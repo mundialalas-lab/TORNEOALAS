@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------
+#  Mundial ALAS — qué NO se publica
+#  El repositorio es público: lo que entra al historial de git queda ahí
+#  aunque después se borre el archivo. Por eso la lista es explícita.
+# ---------------------------------------------------------------------
+
+# Copias de trabajo del HTML. Son 37 archivos, 42 MB, y varias TODAVÍA
+# tienen escrita la clave de administrador en texto plano.
+backup_original/
+
+# Versiones viejas de la app que quedaron sueltas en la raíz. No son la
+# app actual, confunden a cualquiera que abra el repo, y también traen la
+# clave vieja adentro.
+mundial_alas_fixture_mobile.html
+mundial_alas_MOBILE_FORZADO.html
+mundial_alas_mobile_premium.html
+
+# Imágenes que no usa la app
+soccer-sport-environment-filed.jpg
+COPA2.jpg
+futbol-convirtiendo-deporte-exclusivo-mediotiempo.jpg
+logomundial20269385_sq.jpg
+
+# Fotos personales: no tienen por qué estar en un repo público
+WhatsApp Image*
+
+# Scripts sueltos de pruebas viejas
+clean_integration.py
+fix_resize.py
+inject*.ps1
+mobile_patch.css
+
+# Archivos de prueba que genera el harness de verificación
+prueba_*.html
+mini.html
+dom.html
+
+# Sistema / editores
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+node_modules/
