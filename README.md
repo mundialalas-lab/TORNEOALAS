@@ -10,7 +10,7 @@ igual proyectada al costado de la cancha.
 
 | Cómo | Qué hacer |
 |---|---|
-| Rápido | Doble clic en `mundial_alas_fixture(1).html` |
+| Rápido | Doble clic en `ALAS-MUNDIAL.html` |
 | Con sonido de intro | Doble clic en `Abrir Mundial ALAS (con sonido).bat` |
 | Servidor local | Cualquier servidor estático sobre esta carpeta y entrar a `index.html` |
 
@@ -76,8 +76,8 @@ entregarla; las políticas de RLS de la migración ya están escritas para eso.
 
 | Archivo | Qué es |
 |---|---|
-| `mundial_alas_fixture(1).html` | La app entera |
-| `index.html` · `Album.html` | Atajos que redirigen a la app |
+| `ALAS-MUNDIAL.html` | La app entera |
+| `index.html` · `ALAS-ALBUM.html` | Atajos que redirigen a la app |
 | `supabase/migrations/` | El esquema de la base |
 | `ALAS.png` · `ALAS_blanco.png` | Logo institucional (el segundo, en blanco sobre transparente, es el de la barra) |
 | `cancha_web.jpg` · `PELOTA.jpg` · `FIFA.jpg` | Fondos |

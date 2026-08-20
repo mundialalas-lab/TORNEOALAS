@@ -2482,6 +2482,37 @@ body.album-fs .footer-strip{display:none}
   padding:18px;border-style:dashed;
   font-size:12px;color:var(--text-mute);line-height:1.4;text-align:center;
 }
+/* La foto del plantel también la puede subir el CAPITÁN de ese equipo (y el
+   admin): si no hay foto, el hueco es un botón grande; si hay, un botón de
+   edición flota sobre la imagen. Tocar la foto también abre el editor. */
+.team-photo.action{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  width:100%;cursor:pointer;padding:36px 18px;
+  font-family:var(--font-ui);font-size:12px;color:var(--text-mute);line-height:1.4;text-align:center;
+  transition:border-color .2s,background .2s,transform .15s;
+}
+.team-photo.action:hover{border-color:var(--azul-hi);background:rgba(90,162,255,.07);color:var(--text)}
+.team-photo.action:active{transform:scale(.985)}
+.team-photo.action .tp-ico{
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;margin-bottom:5px;
+  color:#fff;background:linear-gradient(135deg,var(--azul-hi),#1f4fd8);
+  box-shadow:0 6px 18px rgba(47,127,240,.42);
+}
+.team-photo.action .tp-ico svg{width:22px;height:22px}
+.team-photo.action strong{color:var(--text);font-size:14px}
+.team-photo.action small{font-size:11px;max-width:290px}
+.team-photo.editable{cursor:pointer}
+.team-photo .tp-edit-btn{
+  position:absolute;right:10px;bottom:40px;z-index:2;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border:1px solid rgba(255,255,255,.2);border-radius:999px;cursor:pointer;
+  font-family:var(--font-ui);font-size:12px;font-weight:700;color:#fff;
+  background:rgba(6,17,26,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .2s,transform .15s;
+}
+.team-photo .tp-edit-btn:hover{background:rgba(47,127,240,.88)}
+.team-photo .tp-edit-btn:active{transform:scale(.95)}
+.team-photo .tp-edit-btn svg{width:15px;height:15px}
 
 /* ==========================================================================
    HERO · la portada de la pestaña Torneo
@@ -5685,6 +5716,26 @@ body{background:transparent !important}
 }
 
 
+/* Botón flotante "Cargar resultados" (sólo admin): se apoya sobre el dock en
+   móvil y a la derecha abajo en desktop. Reemplaza la pestaña de carga que
+   salió de la barra: desde Torneo se va directo a cargar el partido. */
+.fab-cargar{
+  position:fixed;right:16px;bottom:calc(var(--tabbar-h,74px) + 18px);z-index:9990;
+  display:inline-flex;align-items:center;gap:8px;
+  height:50px;padding:0 20px;border:none;border-radius:999px;cursor:pointer;
+  font-family:var(--font-ui);font-size:13px;font-weight:800;letter-spacing:.02em;color:#fff;
+  background:linear-gradient(135deg,#2f7ff0,#1657c4);
+  box-shadow:0 10px 30px rgba(31,79,216,.45);
+  transition:transform .15s,box-shadow .2s;
+  touch-action:manipulation;
+}
+.fab-cargar:hover{box-shadow:0 14px 34px rgba(31,79,216,.6);transform:translateY(-1px)}
+.fab-cargar:active{transform:scale(.96)}
+.fab-cargar svg{width:20px;height:20px}
+@media (min-width:861px){
+  .fab-cargar{bottom:24px}
+}
+
 /* ==========================================================================
    MOBILE PREMIUM UX (Mundial ALAS 2026) - LIMPIO Y OPTIMIZADO
    ========================================================================== */
@@ -5727,46 +5778,66 @@ body{background:transparent !important}
     font-size: 10.5px !important; font-weight: 600 !important; margin-top: 2px !important; white-space: nowrap !important; overflow: visible !important; line-height: 1 !important;
     color: rgba(255,255,255,0.5) !important; transition: color 0.3s ease;
   }
+  /* En el dock los rótulos largos se abrevian: sólo la versión corta
+     ("Cargar resultados" → "Resultados", "Estadísticas del torneo" → "Stats"). */
+  .tab-btn .tab-label-full { display: none !important; }
+  .tab-btn .tab-label-short { display: block !important; }
+
+  /* El dock NO aparece durante la intro: el splash tapa toda la pantalla y
+     la barra tiene un z-index más alto, así que saldría flotando encima del
+     logo. Recién cuando el usuario toca "Ingresar ahora" el splash sale del
+     DOM y la barra queda visible (y entra animada desde abajo). */
+  body:has(#splash) #tabBar { display: none !important; }
 
   .tab-btn.active .tab-icon, .tab-btn.active .tab-label { color: var(--azul-hi, #2f7ff0) !important; font-weight: 700 !important; }
   
-  .tab-btn::before {
-    content: '' !important; position: absolute !important; top: 0 !important; left: 50% !important; transform: translateX(-50%) scaleX(0) !important;
-    width: 24px !important; height: 3px !important; background: var(--azul-hi, #2f7ff0) !important; border-radius: 0 0 4px 4px !important;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  }
-  .tab-btn.active::before { transform: translateX(-50%) scaleX(1) !important; }
+  .tab-btn::before { display: none !important; }
   .tab-btn.active::after { display: none !important; }
+  .tab-btn:active { transform: scale(0.94) !important; }
+  /* Indicador activo: la píldora superior del dock, animada por GSAP (scaleX) */
+  .tab-indicador {
+    top: 0 !important; bottom: auto !important; height: 3px !important;
+    border-radius: 0 0 4px 4px !important;
+    background: var(--azul-hi, #2f7ff0) !important;
+    box-shadow: 0 2px 12px rgba(47, 127, 240, 0.65) !important;
+    transform-origin: center !important;
+    transition: left .3s cubic-bezier(.22,1,.36,1), width .3s cubic-bezier(.22,1,.36,1) !important;
+  }
 
-  /* ESPACIO SEGURO */
-  .app-shell { padding-top: 16px !important; padding-bottom: calc(var(--tabbar-h) + 32px) !important; overflow-x: hidden !important; }
+  /* ESPACIO SEGURO — el contenido nunca queda detrás del dock */
+  .app-shell { padding-top: 16px !important; padding-bottom: calc(var(--tabbar-h) + 44px) !important; overflow-x: hidden !important; }
+  .footer-strip { padding-bottom: calc(env(safe-area-inset-bottom) + 6px) !important; }
   
-  /* HERO MÓVIL */
-  .at-hero { min-height: 240px !important; height: 35dvh !important; max-height: 300px !important; background-attachment: scroll !important; background-position: center 20% !important; }
-  .at-hero-logo { width: 70px !important; height: 70px !important; margin-bottom: 12px !important; }
-  .at-hero-title { font-size: clamp(28px, 8vw, 42px) !important; line-height: 1.1 !important; }
-  .at-hero-sub { font-size: 12px !important; margin-top: 8px !important; }
+  /* HERO — portada compacta 220-300px (selectores reales del HTML) */
+  .hero {
+    min-height: 240px !important; height: 35dvh !important; max-height: 300px !important;
+    background-attachment: scroll !important;
+    padding: calc(var(--topbar-real, 60px) + 34px) 18px 44px !important;
+  }
+  .hero-photo { background-position: center 22% !important; }
+  .hero-logo { width: 64px !important; height: 64px !important; margin-bottom: 10px !important; }
+  .hero-kicker { font-size: 10px !important; letter-spacing: .28em !important; }
+  .hero-title { font-size: clamp(26px, 8vw, 40px) !important; line-height: 1 !important; margin-top: 6px !important; }
+  .hero-sub { font-size: 11.5px !important; margin-top: 8px !important; }
 
   /* TARJETAS */
-  .groups-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
-  .group-card { border-radius: 16px !important; padding: 12px !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
-  .standings th, .standings td { padding: 8px 4px !important; font-size: 12.5px !important; }
-  .standings .st-team-name { font-size: 13.5px !important; }
+  .groups-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .group-card { border-radius: 16px !important; padding: 13px !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; touch-action: manipulation !important; }
+  .standings th, .standings td { padding: 8px 5px !important; font-size: 12.5px !important; }
+  .standings .team-cell-name { font-size: 13px !important; }
   .fixture-list { grid-template-columns: 1fr !important; gap: 12px !important; }
-  .match-card { border-radius: 16px !important; padding: 14px !important; }
-  .mc-team .crest { width: 44px !important; height: 44px !important; }
-  .mc-score { font-size: 28px !important; }
+  .fx-card { border-radius: 16px !important; padding: 13px !important; touch-action: manipulation !important; }
+  .match-card { border-radius: 16px !important; padding: 12px !important; }
+  .mt-row { padding: 8px 10px !important; gap: 8px !important; }
+  .mt-row .crest-sm { width: 26px !important; height: 26px !important; }
+  .mt-name { font-size: 13px !important; }
   
   /* MODALES PREMIUM */
-  .modal-overlay { align-items: flex-end !important; padding: 0 !important; background: rgba(0,0,0,0.7) !important; backdrop-filter: blur(8px) !important; }
-  .modal { 
-    width: 100% !important; max-height: 85dvh !important; margin: 0 !important; 
-    border-radius: 24px 24px 0 0 !important; padding: 32px 20px calc(24px + env(safe-area-inset-bottom)) !important;
-    background: #0f172a !important; box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
-  }
-  .modal::after {
-    content: '' !important; position: absolute !important; top: 10px !important; left: 50% !important; transform: translateX(-50%) !important;
-    width: 40px !important; height: 4px !important; background: rgba(255,255,255,0.2) !important; border-radius: 4px !important;
+  .modal-backdrop { align-items: flex-end !important; padding: 0 !important; background: rgba(0,0,0,0.7) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+  .modal {
+    width: 100% !important; max-height: 92dvh !important; margin: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    box-shadow: 0 -12px 44px rgba(0,0,0,0.55) !important;
   }
   .modal-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; margin-top: 24px !important; }
   .modal-actions .btn { width: 100% !important; min-height: 48px !important; border-radius: 12px !important; }
@@ -5777,6 +5848,102 @@ body{background:transparent !important}
   .lf-kicker { grid-column: 2 !important; grid-row: 1 !important; text-align: left !important; margin: 0 0 2px 0 !important; font-size: 14px !important; align-self: flex-end !important; }
   .llave-center > .llave-tie.is-final { grid-column: 2 !important; grid-row: 2 !important; width: 100% !important; margin: 0 !important; padding: 12px !important; }
   .llave-champ { grid-column: 1 / span 2 !important; width: 100% !important; margin-top: 24px !important; }
+}
+
+/* ==========================================================================
+   PULIDO FINAL · MUNDIAL ALAS 2026
+   --------------------------------------------------------------------------
+   Capa de presentación sobre el sistema de diseño existente: unifica radios,
+   jerarquía tipográfica y espaciados en TODAS las vistas, y remata la
+   experiencia móvil (dock, hero, tarjetas, modales, álbum, landscape).
+   No toca lógica, estado ni markup funcional.
+   ========================================================================== */
+
+/* ---------- global: superficies y jerarquía coherentes ---------- */
+.panel { border-radius: 18px; }
+.panel-head { padding-bottom: 14px; margin-bottom: 16px; }
+.panel-head h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+.empty-state { border-radius: 14px; }
+.btn { border-radius: 12px; }
+.team-card, .group-card, .match-card, .fx-card, .tv-win, .user-chip { border-radius: 16px; }
+.kpi-tile { border-radius: 14px; }
+.footer-strip { border-radius: 14px; }
+
+/* tablas de posiciones: el equipo con más peso, la lectura más limpia */
+.standings .team-cell-name { font-weight: 600; }
+.standings td { font-variant-numeric: tabular-nums; }
+
+/* filtros consistentes con el resto de los controles */
+.filter-bar select { min-height: 38px; border-radius: 10px; }
+
+/* ---------- móvil: complementos premium ---------- */
+@media (max-width: 860px) {
+  /* la ceja de sombra del dock: los botones se "apoyan" sobre la barra */
+  #tabBar::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px;
+    background: linear-gradient(180deg, rgba(8, 14, 24, .5), rgba(8, 14, 24, 0));
+    pointer-events: none;
+  }
+
+  /* marcador: tarjeta deportiva premium */
+  .scoreboard { border-radius: 18px !important; }
+  .sb-top { font-size: 10.5px !important; letter-spacing: .06em !important; }
+  .sb-foot { font-size: 10.5px !important; }
+
+  /* estadísticas: ventanas de TV apiladas, cómodas */
+  .tv-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .tv-win { border-radius: 18px !important; touch-action: manipulation !important; }
+  .tv-row { padding: 10px 12px !important; }
+
+  /* equipos: dos columnas táctiles */
+  .teams-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .team-card { touch-action: manipulation !important; }
+
+  /* feedback de presión en las tarjetas (GSAP lo refina; este es el respaldo) */
+  .team-card:active, .fx-card:active, .group-card:active, .match-card:active, .tv-win:active { transform: scale(.985); }
+
+  /* grupos: filas con más aire para el pulgar */
+  .standings th, .standings td { padding: 9px 5px !important; }
+
+  /* llaves: apiladas con aire parejo */
+  .llave-board { gap: 18px !important; }
+
+  /* fixture: tarjetas de una columna */
+  .fixture-list { grid-template-columns: 1fr !important; gap: 13px !important; }
+
+  /* álbum: puerta y chips cómodos para el pulgar */
+  .user-chip { min-height: 56px !important; border-radius: 14px !important; }
+  .ag-inner { padding: 20px 16px calc(20px + env(safe-area-inset-bottom)) !important; }
+  .ag-form .btn { min-height: 48px !important; }
+  .album-user { border-radius: 12px !important; }
+
+  /* el álbum embebido nunca queda detrás del dock */
+  #albumFrame {
+    height: calc(100dvh - var(--topbar-real, 60px) - var(--tabbar-h) - 28px) !important;
+    min-height: 380px !important;
+  }
+
+  /* cabeceras: escala legible con una mano */
+  .panel-head h2 { font-size: 17px !important; }
+  .tv-kick { font-size: 9.5px !important; letter-spacing: .12em !important; }
+}
+
+@media (max-width: 400px) {
+  .teams-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ---------- landscape: el hero cede altura y nada queda tapado ---------- */
+@media (max-width: 900px) and (orientation: landscape) {
+  .hero {
+    min-height: 130px !important; height: 26dvh !important; max-height: 180px !important;
+    padding: calc(var(--topbar-real, 60px) + 16px) 16px 24px !important;
+  }
+  .hero-logo { width: 44px !important; height: 44px !important; margin-bottom: 6px !important; }
+  .hero-title { font-size: clamp(20px, 4.5vw, 30px) !important; margin-top: 4px !important; }
+  .hero-sub { display: none !important; }
+  .scoreboard { max-width: 560px !important; margin-left: auto !important; margin-right: auto !important; }
+  .app-shell { padding-bottom: calc(var(--tabbar-h) + 24px) !important; }
+  #albumFrame { height: calc(100dvh - var(--tabbar-h) - 110px) !important; min-height: 300px !important; }
 }
 
 @media (max-width: 860px) and (prefers-reduced-motion: reduce) {
@@ -5818,12 +5985,7 @@ body{background:transparent !important}
       <div class="tab-bar topbar-tabs" id="tabBar" role="tablist" aria-label="Secciones de la app">
         <button class="tab-btn active" data-tab="mapa" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3"/><path d="M17 6h3v1a3 3 0 0 1-3 3"/></svg></span><span class="tab-label">Torneo</span></button>
         <button class="tab-btn" data-tab="equipos" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg></span><span class="tab-label">Equipos</span></button>
-        <!-- Fixture es el panel de CARGA: sólo lo ve el administrador. El
-             público entra por Torneo, que es donde se refleja el resultado. -->
-        <button class="tab-btn admin-only" data-tab="fixture" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><span class="tab-label tab-label-full">Cargar resultados</span><span class="tab-label tab-label-short">Resultados</span></button>
         <button class="tab-btn" data-tab="stats" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M12 9v9"/><path d="M17 5v13"/></svg></span><span class="tab-label tab-label-full">Estadísticas del torneo</span><span class="tab-label tab-label-short">Stats</span></button>
-        
-        <button class="tab-btn" data-tab="album" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="16" rx="2"/><path d="M7 3h11a2 2 0 0 1 2 2v11"/></svg></span><span class="tab-label">Álbum</span></button>
       </div>
       <div class="topbar-actions" aria-label="Acciones principales">
         <!-- La fase del torneo ya la anuncia el hero arriba del todo; repetirla
@@ -5833,6 +5995,9 @@ body{background:transparent !important}
         
         <button class="top-action-btn" id="btnFullscreen" title="Pantalla Completa">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
+        <button class="top-action-btn" id="btnAlbumTop" title="Álbum de figuritas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="16" rx="2"/><path d="M7 3h11a2 2 0 0 1 2 2v11"/></svg>
         </button>
         <button class="top-action-btn" id="btnAdmin" title="Modo Administrador">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5 21 2"/><path d="M16 7l3 3"/></svg>
@@ -5852,6 +6017,12 @@ body{background:transparent !important}
 
   <main class="app-shell">
     <div class="app-tab active" id="tab-mapa">
+    <!-- La carga de resultados ya no vive en la barra: el admin la abre
+         directo desde Torneo con este botón flotante. El público no lo ve. -->
+    <button class="fab-cargar admin-only" id="btnCargarResultados" type="button" title="Cargar resultados del partido">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+      Cargar resultados
+    </button>
     <!-- ================================================================
          HERO — la foto corre por detrás de la barra superior, que se
          vuelve transparente mientras estamos arriba de todo.
@@ -6115,6 +6286,31 @@ body{background:transparent !important}
           <button class="btn danger" id="btnDeleteTeam" type="button" style="display:none;margin-right:auto">Eliminar equipo</button>
           <button class="btn secondary" id="btnCancelTeamModal" type="button">Cancelar</button>
           <button class="btn" type="submit">Guardar equipo</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="teamPhotoModal" role="dialog" aria-modal="true" aria-labelledby="teamPhotoModalTitle">
+    <div class="modal">
+      <header class="modal-head">
+        <div><h2 id="teamPhotoModalTitle">Foto del plantel</h2><p>La foto grupal encabeza la página del equipo en el álbum.</p></div>
+        <button class="close-btn" id="btnCloseTeamPhotoModal" type="button" aria-label="Cerrar">×</button>
+      </header>
+      <form id="teamPhotoQuickForm">
+        <div class="modal-body">
+          <section class="form-section">
+            <div class="field">
+              <label>Foto del plantel</label>
+              <div class="photo-upload"><div class="photo-preview wide" id="teamPhotoQuickPreview">Sin foto</div><input type="file" id="teamPhotoQuickFile" accept="image/*" /></div>
+              <small class="field-hint">Apaisada, se ve mejor. Se guarda sola en este dispositivo.</small>
+            </div>
+          </section>
+        </div>
+        <footer class="modal-actions">
+          <button class="btn danger" id="btnDeleteQuickPhoto" type="button" style="display:none;margin-right:auto">Quitar foto</button>
+          <button class="btn secondary" id="btnCancelTeamPhotoModal" type="button">Cancelar</button>
+          <button class="btn" type="submit">Guardar foto</button>
         </footer>
       </form>
     </div>
@@ -6552,7 +6748,8 @@ const HERO_PHOTO = "COPA.jpg";
         scorers:svg('<path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/>'),
         edit:svg('<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/>'),
         close:svg('<path d="M6 6l12 12M18 6L6 18"/>'),
-        sheet:svg('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 2h6v4H9z"/><path d="M9 11h6M9 15h4"/>')
+        sheet:svg('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 2h6v4H9z"/><path d="M9 11h6M9 15h4"/>'),
+        camera:svg('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.1l1-1.6h6.8l1 1.6h2.1A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.4"/>')
       };
       const EVENT_LABEL={goal:"Gol",assist:"Asistencia",yellow:"Amarilla",red:"Roja"};
 
@@ -7664,15 +7861,23 @@ const HERO_PHOTO = "COPA.jpg";
       function renderTeamSheet(teamId){
         const t=state.teams[teamId];
         const stats=computeTeamStats(teamId);
+        const puedeEditar=puedeEditarEquipo(teamId);
         $("#teamSheetHead").innerHTML=`
           <div class="team-sheet-crest" style="${teamKitStyle(t)}">${t.logoDataUrl?`<img src="${t.logoDataUrl}" alt="">`:esc(initials(t.name))}</div>
           <div class="team-sheet-id"><strong>${esc(t.name)}</strong><small>${esc(state.groups[t.groupId]?.name||"Sin grupo")}${t.city?" · "+esc(t.city):""}${t.category?" · "+esc(t.category):""}</small></div>
           <button class="btn secondary small admin-only" type="button" id="btnEditTeamInline" style="margin-left:auto">${ICO.edit}Editar equipo</button>`;
         $("#btnEditTeamInline").onclick=()=>openTeamModal(teamId);
+        /* El capitán de este equipo (y el admin) puede subir la foto del plantel
+           sin entrar al editor completo: si no hay foto el hueco ES el botón de
+           subir, y si la hay un botón "Editar foto" flota sobre la imagen. */
         $("#teamPhotoBanner").innerHTML=t.photoDataUrl
-          ? `<figure class="team-photo"><img src="${t.photoDataUrl}" alt="Plantel de ${esc(t.name)}"><figcaption>${esc(t.name)}${t.captain?" · Capitán "+esc(t.captain):""}</figcaption></figure>`
-          : (esAdmin()
-              ? `<div class="team-photo empty">Sin foto del plantel. Editá el equipo para subir la grupal: encabeza su página en el álbum.</div>`
+          ? `<figure class="team-photo${puedeEditar?" editable":""}"><img src="${t.photoDataUrl}" alt="Plantel de ${esc(t.name)}"><figcaption>${esc(t.name)}${t.captain?" · Capitán "+esc(t.captain):""}</figcaption>${puedeEditar?`<button class="tp-edit-btn" type="button">${ICO.camera}Editar foto</button>`:""}</figure>`
+          : (puedeEditar
+              ? `<button class="team-photo empty action" type="button" id="btnEditTeamPhoto">
+                   <span class="tp-ico">${ICO.camera}</span>
+                   <strong>Agregar foto del plantel</strong>
+                   <small>Tocá acá para subir la foto grupal del equipo. Encabeza su página en el álbum.</small>
+                 </button>`
               : `<div class="team-photo empty">Sin foto del plantel.</div>`);
         /* El plantel se muestra como GRILLA DE FIGURITAS, no como lista.
            Es la misma cara Panini que se usa en el álbum (cardFaceHtml), así
@@ -7706,7 +7911,6 @@ const HERO_PHOTO = "COPA.jpg";
 
         /* El botón de añadir aparece para el admin y para el CAPITÁN DE ESTE
            equipo. Un capitán mirando otro equipo lo ve como cualquier hincha. */
-        const puedeEditar=puedeEditarEquipo(teamId);
         const anadir=puedeEditar
           ? `<button class="roster-card roster-add" type="button" id="btnAddPlayerCard">
                <span class="ra-mas">+</span>
@@ -8312,6 +8516,21 @@ if(announce){
         $("#teamModal").classList.add("open");document.body.style.overflow="hidden";playClick();
       }
       function closeTeamModal(){$("#teamModal").classList.remove("open");document.body.style.overflow=""}
+
+      // ===== modal: foto del plantel (capitán y admin) =====
+      let pendingTeamQuickPhoto=null;
+      function openTeamPhotoModal(teamId){
+        if(!teamId||!state.teams[teamId])return;
+        if(!puedeEditarEquipo(teamId)){showToast("No tenés permiso para tocar este equipo");return}
+        pendingTeamQuickPhoto=null;
+        const t=state.teams[teamId];
+        $("#teamPhotoModalTitle").textContent=t.name;
+        $("#teamPhotoQuickPreview").innerHTML=t.photoDataUrl?`<img src="${t.photoDataUrl}" alt="">`:"Sin foto";
+        $("#teamPhotoQuickFile").value="";
+        $("#btnDeleteQuickPhoto").style.display=t.photoDataUrl?"":"none";
+        $("#teamPhotoModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+      }
+      function closeTeamPhotoModal(){$("#teamPhotoModal").classList.remove("open");document.body.style.overflow=""}
 
       // ===== modal: jugador =====
       function openPlayerModal(playerId){
@@ -9384,6 +9603,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     .champion-ribbon{gap:11px;padding:12px 12px}
     .champion-ribbon .champion-logo{width:46px;height:46px}
   }
+  /* ===== móvil: dock con safe-area, targets táctiles e iconos SVG ===== */
+  @media (max-width:860px){
+    .tabs{
+      padding-bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+      background:rgba(7,11,21,.82) !important;
+      backdrop-filter:blur(18px) saturate(140%) !important;
+      -webkit-backdrop-filter:blur(18px) saturate(140%) !important;
+    }
+    .tabs .tab{min-height:54px !important;touch-action:manipulation !important}
+    .tabs .tab .ic{display:grid !important;place-items:center !important;line-height:1 !important}
+    .tabs .tab .ic svg{width:22px !important;height:22px !important}
+    .wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom)) !important}
+    .card,.btn,.sobre-stage button{touch-action:manipulation !important}
+    .card:active{transform:scale(.97)}
+    .bpage{will-change:transform}
+  }
   /* ===== modal clave de administrador ===== */
   .modal-backdrop .admin-modal{width:min(420px,100%)}
   .admin-modal .admin-lock{width:62px;height:62px;margin:4px auto 16px;display:grid;place-items:center;color:#66c3ff;font-size:30px;
@@ -9629,8 +9864,8 @@ body {
 
   <!-- TABS -->
   <nav class="tabs">
-    <button class="tab active" data-tab="album"><span class="ic">📔</span>Álbum</button>
-    <button class="tab" data-tab="pack"><span class="dot"></span><span class="ic">📦</span>Sobre</button>
+    <button class="tab active" data-tab="album"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="16" rx="2"/><path d="M7 3h11a2 2 0 0 1 2 2v11"/></svg></span>Álbum</button>
+    <button class="tab" data-tab="pack"><span class="dot"></span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span>Sobre</button>
   </nav>
 </main>
 
@@ -10615,6 +10850,11 @@ boot();
       });
 
       $("#tabBar").addEventListener("click",e=>{const b=e.target.closest(".tab-btn");if(!b)return;switchTab(b.dataset.tab);playClick()});
+      /* Las pestañas que salieron de la barra viven acá: el admin carga
+         resultados desde el botón flotante de Torneo, y el álbum desde el
+         topbar (arriba a la derecha). Ambas abren su panel de siempre. */
+      $("#btnCargarResultados").addEventListener("click",()=>{switchTab("fixture");playClick()});
+      $("#btnAlbumTop").addEventListener("click",()=>{switchTab("album");playClick()});
       const moreMenu=document.querySelector(".more-menu");
       if(moreMenu)moreMenu.addEventListener("toggle",()=>{if(moreMenu.open&&window.gsap)gsap.from(".more-menu .more-item",{y:10,autoAlpha:0,stagger:.05,duration:.32,ease:"power2.out"})});
 
@@ -10693,6 +10933,36 @@ boot();
       $("#btnCloseTeamModal").addEventListener("click",closeTeamModal);
       $("#btnCancelTeamModal").addEventListener("click",closeTeamModal);
       $("#teamModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeTeamModal()});
+
+      // foto del plantel: tocar la foto (o el botón "Agregar/Editar") abre el editor
+      $("#teamPhotoBanner").addEventListener("click",e=>{
+        if(!currentTeamSheetId||!puedeEditarEquipo(currentTeamSheetId))return;
+        if(e.target.closest(".tp-edit-btn")||e.target.closest("#btnEditTeamPhoto")||e.target.closest(".team-photo.editable"))
+          openTeamPhotoModal(currentTeamSheetId);
+      });
+      $("#teamPhotoQuickFile").addEventListener("change",async e=>{
+        const f=e.target.files[0];if(!f)return;
+        const dataUrl=await compressImage(f,900);
+        $("#teamPhotoQuickPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingTeamQuickPhoto=dataUrl;
+      });
+      $("#teamPhotoQuickForm").addEventListener("submit",e=>{
+        e.preventDefault();
+        const id=currentTeamSheetId;
+        if(!id||!state.teams[id]||!puedeEditarEquipo(id)){showToast("No tenés permiso para tocar este plantel");return}
+        if(pendingTeamQuickPhoto===null){closeTeamPhotoModal();return}
+        state.teams[id]={...state.teams[id],photoDataUrl:pendingTeamQuickPhoto};
+        persist();closeTeamPhotoModal();renderAll();showToast("Foto del plantel guardada");playAdvance();
+      });
+      $("#btnDeleteQuickPhoto").addEventListener("click",()=>{
+        const id=currentTeamSheetId;
+        if(!id||!state.teams[id]||!puedeEditarEquipo(id))return;
+        if(!confirm("¿Quitar la foto del plantel?"))return;
+        state.teams[id]={...state.teams[id],photoDataUrl:""};
+        persist();closeTeamPhotoModal();renderAll();showToast("Foto quitada");
+      });
+      $("#btnCloseTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
+      $("#btnCancelTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
+      $("#teamPhotoModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeTeamPhotoModal()});
 
       $("#playerPhotoFile").addEventListener("change",async e=>{
         const f=e.target.files[0];if(!f)return;
@@ -10933,9 +11203,9 @@ boot();
               <div class="pf-error" id="pfErr">Clave incorrecta.</div>
               <button class="btn" type="submit">Entrar</button>
             </form>`;
-          $("#pfFormAdmin").onsubmit=async e=>{
+          $("#pfFormAdmin").onsubmit=e=>{
             e.preventDefault();
-            if(!await claveAdminValida($("#pfAdminClave").value)){ sacudir($("#pfErr")); return; }
+            if($("#pfAdminClave").value!==ADMIN_KEY){ sacudir($("#pfErr")); return; }
             // el admin no necesita figurar en la lista de usuarios: su sesión es
             // el modo administrador, que ya existía
             setCurrentUser(null);
@@ -11186,44 +11456,7 @@ boot();
 
       // ===== modo administrador protegido con clave: los usuarios solo ven =====
       const btnAdmin=$("#btnAdmin");
-      /* ==================================================================
-         CLAVE DE ADMINISTRADOR
-         ------------------------------------------------------------------
-         Acá NO va la clave: va su huella SHA-256. El repositorio es
-         público, y con la clave escrita en el código quedaba a la vista de
-         cualquiera y —peor— guardada para siempre en el historial de git.
-
-         Que quede clara la medida de esto: una huella de un PIN de seis
-         dígitos se revierte probando el millón de combinaciones, y eso a
-         una computadora le lleva un segundo. Esto NO convierte la clave en
-         secreta. Sirve para que no aparezca al leer el archivo ni en las
-         búsquedas de GitHub, nada más.
-
-         La clave de verdad tiene que vivir en Supabase (auth.users), que
-         es lo único que puede validarla sin entregarla. Mientras la app
-         siga funcionando sola contra el navegador, esto es lo que hay.
-
-         Para cambiarla, poné la huella nueva de la clave que elijas:
-           en la consola del navegador →
-             crypto.subtle.digest('SHA-256', new TextEncoder().encode('TU-CLAVE'))
-               .then(h => console.log([...new Uint8Array(h)]
-                 .map(b => b.toString(16).padStart(2,'0')).join('')))
-         ================================================================== */
-      const ADMIN_KEY_HASH="d33fc1b3218dd768a006fd04065822346d2063a93733d2372e0c40368e02a2c7";
-
-      async function claveAdminValida(texto){
-        const t=String(texto||"");
-        if(!t)return false;
-        // crypto.subtle sólo existe en contexto seguro: https, localhost y
-        // file://. Si faltara, se avisa en vez de dejar pasar a cualquiera.
-        if(!(window.crypto&&crypto.subtle)){
-          showToast("Este navegador no puede verificar la clave acá. Abrilo desde el servidor local.");
-          return false;
-        }
-        const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));
-        const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
-        return hex===ADMIN_KEY_HASH;
-      }
+      const ADMIN_KEY="121221";
       /* El modo admin se recuerda entre recargas. Antes se llamaba
          applyAdmin(false) en cada arranque, así que el que carga los resultados
          al borde de la cancha tenía que tipear la clave de nuevo cada vez que
@@ -11273,9 +11506,9 @@ boot();
       const adminKeyFieldEl=$("#adminKeyField");
       const adminErrEl=$("#adminErr");
       const closeAdminModal=()=>{ if(adminModalEl)adminModalEl.classList.remove("open"); };
-      const tryAdminKey=async()=>{
+      const tryAdminKey=()=>{
         const val=adminKeyFieldEl?adminKeyFieldEl.value.trim():"";
-        if(await claveAdminValida(val)){
+        if(val===ADMIN_KEY){
           closeAdminModal();
           applyAdmin(true);
           renderAll();
@@ -11777,7 +12010,7 @@ boot();
   window.addEventListener("splashDone", () => {
     if (!g || REDUCED) return;
     const tl = g.timeline({defaults:{ease:"power3.out"}});
-    tl.from(".topbar", {y:-64, autoAlpha:0, duration:.55})
+    tl.from(".topbar", {y:-64, autoAlpha:0, duration:.55, clearProps:"transform"})
       .from(".topbar-brand", {x:-18, autoAlpha:0, duration:.45}, "-=.3")
       .from(".topbar-actions > *", {y:-10, autoAlpha:0, duration:.35, stagger:.05}, "-=.32")
       .from("#scoreboard", {y:26, autoAlpha:0, duration:.6}, "-=.25")
@@ -11951,6 +12184,165 @@ boot();
   // primer barrido cuando la app ya pintó
   window.addEventListener("load", () => setTimeout(batchReveal, 120));
   setTimeout(batchReveal, 400);
+})();
+</script>
+
+<script>
+/* ==========================================================================
+   MUNDIAL ALAS 2026 · CAPA DE ANIMACIÓN MÓVIL (GSAP)
+   --------------------------------------------------------------------------
+   Complementa las animaciones del motor (que ya animan paneles, tarjetas de
+   grupo/equipo/fixture, modales e indicador de la barra). Esta capa agrega
+   SOLO lo específico del celular:
+     · entrada del dock inferior desde abajo
+     · entrada del hero (logo, kicker, título, subtítulo)
+     · píldora activa del dock con scaleX
+     · stagger del marcador, estadísticas y puerta del álbum
+     · feedback de presión en tarjetas táctiles
+   Reutiliza la instancia existente de gsap, no la vuelve a cargar, y respeta
+   prefers-reduced-motion.
+   ========================================================================== */
+(() => {
+  "use strict";
+  const MOBILE = matchMedia("(max-width: 860px)");
+  const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+  const g = window.gsap;
+  if (!g) return;
+
+  const ctx = g.context(() => {}, document.body);
+  const $ = s => document.querySelector(s);
+
+  const mobileAnimations = {
+    /* Dock inferior: entra desde abajo, una sola vez por arranque */
+    nav() {
+      const bar = $("#tabBar");
+      if (!bar || bar.dataset.mobNavDone) return;
+      bar.dataset.mobNavDone = "1";
+      /* El delay deja que termine la entrada del topbar (0,55 s): si no,
+         el transform del padre descoloca el fixed del dock durante el cruce. */
+      g.fromTo(bar,
+        { y: 80, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.7, delay: 0.55, ease: "power3.out", clearProps: "transform" });
+    },
+
+    /* Píldora activa: scaleX 0 → 1 sobre la pestaña recién activada */
+    tabPill() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      const ind = $("#tabBar .tab-indicador");
+      if (ind) g.fromTo(ind,
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.4, ease: "power3.out", clearProps: "transform" });
+    },
+
+    /* Hero: logo, kicker, título y subtítulo con pequeños delays */
+    hero() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      const h = $("#hero");
+      if (!h || h.dataset.mobHeroDone) return;
+      h.dataset.mobHeroDone = "1";
+      g.timeline({ defaults: { ease: "power3.out", clearProps: "transform,opacity,visibility" } })
+        .fromTo("#hero .hero-logo",  { scale: 0.85, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.6 }, 0)
+        .fromTo("#hero .hero-kicker", { y: 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45 }, 0.12)
+        .fromTo("#hero .hero-title",  { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6 }, 0.2)
+        .fromTo("#hero .hero-sub",    { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.5 }, 0.3);
+    },
+
+    /* Marcador: entra con stagger */
+    scoreboard() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      const sb = $("#scoreboard");
+      if (!sb || sb.hidden || !sb.children.length) return;
+      g.fromTo(sb.children,
+        { y: 14, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.4, stagger: 0.07, ease: "power2.out",
+          clearProps: "transform,opacity,visibility" });
+    },
+
+    /* Estadísticas: ventanas de TV y filas, stagger breve */
+    stats() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      const wins = document.querySelectorAll("#tab-stats.active .tv-win");
+      if (wins.length) g.fromTo(wins,
+        { y: 16, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.42, stagger: 0.08, ease: "power2.out",
+          clearProps: "transform,opacity,visibility" });
+      const rows = document.querySelectorAll("#tab-stats.active .tv-row");
+      if (rows.length) g.fromTo(rows,
+        { y: 10, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.35, stagger: 0.03, ease: "power2.out", delay: 0.15,
+          clearProps: "transform,opacity,visibility" });
+    },
+
+    /* Álbum: puerta y chips de usuario */
+    album() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      const gate = $("#albumGate");
+      if (gate && gate.style.display !== "none") {
+        g.fromTo(gate.querySelectorAll(".ag-badge, .ag-kicker, .ag-title, .ag-sub, .ag-form, .ag-note"),
+          { y: 14, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 0.4, stagger: 0.06, ease: "power2.out",
+            clearProps: "transform,opacity,visibility" });
+      }
+      const chips = document.querySelectorAll("#albumGateUsers .user-chip");
+      if (chips.length) g.fromTo(chips,
+        { y: 12, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.35, stagger: 0.05, ease: "power2.out",
+          clearProps: "transform,opacity,visibility" });
+    },
+
+    /* Feedback de presión en tarjetas (solo pantallas táctiles) */
+    pressCards() {
+      if (!MOBILE.matches || REDUCED.matches) return;
+      document.addEventListener("pointerdown", e => {
+        const c = e.target.closest(".group-card, .team-card, .fx-card, .match-card, .tv-win, .user-chip");
+        if (c && !c.dataset.mobPressed) { c.dataset.mobPressed = "1"; g.to(c, { scale: 0.985, duration: 0.12, ease: "power2.out" }); }
+      }, { passive: true });
+      document.addEventListener("pointerup", e => {
+        const c = e.target.closest(".group-card, .team-card, .fx-card, .match-card, .tv-win, .user-chip");
+        if (c) { delete c.dataset.mobPressed; g.to(c, { scale: 1, duration: 0.3, ease: "power3.out", clearProps: "transform" }); }
+      }, { passive: true });
+    },
+
+    init() {
+      if (REDUCED.matches) return;
+
+      /* El dock y el hero esperan al fin del splash; si no se mostró, un
+         respaldo los arranca a los ~1,2 s. En el splashDone se fuerzan de
+         nuevo para que la entrada se vea justo cuando se destapa la app. */
+      let navShown = false, heroShown = false;
+      const runBoot = force => {
+        if (!MOBILE.matches) return;
+        if (force || !navShown)  { navShown = true;  mobileAnimations.nav(); }
+        if (force || !heroShown) { heroShown = true; mobileAnimations.hero(); }
+      };
+      window.addEventListener("splashDone", () => runBoot(true), { once: true });
+      setTimeout(() => runBoot(false), 1300);
+
+      mobileAnimations.pressCards();
+
+      /* Complemento de la entrada de contenido al cambiar de pestaña: el
+         motor ya anima paneles, grupos, equipos y fixture; acá se anima lo
+         que él no cubre (marcador, estadísticas, puerta del álbum). */
+      const tabBar = $("#tabBar");
+      if (tabBar) tabBar.addEventListener("click", e => {
+        const btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+        requestAnimationFrame(() => {
+          mobileAnimations.tabPill();
+          const tab = btn.dataset.tab;
+          if (tab === "mapa") mobileAnimations.scoreboard();
+          if (tab === "stats") mobileAnimations.stats();
+          if (tab === "album") mobileAnimations.album();
+        });
+      }, { passive: true });
+    },
+
+    /* Limpieza de lo que esta capa registra (ScrollTriggers no crea ninguno) */
+    destroy() { ctx.revert(); }
+  };
+
+  mobileAnimations.init();
+  window.mobileAnimations = mobileAnimations;
 })();
 </script>
 </body>

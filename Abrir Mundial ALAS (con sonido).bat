@@ -18,10 +18,10 @@ REM  localhost desde tu Chrome de siempre, la intro se ve pero arranca muda
 REM  hasta que toques algo (ahi se activa el sonido solo).
 REM ===========================================================================
 
-set "APP=%~dp0mundial_alas_fixture(1).html"
+set "APP=%~dp0ALAS-MUNDIAL.html"
 set "PERFIL=%LocalAppData%\MundialALAS\perfil"
 
-REM OJO: el archivo se llama mundial_alas_fixture(1).html y tiene PARENTESIS.
+REM OJO: la ruta va SIEMPRE entre comillas al mostrarla.
 REM Dentro de un bloque if(...) de cmd, un ) sin comillas cierra el bloque antes
 REM de tiempo y el .bat muere con "No se esperaba .html en este momento".
 REM Por eso la ruta va SIEMPRE entre comillas al mostrarla.
