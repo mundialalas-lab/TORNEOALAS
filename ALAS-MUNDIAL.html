@@ -4467,6 +4467,14 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 }
 
 
+
+
+
+
+
+
+
+
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -6072,6 +6080,68 @@ body{background:transparent !important}
 #btnConfigure, #btnReset {
   display: none !important;
 }
+
+/* AGRANDAR LOGO EN LA GRAN FINAL */
+@media (max-width: 860px) {
+  .llave-trophy { 
+    width: 96px !important; 
+    height: 120px !important; 
+  }
+}
+/* QUE LAS PANTALLAS SUPERPUESTAS CUBRAN EL DOCK EN MÓVIL */
+@media (max-width: 860px) {
+  .perfiles, .splash {
+    z-index: 9999999 !important;
+  }
+}
+/* AJUSTE FINO CENTRADO DE LOGO TOPBAR */
+@media (max-width: 860px) {
+  .topbar-marca {
+    transform: translateY(-3px) !important;
+  }
+}
+/* ARREGLAR ORDEN DE BOTONES EN MODALES (GUARDAR ARRIBA, CANCELAR ABAJO) */
+@media (max-width: 860px) {
+  .modal-actions {
+    flex-direction: column-reverse !important;
+  }
+}
+/* OCULTAR BOTONES CHICOS Y HACER TARJETA CLICKEABLE */
+.rc-acciones { display: none !important; }
+.roster-card { cursor: pointer; transition: transform 0.15s ease; }
+.roster-card:active { transform: scale(0.96); }
+/* CHIPS DE ESTADO PRO */
+.chip-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.chip-blue { background: linear-gradient(135deg, #1e3a8a, #3b82f6); border: 1px solid #60a5fa; }
+.chip-green { background: linear-gradient(135deg, #064e3b, #10b981); border: 1px solid #34d399; }
+.chip-red { background: linear-gradient(135deg, #7f1d1d, #ef4444); border: 1px solid #f87171; }
+
+/* HACER MAS NOTORIOS LOS PARTIDOS EN FASE DE GRUPOS */
+.mt {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+.mt-row {
+  margin-bottom: 8px !important;
+}
+/* OCULTAR BOTÓN CARGAR RESULTADOS GLOBALMENTE (PC Y MÓVIL) */
+#btnCargarResultados {
+  display: none !important;
+}
 </style>
 <!-- SPLASH VIDEO -->
   <div id="splash" class="splash" aria-label="Bienvenida" role="dialog">
@@ -6776,6 +6846,8 @@ const ALAS_CRONOGRAMA=[
   {n:"F",ronda:"Gran Final",fecha:"2026-09-25",lugar:"Club de Oficiales Policía Nacional",dur:"40 min"}
 ];
 </script>
+
+
 
 <script>
 /* ===== assets (inyectados) ===== */
@@ -7634,14 +7706,44 @@ const HERO_PHOTO = "COPA.jpg";
       }
       /* pie del bloque: estado del partido y, para el admin, el acceso al detalle */
       function mtFoot(m,played,live,extra){
-        // el resultado ya lo dice la barra de color; el pie sólo aporta el estado
         const label=live?`<span class="mt-live"><span class="live-dot"></span>En vivo</span>`
-          :m.status==="suspended"?"Suspendido"
-          :played?"Finalizado":"A jugar";
-        return `<div class="mt-foot"><span>${label}${extra?" · "+extra:""}</span>
-          <button type="button" class="mt-open admin-only" data-open-match="${m.id}" title="Eventos y detalles" aria-label="Eventos y detalles del partido">${ICO.sheet}</button>
+          :m.status==="suspended"?"<span class='chip-status chip-red'>Suspendido</span>"
+          :played?"<span class='chip-status chip-green'>Finalizado</span>":"<span class='chip-status chip-blue'>A jugar</span>";
+        
+        const registrarBtn = document.body.classList.contains("admin-mode") ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="margin: 8px auto 0; display: block; font-size:12px; padding: 6px 20px; min-height:36px; border-radius:18px;">Registrar</button>` : '';
+
+        return `<div class="mt-foot" style="display:flex; flex-direction:column; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <span>${label}${extra?"  "+extra:""}</span>
+            <button type="button" class="mt-open admin-only" data-open-match="${m.id}" style="transform: scale(1.4); transform-origin: right;" title="Eventos y detalles" aria-label="Eventos y detalles del partido">${ICO.sheet}</button>
+          </div>
+          ${registrarBtn}
         </div>`;
       }
+
+      /* Cargar resultado desde el fixture: lee los goles de los inputs manuales
+         del partido y, con ambos cargados, lo pasa a finalizado. */
+      document.addEventListener("click",e=>{
+        const btn=e.target.closest(".btn-registrar-score");
+        if(!btn)return;
+        const matchId=btn.dataset.match;
+        const m=state.matches[matchId];
+        if(!m)return;
+        const inputs=document.querySelectorAll(`.group-score-manual[data-match="${matchId}"]`);
+        let changed=false;
+        inputs.forEach(t=>{
+          const val=t.value===""?null:Math.max(0,Math.min(99,Number(t.value)));
+          if(t.dataset.side==="home"&&m.scoreHome!==val){m.scoreHome=val;changed=true}
+          if(t.dataset.side==="away"&&m.scoreAway!==val){m.scoreAway=val;changed=true}
+        });
+        if(changed){
+          if(m.scoreHome!==null&&m.scoreAway!==null&&m.scoreHome!==undefined&&m.scoreAway!==undefined)m.status="finished";
+          persist();
+          renderAll({announce:true});
+          playScore();
+          notifyAlbumResultLoaded();
+        }
+      });
 
       function groupMatchRow(m){
         const home=state.teams[m.homeSlot.teamId],away=state.teams[m.awaySlot.teamId];
@@ -7649,7 +7751,7 @@ const HERO_PHOTO = "COPA.jpg";
         const live=m.status==="live";
         const played=matchScoreOk(m);
         const hs=Number(m.scoreHome),as=Number(m.scoreAway);
-        const inp=(side,t,val)=>`<input class="score-input group-score" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
+        const inp=(side,t,val)=>`<input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
         return `<div class="mt ${live?"is-live":""}">
           ${mtRow(home,teamName(home),inp("home",home,m.scoreHome),outcome(hs,as,played))}
           ${mtRow(away,teamName(away),inp("away",away,m.scoreAway),outcome(as,hs,played))}
@@ -7944,6 +8046,7 @@ const HERO_PHOTO = "COPA.jpg";
       function renderTeamsTab(){
         const sheetActive=Boolean(currentTeamSheetId&&state.teams[currentTeamSheetId]);
         $("#teamsGrid").parentElement.style.display=sheetActive?"none":"";
+        $("#capitanesPanel").style.display=sheetActive?"none":"";
         $("#teamSheetPanel").style.display=sheetActive?"":"none";
         if(sheetActive){renderTeamSheet(currentTeamSheetId);return}
         const teams=Object.values(state.teams).sort((a,b)=>a.name.localeCompare(b.name));
@@ -11814,6 +11917,26 @@ boot();
       })();
     })();
   </script>
+<script>
+// Hacer interactiva toda la tarjeta del jugador
+document.addEventListener("DOMContentLoaded", () => {
+  const rosterList = document.getElementById("rosterList");
+  if (rosterList) {
+    rosterList.addEventListener("click", e => {
+      const card = e.target.closest(".roster-card");
+      // Ignorar si es la tarjeta de agregar, porque esa ya tiene su propio evento
+      if (card && card.id !== "btnAddPlayerCard" && card.dataset.playerId) {
+        // Solo abrir si el usuario tiene permiso (si existe rc-acciones oculto, asume que puede,
+        // pero mejor validamos llamando a openPlayerModal directo, la app lo permite si estás como admin/capitán)
+        if (typeof openPlayerModal === 'function') {
+          openPlayerModal(card.dataset.playerId);
+        }
+      }
+    });
+  }
+});
+</script>
+
 <script>
 /* ==========================================================================
    COREOGRAFÍA · Mundial ALAS
