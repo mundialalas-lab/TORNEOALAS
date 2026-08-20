@@ -4466,6 +4466,7 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
+
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -5950,6 +5951,127 @@ body{background:transparent !important}
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+
+/* ==========================================================================
+   PARCHES DE DISEÑO MÓVIL A PEDIDO DEL USUARIO
+   ========================================================================== */
+@media (max-width: 860px) {
+  /* 1. CENTRAR LOGO ARRIBA */
+  .topbar-inner { 
+    justify-content: center !important; 
+    position: relative !important;
+  }
+  .topbar-actions { 
+    position: absolute !important; 
+    right: 12px !important; 
+    margin: 0 !important; 
+  }
+  
+  /* 2. EQUIPOS A 1 COLUMNA CON DISEÑO PRO */
+  .teams-grid { 
+    grid-template-columns: 1fr !important; 
+    gap: 16px !important; 
+  }
+  .team-card {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    background: rgba(18, 29, 50, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5) !important;
+  }
+  .team-card-head {
+    padding: 16px 20px !important;
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+  }
+  .team-card-head::before {
+    display: none !important;
+  }
+  .team-card .team-crest {
+    width: 60px !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    margin: 0 !important;
+  }
+  .team-card-name strong {
+    font-size: 18px !important;
+    text-shadow: none !important;
+    color: #ffffff !important;
+  }
+  .team-card-name small {
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.6) !important;
+    text-shadow: none !important;
+  }
+  .team-card-body {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 12px 20px !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+  }
+  .tc-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    border: none !important;
+    padding: 0 !important;
+    gap: 2px !important;
+    background: transparent !important;
+  }
+  .tc-meta em { 
+    font-size: 9px !important; 
+    text-transform: uppercase !important; 
+    letter-spacing: 0.05em !important; 
+    color: rgba(255,255,255,0.5) !important; 
+    font-style: normal !important; 
+  }
+  .tc-meta b { 
+    font-size: 13px !important; 
+    margin: 0 !important; 
+    color: #ffffff !important; 
+  }
+
+  /* 3. AL ENTRAR EN EQUIPO (TEAM SHEET) DISEÑO PRO */
+  .team-sheet-head {
+    background: rgba(18, 29, 50, 0.75) !important;
+    padding: 20px !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5) !important;
+    margin-bottom: 20px !important;
+  }
+  .team-photo.empty {
+    background: rgba(18, 29, 50, 0.4) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+    color: rgba(255,255,255,0.6) !important;
+  }
+  .empty-state {
+    background: rgba(18, 29, 50, 0.4) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    color: rgba(255,255,255,0.6) !important;
+  }
+  
+  /* 4. QUITAR BOTON CARGAR RESULTADOS (FLUJO DESDE TORNEO) */
+  #btnCargarResultados {
+    display: none !important;
+  }
+}
+/* QUITAR BOTONES DE CONFIGURAR Y RESETEAR (A PEDIDO DEL USUARIO) */
+#btnConfigure, #btnReset {
+  display: none !important;
+}
 </style>
 <!-- SPLASH VIDEO -->
   <div id="splash" class="splash" aria-label="Bienvenida" role="dialog">
