@@ -8202,12 +8202,12 @@ const HERO_PHOTO = "COPA.jpg";
           :played?"<span class='chip-status chip-green'>Finalizado</span>":"<span class='chip-status chip-blue'>A jugar</span>";
         
         const isAdmin = document.body.classList.contains("admin-mode");
-        const btnStyle = "flex:1; font-size:12px; padding: 6px 10px; min-height:36px; border-radius:18px; text-align:center;";
-        const secStyle = btnStyle + " border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);";
+        const btnStyle = "flex: 1; padding: 0 4px; min-height: 38px; border-radius: 12px; font-size: 13px;";
+        const secStyle = btnStyle + " border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff;";
         
         const registrarBtn = isAdmin && !played ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="${btnStyle}">REGISTRAR</button>` : '';
         const verResultadosBtn = played ? `<button type="button" class="btn secondary btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">RESULTADOS</button>` : '';
-        const editBtn = isAdmin ? `<button type="button" class="btn secondary mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR EVENTOS</button>` : '';
+        const editBtn = isAdmin ? `<button type="button" class="btn secondary mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR</button>` : '';
 
         return `<div class="mt-foot" style="display:flex; flex-direction:column; width:100%;">
           <div style="text-align:center; width:100%; margin-bottom:4px;">
