@@ -12177,12 +12177,12 @@ boot();
       // pestañas que sólo existen para el administrador
       const TABS_ADMIN=["fixture"];
 
-            function switchTab(tab){
+      function switchTab(tab){
         /* Portero: si es admin y no tiene permiso, vuelve a mapa */
         if(TABS_ADMIN.includes(tab)&&!esAdmin())tab="mapa";
         state.ui.activeTab=tab;
-        $(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-        $(".app-tab").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
+        $$(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+        $$(".app-tab").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
         
         // Fondo por pestaña: Torneo lleva la pelota, el resto el cartel FIFA
         document.body.classList.toggle("tab-torneo",tab==="mapa");
