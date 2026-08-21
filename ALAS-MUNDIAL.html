@@ -6886,16 +6886,15 @@ body{background:transparent !important}
     </div>
   </div>
 
-  <div class="modal-backdrop" id="matchModal" role="dialog" aria-modal="true" aria-labelledby="matchModalTitle">
+  <div class="modal-backdrop" id="matchDataModal" role="dialog" aria-modal="true" aria-labelledby="matchDataModalTitle">
     <div class="modal">
       <header class="modal-head">
-        <div><h2 id="matchModalTitle">Partido</h2><p id="matchModalSub">Cargá el resultado y los eventos.</p></div>
-        <button class="close-btn" id="btnCloseMatchModal" type="button" aria-label="Cerrar">×</button>
+        <div><h2 id="matchDataModalTitle">Datos del partido</h2><p id="matchDataModalSub">Fecha, hora, sede y estado.</p></div>
+        <button class="close-btn" id="btnCloseMatchDataModal" type="button" aria-label="Cerrar">×</button>
       </header>
-      <form id="matchForm">
+      <form id="matchDataForm">
         <div class="modal-body">
           <section class="form-section">
-            <h3>Datos del partido</h3>
             <div class="form-grid">
               <div class="field"><label for="matchDateField">Fecha</label><input type="date" id="matchDateField" /></div>
               <div class="field"><label for="matchTimeField">Hora</label><input type="time" id="matchTimeField" /></div>
@@ -6903,6 +6902,26 @@ body{background:transparent !important}
               <div class="field"><label for="matchStatusField">Estado</label><select id="matchStatusField"><option value="scheduled">Programado</option><option value="live">En vivo</option><option value="finished">Finalizado</option><option value="suspended">Suspendido</option></select></div>
             </div>
           </section>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" class="btn cancel-btn" id="btnCancelMatchDataModal">Cancelar</button>
+          <button type="submit" class="btn primary save-state">Guardar Datos</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="matchModal" role="dialog" aria-modal="true" aria-labelledby="matchModalTitle">
+    <div class="modal">
+      <header class="modal-head" style="align-items: center; justify-content: space-between;">
+        <div style="flex:1;"><h2 id="matchModalTitle">Partido</h2><p id="matchModalSub">Cargá el resultado y los eventos.</p></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn secondary admin-only" id="btnOpenMatchDataFromEditor" style="font-size:11px; padding:6px 10px; border-radius:6px; min-height:0; height:28px;">✏️ DATOS</button>
+          <button class="close-btn" id="btnCloseMatchModal" type="button" aria-label="Cerrar" style="position:static; transform:none;">×</button>
+        </div>
+      </header>
+      <form id="matchForm">
+        <div class="modal-body">
           <section class="form-section">
             <h3 id="matchScoreHeading">Resultado</h3>
             <div class="form-grid">
@@ -8208,12 +8227,14 @@ const HERO_PHOTO = "COPA.jpg";
         const registrarBtn = isAdmin && !played ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="${btnStyle}">REGISTRAR</button>` : '';
         const verResultadosBtn = played ? `<button type="button" class="btn secondary btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">RESULTADOS</button>` : '';
         const editBtn = isAdmin ? `<button type="button" class="btn secondary mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR</button>` : '';
+        const dataBtn = isAdmin ? `<button type="button" class="btn secondary admin-only btn-edit-datos" data-open-match-data="${m.id}" style="${secStyle}">DATOS</button>` : '';
 
         return `<div class="mt-foot" style="display:flex; flex-direction:column; width:100%;">
           <div style="text-align:center; width:100%; margin-bottom:4px;">
             <span>${label}${extra?"  "+extra:""}</span>
           </div>
           <div style="display:flex; gap:8px; width:100%; margin-top:4px;">
+            ${dataBtn}
             ${editBtn}
             ${registrarBtn || verResultadosBtn}
           </div>
@@ -11668,6 +11689,9 @@ boot();
       document.addEventListener("click",e=>{
         const openBtn=e.target.closest("[data-open-match]");
         if(openBtn)openMatchModal(openBtn.getAttribute("data-open-match"));
+        
+        const openDataBtn=e.target.closest("[data-open-match-data]");
+        if(openDataBtn)openMatchDataModal(openDataBtn.getAttribute("data-open-match-data"));
       });
       // la tarjeta del fixture es enfocable: sin esto se llega con Tab pero no
       // se puede abrir sin mouse
@@ -11903,8 +11927,6 @@ boot();
       $("#matchForm").addEventListener("submit",e=>{
         e.preventDefault();
         const m=state.matches[editingMatchId];if(!m)return;
-        m.date=$("#matchDateField").value;m.time=$("#matchTimeField").value;m.venue=$("#matchVenueField").value.trim();
-        m.status=$("#matchStatusField").value;
         const clamp=v=>v===""?null:Math.max(0,Math.min(99,Number(v)));
         m.scoreHome=clamp($("#matchHomeScoreField").value);
         m.scoreAway=clamp($("#matchAwayScoreField").value);
@@ -11920,11 +11942,45 @@ boot();
         m.mvpPlayerId=$("#matchMvpField").value||null;
         persist();closeMatchModal();renderAll({announce:true});playScore();showToast("Partido actualizado");notifyAlbumResultLoaded();
       });
+
+      function openMatchDataModal(id){
+        editingMatchId=id;
+        const m=state.matches[id];if(!m)return;
+        $("#matchDataModalTitle").innerHTML=`${esc(teamName(resolveSlot(m.homeSlot)))} vs ${esc(teamName(resolveSlot(m.awaySlot)))}`;
+        $("#matchDateField").value=m.date||"";
+        $("#matchTimeField").value=m.time||"";
+        $("#matchVenueField").value=m.venue||"";
+        $("#matchStatusField").value=m.status;
+        $("#matchDataModal").classList.add("open");
+        document.body.style.overflow="hidden";
+      }
+      function closeMatchDataModal(){
+        $("#matchDataModal").classList.remove("open");
+        document.body.style.overflow="";
+      }
+      
+      $("#matchDataForm").addEventListener("submit",e=>{
+        e.preventDefault();
+        const m=state.matches[editingMatchId];if(!m)return;
+        m.date=$("#matchDateField").value;m.time=$("#matchTimeField").value;m.venue=$("#matchVenueField").value.trim();
+        m.status=$("#matchStatusField").value;
+        persist();closeMatchDataModal();renderAll();playScore();showToast("Datos actualizados");
+      });
+      
+      $("#btnCloseMatchDataModal").addEventListener("click",closeMatchDataModal);
+      $("#btnCancelMatchDataModal").addEventListener("click",closeMatchDataModal);
+      $("#matchDataModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeMatchDataModal()});
+
+      $("#btnOpenMatchDataFromEditor")?.addEventListener("click",()=>{
+        closeMatchModal();
+        openMatchDataModal(editingMatchId);
+      });
+
       $("#btnCloseMatchModal").addEventListener("click",closeMatchModal);
       $("#btnCancelMatchModal").addEventListener("click",closeMatchModal);
       $("#matchModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeMatchModal()});
 
-      document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeConfig();closeTeamModal();closePlayerModal();closeMatchModal();cerrarResetModal()}});
+      document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeConfig();closeTeamModal();closePlayerModal();closeMatchModal();closeMatchDataModal();cerrarResetModal()}});
       // El botón de tema salió de la barra. applyTheme() sigue vivo y respeta
       // lo que haya guardado en settings.theme, sólo que ya no se cambia a mano.
       $("#btnTheme")?.addEventListener("click",()=>{
