@@ -11810,7 +11810,7 @@ boot();
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const origText = submitBtn.textContent;
-        submitBtn.textContent = "Guardando en nube...";
+        submitBtn.textContent = "Guardando...";
         submitBtn.disabled = true;
 
         let logoUrl = existing?.logoDataUrl||"";
@@ -11841,8 +11841,8 @@ boot();
 
            const payload = {
              legacy_id: id,
-             tournament_id: state.meta.tournamentUuid || 1,
-             group_id: groupUuid || 1, // fallback
+             tournament_id: state.meta.tournamentUuid || null,
+             group_id: groupUuid || null, // fallback
              name: name,
              short_name: short,
              city: $("#teamCityField").value.trim(),
@@ -11852,7 +11852,7 @@ boot();
              crest_url: logoUrl,
              photo_url: photoUrl
            };
-           const { data, error } = await window.supabase.from('teams').upsert(payload, { onConflict: 'legacy_id' }).select();
+           const { data, error } = await supabase.from('teams').upsert(payload, { onConflict: 'legacy_id' }).select();
            if (!error && data && data.length > 0) {
               state.teams[id].uuid = data[0].id;
               persist(); 
@@ -11919,7 +11919,7 @@ boot();
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const origText = submitBtn.textContent;
-        submitBtn.textContent = "Guardando en nube...";
+        submitBtn.textContent = "Guardando...";
         submitBtn.disabled = true;
 
         let photoUrl = existing?.photoDataUrl||"";
@@ -11934,7 +11934,7 @@ boot();
         persist();
 
         if (window.supabase) {
-           const teamUuid = state.teams[currentTeamSheetId]?.uuid || 1; // fallback
+           const teamUuid = state.teams[currentTeamSheetId]?.uuid || null; // fallback
            const payload = {
              legacy_id: id,
              team_id: teamUuid,
@@ -11945,7 +11945,7 @@ boot();
              birth_date: $("#playerBirthField").value || null,
              photo_url: photoUrl
            };
-           const { data, error } = await window.supabase.from('players').upsert(payload, { onConflict: 'legacy_id' }).select();
+           const { data, error } = await supabase.from('players').upsert(payload, { onConflict: 'legacy_id' }).select();
            if (!error && data && data.length > 0) {
               state.players[id].uuid = data[0].id;
               persist();
@@ -12064,7 +12064,7 @@ boot();
       function openMatchDataModal(id){
         editingMatchId=id;
         const m=state.matches[id];if(!m)return;
-        $("#matchDataModalTitle").innerHTML=`${esc(teamName(resolveSlot(m.homeSlot)))} vs ${esc(teamName(resolveSlot(m.awaySlot)))}`;
+        $("#matchDataModalTitle").innerHTML=`${teamName(resolveSlot(m.homeSlot))} vs ${teamName(resolveSlot(m.awaySlot))}`;
         $("#matchDateField").value=m.date||"";
         $("#matchTimeField").value=m.time||"";
         $("#matchVenueField").value=m.venue||"";
