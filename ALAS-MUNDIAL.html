@@ -11839,9 +11839,7 @@ boot();
            const g = state.groups[$("#teamGroupField").value];
            if (g && g.uuid) groupUuid = g.uuid;
 
-           const payload = {
-             legacy_id: id,
-             tournament_id: state.meta.tournamentUuid || null,
+           const payload = { id: state.teams[id]?.uuid || undefined, legacy_id: id, tournament_id: state.meta.tournamentUuid || null,
              group_id: groupUuid || null, // fallback
              name: name,
              short_name: short,
@@ -11852,12 +11850,15 @@ boot();
              logo_path: logoUrl,
              photo_path: photoUrl
            };
-           const { data, error } = await supabase.from('teams').upsert(payload, { onConflict: 'legacy_id' }).select();
+           if (!payload.id) delete payload.id;
+           const { data, error } = await supabase.from('teams').upsert(payload).select();
            if (!error && data && data.length > 0) {
               state.teams[id].uuid = data[0].id;
               persist(); 
            } else if (error) {
               console.error("Supabase upsert error:", error);
+              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+              else showToast("Error de base de datos.");
            }
         }
 
@@ -11935,9 +11936,7 @@ boot();
 
         if (window.supabase) {
            const teamUuid = state.teams[currentTeamSheetId]?.uuid || null; // fallback
-           const payload = {
-             legacy_id: id,
-             team_id: teamUuid,
+           const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.meta.tournamentUuid || null, team_id: teamUuid,
              first_name: first,
              last_name: last,
              number: num,
@@ -11945,12 +11944,15 @@ boot();
              birth_date: $("#playerBirthField").value || null,
              photo_path: photoUrl
            };
-           const { data, error } = await supabase.from('players').upsert(payload, { onConflict: 'legacy_id' }).select();
+           if (!payload.id) delete payload.id;
+           const { data, error } = await supabase.from('players').upsert(payload).select();
            if (!error && data && data.length > 0) {
               state.players[id].uuid = data[0].id;
               persist();
            } else if (error) {
               console.error("Supabase upsert error:", error);
+              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+              else showToast("Error de base de datos.");
            }
         }
 
