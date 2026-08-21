@@ -8481,11 +8481,70 @@ const HERO_PHOTO = "COPA.jpg";
         const away = awayRes.id ? state.teams[awayRes.id] : { name: awayRes.name || "?", id: null };
         const live = m.status === "live";
         const played = matchScoreOk(m);
+
+        if (m.twoLegs && home.id && away.id) {
+          const h1 = hasScore(m.scoreHome) ? Number(m.scoreHome) : "";
+          const a1 = hasScore(m.scoreAway) ? Number(m.scoreAway) : "";
+          const h2 = hasScore(m.scoreHome2) ? Number(m.scoreHome2) : "";
+          const a2 = hasScore(m.scoreAway2) ? Number(m.scoreAway2) : "";
+          const totH = (h1 !== "" ? h1 : 0) + (h2 !== "" ? h2 : 0);
+          const totA = (a1 !== "" ? a1 : 0) + (a2 !== "" ? a2 : 0);
+          const hasAny = (h1 !== "" || a1 !== "" || h2 !== "" || a2 !== "");
+          const isComplete = (h1 !== "" && a1 !== "" && h2 !== "" && a2 !== "");
+          const isTied = isComplete && totH === totA;
+
+          const winH = isComplete && (totH > totA || (isTied && m.tieBreakWinner === "home"));
+          const winA = isComplete && (totA > totH || (isTied && m.tieBreakWinner === "away"));
+
+          const tieSelectHtml = isTied ? `
+            <div style="margin-top:8px;width:100%;display:flex;flex-direction:column;gap:4px;background:rgba(30,58,138,0.3);padding:8px;border-radius:10px;border:1px solid rgba(96,165,250,0.3);">
+              <span style="font-size:10px;font-weight:800;color:#93c5fd;letter-spacing:0.05em;text-transform:uppercase;">GANADOR POR PENALES:</span>
+              <select class="tie-penal-quick" data-match="${m.id}" style="width:100%;height:32px;border-radius:8px;background:#0f172a;color:#fff;border:1px solid #3b82f6;font-size:12px;font-weight:700;padding:0 8px;">
+                <option value="">Seleccionar clasificado por penales…</option>
+                <option value="home" ${m.tieBreakWinner==="home"?"selected":""}>${esc(home.name)} (Gana por penales)</option>
+                <option value="away" ${m.tieBreakWinner==="away"?"selected":""}>${esc(away.name)} (Gana por penales)</option>
+              </select>
+            </div>` : "";
+
+          return `<div class="mt ${live?"is-live":""}" style="padding:0;background:none;border:none;box-shadow:none;">
+            <div class="twolegs-card-wrap">
+              <div class="twolegs-header-row">
+                <span class="twolegs-col-title">IDA</span>
+                <span class="twolegs-col-title">VTA</span>
+                <span class="twolegs-col-title" style="color:#60a5fa;font-weight:900;">TOT</span>
+              </div>
+              <div class="twolegs-team-row">
+                <div class="twolegs-team-info">
+                  ${teamCrest(home,"crest-sm")}
+                  <span class="twolegs-team-name">${teamName(home)}</span>
+                </div>
+                <div class="twolegs-inputs-group">
+                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="home" data-leg="1" value="${esc(h1)}" placeholder="–">
+                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="home" data-leg="2" value="${esc(h2)}" placeholder="–">
+                  <div class="twolegs-total-badge ${winH?"is-winner":winA?"is-loser":""}">${hasAny?totH:"–"}</div>
+                </div>
+              </div>
+              <div class="twolegs-team-row">
+                <div class="twolegs-team-info">
+                  ${teamCrest(away,"crest-sm")}
+                  <span class="twolegs-team-name">${teamName(away)}</span>
+                </div>
+                <div class="twolegs-inputs-group">
+                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="away" data-leg="1" value="${esc(a1)}" placeholder="–">
+                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="away" data-leg="2" value="${esc(a2)}" placeholder="–">
+                  <div class="twolegs-total-badge ${winA?"is-winner":winH?"is-loser":""}">${hasAny?totA:"–"}</div>
+                </div>
+              </div>
+              ${tieSelectHtml}
+            </div>
+            ${mtFoot(m,played,live,"")}
+          </div>`;
+        }
+
         const hs = Number(m.scoreHome), as = Number(m.scoreAway);
-        
         const inp = (side, t, val) => {
           if(!t.id) return `<span class="mt-score" style="color:rgba(255,255,255,0.2)">-</span>`;
-          return `<input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
+          return `<input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" data-leg="1" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
         };
         
         return `<div class="mt ${live?"is-live":""}">
