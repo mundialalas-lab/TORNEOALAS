@@ -11780,6 +11780,7 @@ boot();
 
         if (window.supabase) {
            const payload = {
+             id: state.tournament.uuid || undefined,
              legacy_id: 'alas-torneo-v3',
              name: state.tournament.name,
              subtitle: state.tournament.subtitle,
@@ -11794,7 +11795,8 @@ boot();
              confetti_enabled: state.settings.confetti,
              volume: state.settings.volume
            };
-           const { error } = await supabase.from('tournaments').upsert(payload, { onConflict: 'legacy_id' });
+           if (!payload.id) delete payload.id;
+           const { error } = await supabase.from('tournaments').upsert(payload);
            if (error) {
               console.error('Config save error:', error);
               if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
@@ -11878,12 +11880,16 @@ boot();
            const g = state.groups[$("#teamGroupField").value];
            if (g && g.uuid) groupUuid = g.uuid;
 
+           const captainVal = $("#teamCategoryField").value.trim();
+           const cityVal = $("#teamCityField").value.trim();
            const payload = { id: state.teams[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null,
              group_id: groupUuid || null, // fallback
              name: name,
              short_name: short,
-             city: $("#teamCityField").value.trim(),
-             captain: $("#teamCategoryField").value.trim(),
+             city: cityVal,
+             country_name: cityVal,
+             captain_name: captainVal,
+             category: captainVal,
              color_primary: $("#teamColor1Field").value,
              color_secondary: $("#teamColor2Field").value,
              logo_path: logoUrl,
@@ -11974,7 +11980,8 @@ boot();
         persist();
 
         if (window.supabase) {
-           const teamUuid = state.teams[currentTeamSheetId]?.uuid || null; // fallback
+           const targetTeamKey = currentTeamSheetId || state.players[id]?.teamId || null;
+           const teamUuid = state.teams[targetTeamKey]?.uuid || null; // fallback
            const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
              first_name: first,
              last_name: last,
