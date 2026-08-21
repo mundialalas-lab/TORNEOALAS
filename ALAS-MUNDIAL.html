@@ -9395,13 +9395,12 @@ if(announce){
         {t:"mvp",   lbl:"Figura",     acc:"#e8b93b"}
       ];
       const REG_ICO={
-        goal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.4l3.5 2.6-1.35 4.1h-4.3L8.5 10z"/><path d="M12 3.1v4.3M4.5 9.2l4 .8M19.5 9.2l-4 .8M7.6 20.3l2.3-6.2M16.4 20.3l-2.3-6.2"/></svg>`,
+        goal:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm4.85 4.35L15 8.7L12 7l-3 1.7L7.15 6.35a8 8 0 0 1 9.7 0ZM5.5 10l3.1.8L9 14.5l-2.8 1.9a8 8 0 0 1-.7-6.4Zm6.5 8l-2-2.5v-3L12 11l2 1.5v3l-2 2.5Zm6.5-1.6l-2.8-1.9L15 14.5l.4-3.7 3.1-.8a8 8 0 0 1-.7 6.4Z"/></svg>`,
         assist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5c3.4-7.4 8.6-10 15.3-9.6"/><path d="M15.4 3.6l4.2 3.3-3.3 4.2"/></svg>`,
         yellow:`<svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="9.5" height="16" rx="1.5" fill="currentColor"/></svg>`,
         red:`<svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="9.5" height="16" rx="1.5" fill="currentColor"/></svg>`,
         mvp:`<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95z" fill="currentColor"/></svg>`
       };
-      // qué se está registrando ahora: {t:tipo, teamId:equipo elegido|null}
       let regSel=null;
 
       function regCuenta(t){
@@ -9409,9 +9408,6 @@ if(announce){
         return pendingEvents.filter(e=>e.type===t&&e.playerId).length;
       }
 
-      /* Goles que dice el marcador contra goles con autor asignado. Es el único
-         control que evita que la tabla de goleadores quede corta sin que nadie
-         se entere. */
       function regGolesPendientes(home,away){
         const m=state.matches[editingMatchId];
         const n=sel=>{const v=$(sel)?.value;return v===""||v==null?0:Number(v)};
@@ -9422,7 +9418,6 @@ if(announce){
           {slot:away,marc:marc("#matchAwayScoreField","#matchAwayScoreField2"),car:away.id?car(away.id):0}
         ];
       }
-      // si se cargan más goles que los del marcador, manda el gol: el marcador sube
       function regSincronizarMarcador(home,away){
         regGolesPendientes(home,away).forEach((r,i)=>{
           if(!r.slot.id||r.car<=r.marc)return;
@@ -9437,10 +9432,10 @@ if(announce){
           const n=regCuenta(d.t);
           const on=regSel&&regSel.t===d.t;
           return `<button type="button" class="reg-tile reg-t-${d.t}${on?" is-open":""}${n?" has-n":""}"
-            data-reg="${d.t}" style="--acc:${d.acc}" aria-pressed="${on?"true":"false"}">
-            <span class="reg-ico">${REG_ICO[d.t]}</span>
+            data-reg="${d.t}" style="--acc:${d.acc} !important; border-color:${on?d.acc:'rgba(255,255,255,0.08)'} !important;" aria-pressed="${on?"true":"false"}">
+            <span class="reg-ico" style="color:${d.acc} !important;">${REG_ICO[d.t]}</span>
             <span class="reg-lbl">${d.lbl}</span>
-            <b class="reg-n">${n}</b>
+            <b class="reg-n" style="background:${on?d.acc:'rgba(0,0,0,0.5)'} !important; color:${on?'#fff':d.acc} !important;">${n}</b>
           </button>`;
         }).join("");
       }
