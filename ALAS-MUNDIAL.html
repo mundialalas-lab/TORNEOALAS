@@ -7414,6 +7414,20 @@ const HERO_PHOTO = "COPA.jpg";
 
       let state=loadState();
       
+      async function uploadBase64ToSupabase(base64Data, path) {
+        try {
+          const res = await fetch(base64Data);
+          const blob = await res.blob();
+          const { data, error } = await supabase.storage.from('media').upload(path, blob, { upsert: true });
+          if (error) { console.error('Upload error:', error); return null; }
+          const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(path);
+          return publicUrlData.publicUrl;
+        } catch (e) {
+          console.error('Blob conversion error:', e);
+          return null;
+        }
+      }
+
       async function syncFromSupabase() {
         if (!supabase) return;
         try {
@@ -8443,7 +8457,10 @@ const HERO_PHOTO = "COPA.jpg";
           ${llaveSlot(m.homeSlot,home,agg.h,winner,played)}
           ${llaveSlot(m.awaySlot,away,agg.a,winner,played)}
           <div class="lt-foot">${esc(cuando)}${legs}</div>
-          <button class="lt-edit admin-only" type="button" data-open-match="${m.id}" aria-label="Cargar resultado">${ICO.edit}</button>
+          <div class="lt-actions admin-only" style="position:absolute; top:4px; right:4px; display:flex; flex-direction:column; gap:4px; z-index:10;">
+            <button class="lt-edit" type="button" data-open-match="${m.id}" aria-label="Cargar resultado" style="position:relative; top:auto; right:auto;">${ICO.edit}</button>
+            <button class="lt-edit btn-edit-datos" type="button" data-open-match-data="${m.id}" aria-label="Datos" style="position:relative; top:auto; right:auto; font-size:9px; font-weight:bold; width:22px; height:22px;">DAT</button>
+          </div>
         </article>`;
       }
       /* Una columna por ronda. side "left" apila de afuera hacia adentro y
@@ -11768,21 +11785,69 @@ boot();
         const dataUrl=await compressImage(f,900);
         $("#teamPhotoPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingTeamPhoto=dataUrl;
       });
-      $("#teamForm").addEventListener("submit",e=>{
+      $("#teamForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const name=$("#teamNameField").value.trim(),short=$("#teamShortField").value.trim();
         if(!name||!short)return;
         const id=editingTeamId||uid("t");
         const existing=state.teams[id];
-        // se preserva lo que el formulario no toca (country, captain, order): sin
-        // esto, editar un equipo le borraba el orden y las figuritas se renumeraban
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn.textContent;
+        submitBtn.textContent = "Guardando en nube...";
+        submitBtn.disabled = true;
+
+        let logoUrl = existing?.logoDataUrl||"";
+        if (pendingTeamCrest !== null && pendingTeamCrest.startsWith('data:')) {
+          const uploadedUrl = await uploadBase64ToSupabase(pendingTeamCrest, `teams/${id}_crest.png`);
+          if (uploadedUrl) logoUrl = uploadedUrl;
+        }
+
+        let photoUrl = existing?.photoDataUrl||"";
+        if (pendingTeamPhoto !== null && pendingTeamPhoto.startsWith('data:')) {
+          const uploadedUrl = await uploadBase64ToSupabase(pendingTeamPhoto, `teams/${id}_photo.png`);
+          if (uploadedUrl) photoUrl = uploadedUrl;
+        }
+
         state.teams[id]={...(existing||{}),
           id,name,shortName:short,city:$("#teamCityField").value.trim(),category:$("#teamCategoryField").value.trim(),
           groupId:$("#teamGroupField").value,colorPrimary:$("#teamColor1Field").value,colorSecondary:$("#teamColor2Field").value,
-          logoDataUrl:pendingTeamCrest!==null?pendingTeamCrest:(existing?.logoDataUrl||""),
-          photoDataUrl:pendingTeamPhoto!==null?pendingTeamPhoto:(existing?.photoDataUrl||""),
+          logoDataUrl:logoUrl,
+          photoDataUrl:photoUrl,
           createdAt:existing?.createdAt||new Date().toISOString()};
-        persist();closeTeamModal();renderAll();showToast(existing?"Equipo actualizado":"Equipo creado");playAdvance();
+          
+        persist();
+
+        if (window.supabase) {
+           let groupUuid = null;
+           const g = state.groups[$("#teamGroupField").value];
+           if (g && g.uuid) groupUuid = g.uuid;
+
+           const payload = {
+             legacy_id: id,
+             tournament_id: state.meta.tournamentUuid || 1,
+             group_id: groupUuid || 1, // fallback
+             name: name,
+             short_name: short,
+             city: $("#teamCityField").value.trim(),
+             captain: $("#teamCategoryField").value.trim(),
+             color_primary: $("#teamColor1Field").value,
+             color_secondary: $("#teamColor2Field").value,
+             crest_url: logoUrl,
+             photo_url: photoUrl
+           };
+           const { data, error } = await window.supabase.from('teams').upsert(payload, { onConflict: 'legacy_id' }).select();
+           if (!error && data && data.length > 0) {
+              state.teams[id].uuid = data[0].id;
+              persist(); 
+           } else if (error) {
+              console.error("Supabase upsert error:", error);
+           }
+        }
+
+        submitBtn.textContent = origText;
+        submitBtn.disabled = false;
+        closeTeamModal();renderAll();showToast(existing?"Equipo actualizado":"Equipo creado");playAdvance();
       });
       $("#btnDeleteTeam").addEventListener("click",()=>{if(editingTeamId){deleteTeam(editingTeamId);closeTeamModal()}});
       $("#btnCloseTeamModal").addEventListener("click",closeTeamModal);
@@ -11826,7 +11891,7 @@ boot();
         const dataUrl=await compressImage(f,460,true);
         $("#playerPhotoPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingPlayerPhoto=dataUrl;
       });
-      $("#playerForm").addEventListener("submit",e=>{
+      $("#playerForm").addEventListener("submit", async e=>{
         e.preventDefault();
         if(!currentTeamSheetId)return;
         if(!puedeEditarEquipo(currentTeamSheetId)){showToast("No tenés permiso para tocar este plantel");return}
@@ -11835,10 +11900,48 @@ boot();
         if(!first||!last||!Number.isFinite(num))return;
         const id=editingPlayerId||uid("p");
         const existing=state.players[id];
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn.textContent;
+        submitBtn.textContent = "Guardando en nube...";
+        submitBtn.disabled = true;
+
+        let photoUrl = existing?.photoDataUrl||"";
+        if (pendingPlayerPhoto !== null && pendingPlayerPhoto.startsWith('data:')) {
+          const uploadedUrl = await uploadBase64ToSupabase(pendingPlayerPhoto, `players/${id}_photo.png`);
+          if (uploadedUrl) photoUrl = uploadedUrl;
+        }
+
         state.players[id]={id,teamId:currentTeamSheetId,firstName:first,lastName:last,number:num,
           position:$("#playerPositionField").value,birthDate:$("#playerBirthField").value,
-          photoDataUrl:pendingPlayerPhoto!==null?pendingPlayerPhoto:(existing?.photoDataUrl||"")};
-        persist();closePlayerModal();renderAll();
+          photoDataUrl:photoUrl};
+        persist();
+
+        if (window.supabase) {
+           const teamUuid = state.teams[currentTeamSheetId]?.uuid || 1; // fallback
+           const payload = {
+             legacy_id: id,
+             team_id: teamUuid,
+             first_name: first,
+             last_name: last,
+             number: num,
+             position: $("#playerPositionField").value,
+             birth_date: $("#playerBirthField").value || null,
+             photo_url: photoUrl
+           };
+           const { data, error } = await window.supabase.from('players').upsert(payload, { onConflict: 'legacy_id' }).select();
+           if (!error && data && data.length > 0) {
+              state.players[id].uuid = data[0].id;
+              persist();
+           } else if (error) {
+              console.error("Supabase upsert error:", error);
+           }
+        }
+
+        submitBtn.textContent = origText;
+        submitBtn.disabled = false;
+
+        closePlayerModal();renderAll();
         resaltarJugador(id);
         showToast(existing?"Jugador actualizado":"Jugador agregado");playAdvance();
       });
