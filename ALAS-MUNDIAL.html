@@ -4588,6 +4588,28 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
     box-shadow: none;
   }
 
+
+  /* CREST CHAMPION BADGE */
+  .crest-champion {
+    width: 68px !important;
+    height: 46px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 179, 14, 0.5) !important;
+    border: 2px solid rgba(255, 215, 0, 0.8) !important;
+    object-fit: cover !important;
+    overflow: hidden !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #fff;
+    margin: 4px 0;
+  }
+  .crest-champion img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -8783,7 +8805,14 @@ const HERO_PHOTO = "COPA.jpg";
             <div class="llave-trophy" aria-hidden="true" style="background-image:url('${LOGO_LIMPIO}'); margin: 0 auto 12px;"></div>
             <div class="llave-champ${champ?" is-crowned":""}">
               <div class="lch-lab">Campeón</div>
-              <div class="lch-name">${esc(champ?.name||"Por definir")}</div>
+              ${champ ? `
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:8px;">
+                  ${teamCrest(champ, "crest-champion")}
+                  <div class="lch-name">${esc(champ.name)}</div>
+                </div>
+              ` : `
+                <div class="lch-name">Por definir</div>
+              `}
             </div>
           </div>`;
         mobileHtml += `</div>`;
@@ -8797,7 +8826,14 @@ const HERO_PHOTO = "COPA.jpg";
               ${final?llaveTie(final,"is-final"):""}
               <div class="llave-champ${champ?" is-crowned":""}" id="championZone">
                 <div class="lch-lab">Campeón</div>
-                <div class="lch-name" id="championName">${esc(champ?.name||"Por definir")}</div>
+                ${champ ? `
+                  <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:8px;">
+                    ${teamCrest(champ, "crest-champion")}
+                    <div class="lch-name" id="championName">${esc(champ.name)}</div>
+                  </div>
+                ` : `
+                  <div class="lch-name" id="championName">Por definir</div>
+                `}
               </div>
               ${tercero?`<div class="llave-third"><div class="lc-head">Tercer puesto</div>${llaveTie(tercero,"is-third")}</div>`:""}
             </div>
