@@ -7559,6 +7559,28 @@ const HERO_PHOTO = "COPA.jpg";
       const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
       const initials=name=>{const w=String(name||"?").trim().split(/\s+/).filter(Boolean);return(w.slice(0,2).map(x=>x[0]).join("")||"?").toUpperCase()};
       const hasScore=v=>v!==""&&v!==null&&v!==undefined&&Number.isFinite(Number(v));
+      const getFlag = svg => "data:image/svg+xml;utf8," + encodeURIComponent(svg.replace(/\s+/g," ").trim());
+      const GLOBAL_FLAGS = {
+        "Paraguay": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.34" fill="#d52b1e"/><rect y="13.33" width="60" height="13.34" fill="#fff"/><rect y="26.66" width="60" height="13.34" fill="#0038a8"/><circle cx="30" cy="20" r="4.6" fill="#fff" stroke="#0038a8" stroke-width=".7"/><circle cx="30" cy="20" r="1.9" fill="#159b48"/></svg>'),
+        "py": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.34" fill="#d52b1e"/><rect y="13.33" width="60" height="13.34" fill="#fff"/><rect y="26.66" width="60" height="13.34" fill="#0038a8"/><circle cx="30" cy="20" r="4.6" fill="#fff" stroke="#0038a8" stroke-width=".7"/><circle cx="30" cy="20" r="1.9" fill="#159b48"/></svg>'),
+        "Alemania": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.34" fill="#000"/><rect y="13.33" width="60" height="13.34" fill="#dd0000"/><rect y="26.66" width="60" height="13.34" fill="#ffce00"/></svg>'),
+        "de": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.34" fill="#000"/><rect y="13.33" width="60" height="13.34" fill="#dd0000"/><rect y="26.66" width="60" height="13.34" fill="#ffce00"/></svg>'),
+        "Portugal": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#f00"/><rect width="24" height="40" fill="#006600"/><circle cx="24" cy="20" r="7.6" fill="#ffe800" stroke="#fff" stroke-width=".9"/><circle cx="24" cy="20" r="4.3" fill="#f00"/><rect x="21.5" y="17.5" width="5" height="5" fill="#fff"/></svg>'),
+        "pt": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#f00"/><rect width="24" height="40" fill="#006600"/><circle cx="24" cy="20" r="7.6" fill="#ffe800" stroke="#fff" stroke-width=".9"/><circle cx="24" cy="20" r="4.3" fill="#f00"/><rect x="21.5" y="17.5" width="5" height="5" fill="#fff"/></svg>'),
+        "Noruega": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#ba0c2f"/><rect x="14" width="10" height="40" fill="#fff"/><rect y="15" width="60" height="10" fill="#fff"/><rect x="16.5" width="5" height="40" fill="#00205b"/><rect y="17.5" width="60" height="5" fill="#00205b"/></svg>'),
+        "no": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#ba0c2f"/><rect x="14" width="10" height="40" fill="#fff"/><rect y="15" width="60" height="10" fill="#fff"/><rect x="16.5" width="5" height="40" fill="#00205b"/><rect y="17.5" width="60" height="5" fill="#00205b"/></svg>'),
+        "Brasil": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#009b3a"/><path d="M30 5.5 54 20 30 34.5 6 20Z" fill="#fedf00"/><circle cx="30" cy="20" r="8" fill="#002776"/><path d="M22.4 18.2Q30 13.6 37.6 19.4" stroke="#fff" stroke-width="2" fill="none"/></svg>'),
+        "br": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#009b3a"/><path d="M30 5.5 54 20 30 34.5 6 20Z" fill="#fedf00"/><circle cx="30" cy="20" r="8" fill="#002776"/><path d="M22.4 18.2Q30 13.6 37.6 19.4" stroke="#fff" stroke-width="2" fill="none"/></svg>'),
+        "Inglaterra": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect x="24" width="12" height="40" fill="#cf142b"/><rect y="14" width="60" height="12" fill="#cf142b"/></svg>'),
+        "en": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect x="24" width="12" height="40" fill="#cf142b"/><rect y="14" width="60" height="12" fill="#cf142b"/></svg>'),
+        "gb-eng": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect x="24" width="12" height="40" fill="#cf142b"/><rect y="14" width="60" height="12" fill="#cf142b"/></svg>'),
+        "Japón": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="11" fill="#bc002d"/></svg>'),
+        "Japon": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="11" fill="#bc002d"/></svg>'),
+        "jp": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="11" fill="#bc002d"/></svg>'),
+        "Bélgica": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#000"/><rect x="20" width="20" height="40" fill="#fdda24"/><rect x="40" width="20" height="40" fill="#ef3340"/></svg>'),
+        "Belgica": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#000"/><rect x="20" width="20" height="40" fill="#fdda24"/><rect x="40" width="20" height="40" fill="#ef3340"/></svg>'),
+        "be": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#000"/><rect x="20" width="20" height="40" fill="#fdda24"/><rect x="40" width="20" height="40" fill="#ef3340"/></svg>')
+      };
 
       function defaultState(){
         const initialTeams = {
@@ -8464,14 +8486,18 @@ const HERO_PHOTO = "COPA.jpg";
       /* Escudo del equipo. Es la pieza que más se repite en la app, así que
          vive en un solo lugar: círculo con el kit de fondo, y adentro el
          escudo cargado o las iniciales. */
-      function teamCrest(t,cls,fallback){
-        const bg=t
-          ? `linear-gradient(140deg,${esc(t.colorPrimary||"#1657c4")},${esc(t.colorSecondary||"#0f3f96")})`
+      function teamCrest(t, cls, fallback){
+        const id = t?.id || (typeof t === "string" ? t : null);
+        const full = (id && state.teams[id]) ? state.teams[id] : (t && typeof t === "object" ? t : null);
+        const name = full?.name || t?.name || "";
+        const bg = full
+          ? `linear-gradient(140deg,${esc(full.colorPrimary||"#1657c4")},${esc(full.colorSecondary||"#0f3f96")})`
           : "var(--surface-3)";
-        const inner=t?.logoDataUrl
-          ? `<img src="${t.logoDataUrl}" alt="">`
-          : esc(t?initials(t.name):(fallback||"?"));
-        return `<span class="crest ${cls||""}${t?"":" is-empty"}" style="background:${bg}">${inner}</span>`;
+        const flagUrl = full?.logoDataUrl || (full?.country && GLOBAL_FLAGS[full.country]) || (full?.country_name && GLOBAL_FLAGS[full.country_name]) || (full?.city && GLOBAL_FLAGS[full.city]) || "";
+        const inner = flagUrl
+          ? `<img src="${flagUrl}" alt="${esc(name)}">`
+          : esc(name ? initials(name) : (fallback || "?"));
+        return `<span class="crest ${cls||""}${full?"":" is-empty"}" style="background:${bg}">${inner}</span>`;
       }
 
       /* Nombre de equipo con su versión corta. En pantallas angostas la fila del
