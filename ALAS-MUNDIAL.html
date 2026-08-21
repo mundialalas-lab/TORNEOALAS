@@ -8293,28 +8293,53 @@ const HERO_PHOTO = "COPA.jpg";
 
       /* Cargar resultado desde el fixture: lee los goles de los inputs manuales
          del partido y, con ambos cargados, lo pasa a finalizado. */
-      document.addEventListener("click",e=>{
-        const btnVerRes=e.target.closest(".btn-ver-resultados");
-        if(btnVerRes){openMatchResultModal(btnVerRes.dataset.viewMatch);return;}
+      document.addEventListener("click", async e => {
+        const btnVerRes = e.target.closest(".btn-ver-resultados");
+        if (btnVerRes) { openMatchResultModal(btnVerRes.dataset.viewMatch); return; }
         
-        const btn=e.target.closest(".btn-registrar-score");
-        if(!btn)return;
-        const matchId=btn.dataset.match;
-        const m=state.matches[matchId];
-        if(!m)return;
-        const inputs=document.querySelectorAll(`.group-score-manual[data-match="${matchId}"]`);
-        let changed=false;
-        inputs.forEach(t=>{
-          const val=t.value===""?null:Math.max(0,Math.min(99,Number(t.value)));
-          if(t.dataset.side==="home"&&m.scoreHome!==val){m.scoreHome=val;changed=true}
-          if(t.dataset.side==="away"&&m.scoreAway!==val){m.scoreAway=val;changed=true}
+        const btn = e.target.closest(".btn-registrar-score");
+        if (!btn) return;
+        const matchId = btn.dataset.match;
+        const m = state.matches[matchId];
+        if (!m) return;
+
+        const inputs = document.querySelectorAll(`.group-score-manual[data-match="${matchId}"]`);
+        let changed = false;
+        inputs.forEach(t => {
+          const val = t.value === "" ? null : Math.max(0, Math.min(99, Number(t.value)));
+          if (t.dataset.side === "home" && m.scoreHome !== val) { m.scoreHome = val; changed = true; }
+          if (t.dataset.side === "away" && m.scoreAway !== val) { m.scoreAway = val; changed = true; }
         });
-        if(changed){
-          if(m.scoreHome!==null&&m.scoreAway!==null&&m.scoreHome!==undefined&&m.scoreAway!==undefined)m.status="finished";
+
+        if (changed) {
+          if (m.scoreHome !== null && m.scoreAway !== null && m.scoreHome !== undefined && m.scoreAway !== undefined) {
+            m.status = "finished";
+          }
           persist();
-          renderAll({announce:true});
+          renderAll({ announce: true });
           playScore();
           notifyAlbumResultLoaded();
+
+          // Sync immediately to Supabase
+          if (window.supabase && m.uuid) {
+            const mvpUuid = m.mvpPlayerId ? (state.players[m.mvpPlayerId]?.uuid || null) : null;
+            const payload = {
+              score_home: m.scoreHome,
+              score_away: m.scoreAway,
+              score_home_leg2: m.scoreHome2 != null ? m.scoreHome2 : null,
+              score_away_leg2: m.scoreAway2 != null ? m.scoreAway2 : null,
+              tie_break_winner: m.tieBreakWinner,
+              mvp_player_id: mvpUuid,
+              status: m.status
+            };
+            const { error } = await supabase.from('matches').update(payload).eq('legacy_id', matchId);
+            if (error) {
+              console.error("Match score quick update error:", error);
+              showToast("Error al guardar en base de datos: " + (error.message || error.code));
+            } else {
+              showToast("Resultado guardado en Supabase");
+            }
+          }
         }
       });
 
@@ -12126,13 +12151,14 @@ boot();
            submitBtn.textContent = "Guardando...";
            submitBtn.disabled = true;
 
+           const mvpUuid = m.mvpPlayerId ? (state.players[m.mvpPlayerId]?.uuid || null) : null;
            const payload = {
              score_home: m.scoreHome,
              score_away: m.scoreAway,
-             score_home_leg2: m.scoreHome2,
-             score_away_leg2: m.scoreAway2,
+             score_home_leg2: m.scoreHome2 != null ? m.scoreHome2 : null,
+             score_away_leg2: m.scoreAway2 != null ? m.scoreAway2 : null,
              tie_break_winner: m.tieBreakWinner,
-             mvp_player_id: m.mvpPlayerId,
+             mvp_player_id: mvpUuid,
              status: m.status
            };
            const { error: err1 } = await supabase.from('matches').update(payload).eq('legacy_id', editingMatchId);
