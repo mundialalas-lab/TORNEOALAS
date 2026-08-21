@@ -6929,9 +6929,15 @@ body{background:transparent !important}
     </footer>
       <div class="app-tab" id="tab-config">
       <section class="panel">
-        <div class="panel-head">
+        <div class="panel-head" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
           <div><h2>Configuración del torneo</h2><p>Personalizá la competencia, equipos, colores y experiencia sonora.</p></div>
-          <span class="admin-tag">Sólo administrador</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn secondary" id="btnVerUsuariosActivos" style="font-size:11px; padding:6px 12px; border-radius:10px; display:inline-flex; align-items:center; gap:6px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#4ade80; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; cursor:pointer;">
+              <span class="live-dot" style="background:#22c55e; box-shadow:0 0 8px #22c55e;"></span>
+              USUARIOS ACTIVOS (<span id="activeUsersBadge">0</span>)
+            </button>
+            <span class="admin-tag">Sólo administrador</span>
+          </div>
         </div>
         <form id="configForm">
           <div class="config-body" style="padding: 16px;">
@@ -7714,6 +7720,7 @@ const HERO_PHOTO = "COPA.jpg";
           
           state.tournament.name = tourData.name;
           state.tournament.subtitle = tourData.subtitle;
+          populateConfigForm();
           state.tournament.uuid = tid;
           if (tourData.num_groups != null) state.format.numGroups = tourData.num_groups;
           if (tourData.qualifiers_per_group != null) state.format.qualifiersPerGroup = tourData.qualifiers_per_group;
@@ -9697,6 +9704,91 @@ if(announce){
       };
 
       // ===== modal: configuración =====
+      
+      function populateConfigForm() {
+        if (!$("#tournamentName")) return;
+        $("#tournamentName").value = state.tournament.name || "";
+        $("#tournamentSubtitle").value = state.tournament.subtitle || "";
+        $("#numGroupsField").value = state.format.numGroups || 2;
+        $("#qualifiersField").value = state.format.qualifiersPerGroup || 2;
+        $("#yellowField").value = state.format.yellowCardsSuspension || 2;
+        $("#redSuspField").value = state.format.redCardSuspensionMatches || 1;
+        $("#doubleRRField").checked = Boolean(state.format.doubleRoundRobin);
+        $("#thirdPlaceField").checked = Boolean(state.format.thirdPlaceMatch);
+        $("#h2hField").checked = Boolean(state.format.h2hTiebreak);
+        $("#soundEnabledField").checked = Boolean(state.settings.sound);
+        $("#confettiEnabledField").checked = Boolean(state.settings.confetti);
+        $("#volumeField").value = Math.round((state.settings.volume ?? 0.7) * 100);
+        $("#volumeValue").textContent = `${Math.round((state.settings.volume ?? 0.7) * 100)}%`;
+        renderUsersPanel();
+      }
+
+      function renderUsersPanel() {
+        const grid = $("#usersActiveGrid");
+        const summary = $("#onlineUsersSummary");
+        const badge = $("#activeUsersBadge");
+        if (!grid) return;
+
+        const now = Date.now();
+        const allUsers = usersList();
+        const onlineThreshold = 10 * 60 * 1000; // 10 minutes
+        const onlineUsers = allUsers.filter(u => u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold);
+
+        if (badge) badge.textContent = onlineUsers.length;
+        if (summary) summary.innerHTML = `Total: <b style="color:#fff;">${allUsers.length}</b> · En línea: <b style="color:#4ade80;">${onlineUsers.length}</b>`;
+
+        if (!allUsers.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">Todavía no hay usuarios registrados en el álbum.</div>`;
+          return;
+        }
+
+        grid.innerHTML = allUsers.map(u => {
+          const isOnline = u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold;
+          const album = (state.albums && state.albums[u.id]) || (state.users[u.id]?.album) || { collection: {}, packs: 0 };
+          const collCount = Object.keys(album.collection || {}).length;
+          const totalCards = 32;
+          const pct = Math.min(100, Math.round((collCount / totalCards) * 100));
+
+          let timeText = "Desconectado";
+          if (isOnline) {
+            timeText = "En línea ahora";
+          } else if (u.lastSeen) {
+            const diffMins = Math.round((now - new Date(u.lastSeen).getTime()) / (60 * 1000));
+            if (diffMins < 60) timeText = `Hace ${diffMins} min`;
+            else if (diffMins < 1440) timeText = `Hace ${Math.round(diffMins / 60)}h`;
+            else timeText = `Hace ${Math.round(diffMins / 1440)}d`;
+          }
+
+          const roleName = u.role === ROL.ADMIN ? "Administrador" : u.role === ROL.CAPITAN ? "Capitán" : "Hincha";
+          const team = u.teamId && state.teams[u.teamId];
+
+          return `
+            <div style="background:linear-gradient(145deg, rgba(15,23,42,0.8) 0%, rgba(10,15,28,0.9) 100%); border:1px solid ${isOnline ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.08)'}; border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; position:relative; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:38px; height:38px; border-radius:10px; background:${isOnline ? 'linear-gradient(135deg,#15803d,#22c55e)' : 'rgba(255,255,255,0.1)'}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;">
+                    ${esc(initials(u.name))}
+                  </div>
+                  <div>
+                    <div style="font-weight:800; font-size:14px; color:#fff;">${esc(u.name)}</div>
+                    <div style="font-size:11px; color:#94a3b8;">${roleName}${team ? ` · ${esc(team.name)}` : ''}</div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:${isOnline ? '#4ade80' : '#64748b'};">
+                  <span style="width:8px; height:8px; border-radius:50%; background:${isOnline ? '#22c55e' : '#64748b'}; ${isOnline ? 'box-shadow:0 0 8px #22c55e;' : ''}"></span>
+                  ${timeText}
+                </div>
+              </div>
+
+              <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                <span style="color:#94a3b8;">Álbum: <b style="color:#fff;">${collCount} figuritas</b></span>
+                <span style="color:#f5b30e; font-weight:800;">${pct}%</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
       function openConfig() {
         const countSpan = $("#onlineUsersCount");
         if(countSpan) {
@@ -12102,6 +12194,7 @@ boot();
         if (document.body) document.body.scrollTop = 0;
 
         if(tab==="album")renderAlbumTab();
+        if(tab==="config")populateConfigForm();
         document.body.classList.toggle("album-fs",tab==="album"&&!esAdmin());
         updateHeroBar();
         requestConnectors();
