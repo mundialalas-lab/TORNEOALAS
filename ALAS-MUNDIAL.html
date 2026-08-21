@@ -8264,22 +8264,23 @@ const HERO_PHOTO = "COPA.jpg";
           :played?"<span class='chip-status chip-green'>Finalizado</span>":"<span class='chip-status chip-blue'>A jugar</span>";
         
         const isAdmin = document.body.classList.contains("admin-mode");
-        const btnStyle = "flex: 1; padding: 0 4px; min-height: 38px; border-radius: 12px; font-size: 13px;";
-        const secStyle = btnStyle + " border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff;";
+        const btnBase = "width: 100%; min-height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease;";
+        const primaryStyle = btnBase + " background: linear-gradient(180deg, #2563eb, #1d4ed8); border: 1px solid #60a5fa; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.35);";
+        const secStyle = btnBase + " border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #e2e8f0; backdrop-filter: blur(4px);";
         
-        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="${btnStyle}">REGISTRAR</button>` : '';
-        const verResultadosBtn = played ? `<button type="button" class="btn secondary btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">RESULTADOS</button>` : '';
-        const editBtn = isAdmin ? `<button type="button" class="btn secondary mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR</button>` : '';
-        const dataBtn = isAdmin ? `<button type="button" class="btn secondary admin-only btn-edit-datos" data-open-match-data="${m.id}" style="${secStyle}">DATOS</button>` : '';
+        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn btn-registrar-score" data-match="${m.id}" style="${primaryStyle}">⚡ REGISTRAR RESULTADO</button>` : '';
+        const verResultadosBtn = played ? `<button type="button" class="btn btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">📊 VER RESULTADOS</button>` : '';
+        const editBtn = isAdmin ? `<button type="button" class="btn mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">✏️ EDITAR DETALLES</button>` : '';
+        const dataBtn = isAdmin ? `<button type="button" class="btn admin-only btn-edit-datos" data-open-match-data="${m.id}" style="${secStyle}">📅 FECHA / SEDE / HORA</button>` : '';
 
-        return `<div class="mt-foot" style="display:flex; flex-direction:column; width:100%;">
-          <div style="text-align:center; width:100%; margin-bottom:4px;">
-            <span>${label}${extra?"  "+extra:""}</span>
+        return `<div class="mt-foot" style="display:flex; flex-direction:column; align-items:center; width:100%; gap:6px; margin-top:8px;">
+          <div style="text-align:center; width:100%; margin-bottom:2px;">
+            ${label}${extra?` <span style="font-size:11px; opacity:0.8; margin-left:4px;">${extra}</span>`:""}
           </div>
-          <div style="display:flex; gap:8px; width:100%; margin-top:4px;">
-            ${dataBtn}
-            ${editBtn}
+          <div style="display:flex; flex-direction:column; gap:6px; width:100%;">
             ${registrarBtn || verResultadosBtn}
+            ${editBtn}
+            ${dataBtn}
           </div>
         </div>`;
       }
