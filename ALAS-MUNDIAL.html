@@ -4480,6 +4480,8 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 
   .roster-card { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .roster-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+  .llave-tie { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .llave-tie:hover { transform: scale(1.02); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -8514,7 +8516,7 @@ const HERO_PHOTO = "COPA.jpg";
         const legs=(m.twoLegs&&played)
           ? `<span class="lt-legs">Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}</span>`
           : m.twoLegs?`<span class="lt-legs">Ida y vuelta</span>`:"";
-        return `<article class="llave-tie ${extraCls||""}${tied?" is-tied":""}${m.status==="live"?" is-live":""}" id="node-${m.id}">
+        return `<article class="llave-tie ${extraCls||""}${tied?" is-tied":""}${m.status==="live"?" is-live":""}" id="node-${m.id}" data-open-match="${m.id}" style="cursor: pointer;">
           <div class="lt-head"><span class="lt-label">${esc(m.label||m.roundTitle||"")}</span>${m.status==="live"?'<span class="lt-live">EN VIVO</span>':""}</div>
           ${llaveSlot(m.homeSlot,home,agg.h,winner,played)}
           ${llaveSlot(m.awaySlot,away,agg.a,winner,played)}
@@ -9789,8 +9791,8 @@ if(announce){
         $("#matchAwayLabel").textContent=away.name;
         $("#matchHomeScoreField").value=m.scoreHome??"";
         $("#matchAwayScoreField").value=m.scoreAway??"";
-        $("#matchHomeScoreField").disabled=!home.id;
-        $("#matchAwayScoreField").disabled=!away.id;
+        $("#matchHomeScoreField").disabled=false;
+        $("#matchAwayScoreField").disabled=false;
         // serie de ida y vuelta: se muestra el segundo marcador y se rotulan las fechas
         const two=Boolean(m.twoLegs);
         $("#matchLeg2Wrap").classList.toggle("visible",two);
@@ -9801,8 +9803,8 @@ if(announce){
           $("#matchAwayLabel2").textContent=away.name;
           $("#matchHomeScoreField2").value=m.scoreHome2??"";
           $("#matchAwayScoreField2").value=m.scoreAway2??"";
-          $("#matchHomeScoreField2").disabled=!home.id;
-          $("#matchAwayScoreField2").disabled=!away.id;
+          $("#matchHomeScoreField2").disabled=false;
+          $("#matchAwayScoreField2").disabled=false;
         }
         $("#matchTieField").innerHTML=`<option value="">Seleccionar ganador…</option><option value="home" ${m.tieBreakWinner==="home"?"selected":""}>${esc(home.name)}</option><option value="away" ${m.tieBreakWinner==="away"?"selected":""}>${esc(away.name)}</option>`;
         updateTieVisibility();
