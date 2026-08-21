@@ -4478,6 +4478,8 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 
 
 
+  .roster-card { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .roster-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -11956,13 +11958,17 @@ boot();
       });
       $("#playerForm").addEventListener("submit", async e=>{
         e.preventDefault();
-        if(!currentTeamSheetId)return;
-        if(!puedeEditarEquipo(currentTeamSheetId)){showToast("No tenés permiso para tocar este plantel");return}
+        const id=editingPlayerId||uid("p");
+        const existing=state.players[id];
+        const targetTeamId = currentTeamSheetId || existing?.teamId || null;
+        if(!targetTeamId){
+          showToast("Error: No se encontró el equipo.");
+          return;
+        }
+        if(!puedeEditarEquipo(targetTeamId)){showToast("No tenés permiso para tocar este plantel");return}
         const first=$("#playerFirstField").value.trim(),last=$("#playerLastField").value.trim();
         const num=Number($("#playerNumberField").value);
         if(!first||!last||!Number.isFinite(num))return;
-        const id=editingPlayerId||uid("p");
-        const existing=state.players[id];
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const origText = submitBtn.textContent;
@@ -11975,14 +11981,13 @@ boot();
           if (uploadedUrl) photoUrl = uploadedUrl;
         }
 
-        state.players[id]={id,teamId:currentTeamSheetId,firstName:first,lastName:last,number:num,
+        state.players[id]={id,teamId:targetTeamId,firstName:first,lastName:last,number:num,
           position:$("#playerPositionField").value,birthDate:$("#playerBirthField").value,
           photoDataUrl:photoUrl};
         persist();
 
         if (window.supabase) {
-           const targetTeamKey = currentTeamSheetId || state.players[id]?.teamId || null;
-           const teamUuid = state.teams[targetTeamKey]?.uuid || null; // fallback
+           const teamUuid = state.teams[targetTeamId]?.uuid || null; // fallback
            const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
              first_name: first,
              last_name: last,
