@@ -11885,7 +11885,8 @@ boot();
 
            const captainVal = $("#teamCategoryField").value.trim();
            const cityVal = $("#teamCityField").value.trim();
-           const payload = { id: state.teams[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null,
+           const teamUuid = existing?.uuid || state.teams[id]?.uuid || undefined;
+           const payload = { id: teamUuid, legacy_id: id, tournament_id: state.tournament.uuid || null,
              group_id: groupUuid || null, // fallback
              name: name,
              short_name: short,
@@ -11906,7 +11907,7 @@ boot();
            } else if (error) {
               console.error("Supabase upsert error:", error);
               if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-              else showToast("Error de base de datos.");
+              else showToast("Error de base de datos: " + (error.message || error.code));
            }
         }
 
@@ -11981,14 +11982,15 @@ boot();
           if (uploadedUrl) photoUrl = uploadedUrl;
         }
 
-        state.players[id]={id,teamId:targetTeamId,firstName:first,lastName:last,number:num,
-          position:$("#playerPositionField").value,birthDate:$("#playerBirthField").value,
+        const playerUuid = existing?.uuid || state.players[id]?.uuid || undefined;
+        state.players[id]={...(existing||{}), id, uuid: playerUuid, teamId:targetTeamId, firstName:first, lastName:last, number:num,
+          position:$("#playerPositionField").value, birthDate:$("#playerBirthField").value,
           photoDataUrl:photoUrl};
         persist();
 
         if (window.supabase) {
            const teamUuid = state.teams[targetTeamId]?.uuid || null; // fallback
-           const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
+           const payload = { id: playerUuid, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
              first_name: first,
              last_name: last,
              number: num,
@@ -12004,7 +12006,7 @@ boot();
            } else if (error) {
               console.error("Supabase upsert error:", error);
               if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-              else showToast("Error de base de datos.");
+              else showToast("Error de base de datos: " + (error.message || error.code));
            }
         }
 
