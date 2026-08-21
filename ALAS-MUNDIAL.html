@@ -9681,26 +9681,55 @@ if(announce){
       }
 
       // ===== mantenimiento: resetear torneo =====
-      window.resetearPuntosTorneo = function(){
-        if(confirm("¿Estás seguro de que querés borrar TODOS los resultados y puntos del torneo? Esta acción no se puede deshacer.")){
-          Object.values(state.matches).forEach(m=>{
-            delete m.scoreHome;
-            delete m.scoreAway;
-            delete m.scoreHome2;
-            delete m.scoreAway2;
-            delete m.penaltiesHome;
-            delete m.penaltiesAway;
-            m.events=[];
-            if(m.phase==="knockout"){
-              m.homeSlot.teamId=null;
-              m.awaySlot.teamId=null;
+      window.resetearPuntosTorneo = async function(){
+        if(!confirm("¿Estás seguro de que querés borrar TODOS los resultados y puntos del torneo? Esta acción no se puede deshacer.")) return;
+        
+        showToast("Reseteando partidos y puntos...");
+        
+        Object.values(state.matches).forEach(m=>{
+          m.scoreHome = null;
+          m.scoreAway = null;
+          m.scoreHome2 = null;
+          m.scoreAway2 = null;
+          m.penaltiesHome = null;
+          m.penaltiesAway = null;
+          m.mvp = null;
+          m.status = "scheduled";
+          m.events = [];
+          if(m.phase === "knockout" || m.phase === "repechaje" || m.phase === "semifinal" || m.phase === "final"){
+            if(m.homeSlot && m.homeSlot.type !== "team") m.homeSlot.teamId = null;
+            if(m.awaySlot && m.awaySlot.type !== "team") m.awaySlot.teamId = null;
+          }
+        });
+        
+        persist();
+        renderAll();
+
+        if (window.supabase && state.tournament.uuid) {
+          try {
+            const tid = state.tournament.uuid;
+            const { data: tourMatches } = await supabase.from('matches').select('id').eq('tournament_id', tid);
+            if (tourMatches && tourMatches.length) {
+              const matchIds = tourMatches.map(m => m.id);
+              await supabase.from('match_events').delete().in('match_id', matchIds);
+              await supabase.from('matches').update({
+                score_home: null,
+                score_away: null,
+                score_home_leg2: null,
+                score_away_leg2: null,
+                penalties_home: null,
+                penalties_away: null,
+                status: 'scheduled',
+                mvp_player_id: null
+              }).eq('tournament_id', tid);
             }
-          });
-          buildBracket();
-          persist();
-          renderAll();
-          showToast("Todos los puntos y resultados fueron reseteados.");
+          } catch(err) {
+            console.error("Error al resetear en Supabase:", err);
+          }
         }
+        
+        showToast("🏆 Todos los puntos y resultados fueron reseteados en la base de datos.");
+        if (typeof playAdvance === 'function') playAdvance();
       };
 
       // ===== modal: configuración =====
