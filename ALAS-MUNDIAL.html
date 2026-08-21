@@ -9913,7 +9913,7 @@ if(announce){
         const home = resolveSlot(m.homeSlot), away = resolveSlot(m.awaySlot);
         const g = state.groups[m.groupId];
         
-        $("#viewResultsModalTitle").textContent = `${home.name||"Local"} ${m.scoreHome} - ${m.scoreAway} ${away.name||"Visitante"}`;
+        $("#viewResultsModalTitle").textContent = `${home.name||"Local"} ${m.scoreHome} – ${m.scoreAway} ${away.name||"Visitante"}`;
         $("#viewResultsModalSubtitle").textContent = g ? g.name : "Fase Final";
         
         window.__cardsCache = buildCards(); // Asegurar caché para MVP
@@ -9935,14 +9935,42 @@ if(announce){
            sorted.forEach(ev => {
              const p = state.players[ev.playerId], t = ev.teamId && state.teams[ev.teamId];
              if(!p) return;
-             html += `<div class="tv-row tv-row-pro" style="padding: 8px 12px; align-items:center;">
-                <span style="width:32px; font-weight:800; font-size:14px; color:rgba(255,255,255,0.4);">${ev.minute!=null ? ev.minute+"'" : "-"}</span>
-                <span style="flex:none; margin-right:12px;">${REG_ICO[ev.type]||""}</span>
-                <div style="flex:none; margin-right:10px;">${tvFaceHtml(p)}</div>
-                <span class="tv-nm" style="flex:1;">
-                  <strong style="font-size:14px;">${esc(nombreJugador(p))}</strong>
-                  <small style="font-size:11px;">${esc(t?.name||"")}</small>
-                </span>
+             
+             let badgeHtml = "";
+             if (ev.type === "goal") {
+               badgeHtml = `<div class="ev-badge-right" style="display:flex; align-items:center; gap:6px; background:rgba(0,209,122,0.15); border:1px solid rgba(0,209,122,0.4); padding:6px 12px; border-radius:10px; color:#00d17a; font-weight:800; font-size:12px; box-shadow:0 0 12px rgba(0,209,122,0.25);">
+                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px;"><path d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm4.85 4.35L15 8.7L12 7l-3 1.7L7.15 6.35a8 8 0 0 1 9.7 0ZM5.5 10l3.1.8L9 14.5l-2.8 1.9a8 8 0 0 1-.7-6.4Zm6.5 8l-2-2.5v-3L12 11l2 1.5v3l-2 2.5Zm6.5-1.6l-2.8-1.9L15 14.5l.4-3.7 3.1-.8a8 8 0 0 1-.7 6.4Z"/></svg>
+                 <span>GOL</span>
+               </div>`;
+             } else if (ev.type === "yellow") {
+               badgeHtml = `<div class="ev-badge-right" style="display:flex; align-items:center; gap:6px; background:rgba(245,197,24,0.15); border:1px solid rgba(245,197,24,0.4); padding:6px 12px; border-radius:10px; color:#f5c518; font-weight:800; font-size:12px; box-shadow:0 0 12px rgba(245,197,24,0.25);">
+                 <span style="width:12px; height:16px; background:#f5c518; border-radius:2px; display:inline-block; box-shadow:0 2px 6px rgba(0,0,0,0.5);"></span>
+                 <span>AMARILLA</span>
+               </div>`;
+             } else if (ev.type === "red") {
+               badgeHtml = `<div class="ev-badge-right" style="display:flex; align-items:center; gap:6px; background:rgba(224,52,44,0.15); border:1px solid rgba(224,52,44,0.4); padding:6px 12px; border-radius:10px; color:#e0342c; font-weight:800; font-size:12px; box-shadow:0 0 12px rgba(224,52,44,0.25);">
+                 <span style="width:12px; height:16px; background:#e0342c; border-radius:2px; display:inline-block; box-shadow:0 2px 6px rgba(0,0,0,0.5);"></span>
+                 <span>ROJA</span>
+               </div>`;
+             } else if (ev.type === "mvp") {
+               badgeHtml = `<div class="ev-badge-right" style="display:flex; align-items:center; gap:6px; background:rgba(232,185,59,0.15); border:1px solid rgba(232,185,59,0.4); padding:6px 12px; border-radius:10px; color:#e8b93b; font-weight:800; font-size:12px; box-shadow:0 0 12px rgba(232,185,59,0.25);">
+                 <span style="font-size:15px; line-height:1;">⭐</span>
+                 <span>FIGURA</span>
+               </div>`;
+             }
+
+             html += `<div class="tv-row tv-row-pro" style="padding: 10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; background:linear-gradient(145deg, rgba(15,23,42,0.7) 0%, rgba(10,15,28,0.85) 100%); border:1px solid rgba(255,255,255,0.06); border-radius:14px;">
+                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                  <span style="width:28px; font-weight:800; font-size:13px; color:rgba(255,255,255,0.4); flex-shrink:0;">${ev.minute!=null ? ev.minute+"'" : "-"}</span>
+                  <div style="flex-shrink:0;">${tvFaceHtml(p)}</div>
+                  <div style="display:flex; flex-direction:column; min-width:0;">
+                    <strong style="font-size:14px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nombreJugador(p))}</strong>
+                    <small style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(t?.name||"")}</small>
+                  </div>
+                </div>
+                <div style="flex-shrink:0;">
+                  ${badgeHtml}
+                </div>
              </div>`;
            });
            html += `</div></div>`;
