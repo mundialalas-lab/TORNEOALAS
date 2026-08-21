@@ -8267,16 +8267,20 @@ const HERO_PHOTO = "COPA.jpg";
       }
       /* pie del bloque: estado del partido y, para el admin, el acceso al detalle */
       function mtFoot(m,played,live,extra){
-        const label=live?`<span class="mt-live"><span class="live-dot"></span>En vivo</span>`
-          :m.status==="suspended"?"<span class='chip-status chip-red'>Suspendido</span>"
-          :played?"<span class='chip-status chip-green'>Finalizado</span>":"<span class='chip-status chip-blue'>A jugar</span>";
+        const hasIda = m.twoLegs && hasScore(m.scoreHome) && hasScore(m.scoreAway);
+        const label = live ? `<span class="mt-live"><span class="live-dot"></span>En vivo</span>`
+          : m.status === "suspended" ? "<span class='chip-status chip-red'>Suspendido</span>"
+          : played ? "<span class='chip-status chip-green'>Finalizado</span>"
+          : hasIda ? "<span class='chip-status chip-yellow' style='background:rgba(234,179,8,0.2);color:#fde047;border:1px solid rgba(234,179,8,0.4);font-size:10px;'>Ida jugada · Vuelta pendiente</span>"
+          : "<span class='chip-status chip-blue'>A jugar</span>";
         
         const isAdmin = document.body.classList.contains("admin-mode");
-        const btnBase = "width: 100%; height: 32px; min-height: 32px; border-radius: 8px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box; white-space: nowrap;";
+        const btnBase = "width: 100%; height: 32px; min-height: 32px; border-radius: 8px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box; white-space: nowrap;";
         const primaryStyle = btnBase + " background: linear-gradient(180deg, #2563eb, #1d4ed8); border: 1px solid #3b82f6; color: #ffffff; box-shadow: 0 2px 6px rgba(37,99,235,0.25);";
         const secStyle = btnBase + " border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cbd5e1;";
         
-        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn btn-registrar-score" data-match="${m.id}" style="${primaryStyle}">REGISTRAR RESULTADO</button>` : '';
+        const regLabel = m.twoLegs ? (hasIda ? "CARGAR PARTIDO DE VUELTA" : "REGISTRAR SERIE (IDA Y VUELTA)") : "REGISTRAR RESULTADO";
+        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn btn-registrar-score" data-match="${m.id}" style="${primaryStyle}">${regLabel}</button>` : '';
         const verResultadosBtn = played ? `<button type="button" class="btn btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">VER RESULTADOS</button>` : '';
         const editBtn = isAdmin ? `<button type="button" class="btn mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR DETALLES</button>` : '';
         const dataBtn = isAdmin ? `<button type="button" class="btn admin-only btn-edit-datos" data-open-match-data="${m.id}" style="${secStyle}">DATOS DEL PARTIDO</button>` : '';
@@ -8304,6 +8308,11 @@ const HERO_PHOTO = "COPA.jpg";
         const matchId = btn.dataset.match;
         const m = state.matches[matchId];
         if (!m) return;
+
+        if (m.twoLegs) {
+          openMatchModal(matchId);
+          return;
+        }
 
         const inputs = document.querySelectorAll(`.group-score-manual[data-match="${matchId}"]`);
         let changed = false;
