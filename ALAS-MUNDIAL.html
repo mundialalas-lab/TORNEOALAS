@@ -4482,6 +4482,112 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   .roster-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
   .llave-tie { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .llave-tie:hover { transform: scale(1.02); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+
+  /* PRO TWO-LEGS CARD DESIGN */
+  .twolegs-card-wrap {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    gap: 8px;
+    backdrop-filter: blur(8px);
+  }
+  .twolegs-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .twolegs-col-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    width: 32px;
+    text-align: center;
+  }
+  .twolegs-team-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+  }
+  .twolegs-team-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+  .twolegs-team-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .twolegs-inputs-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .twolegs-input {
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 !important;
+    text-align: center !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    color: #ffffff !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease !important;
+  }
+  .twolegs-input:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 8px rgba(96, 165, 250, 0.5) !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+  }
+  .twolegs-total-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    border: 1px solid #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.35);
+    box-sizing: border-box;
+  }
+  .twolegs-total-badge.is-winner {
+    background: linear-gradient(135deg, #15803d, #22c55e);
+    border-color: #4ade80;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+  }
+  .twolegs-total-badge.is-loser {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    box-shadow: none;
+  }
+
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -8309,23 +8415,37 @@ const HERO_PHOTO = "COPA.jpg";
         const m = state.matches[matchId];
         if (!m) return;
 
-        if (m.twoLegs) {
-          openMatchModal(matchId);
-          return;
-        }
-
         const inputs = document.querySelectorAll(`.group-score-manual[data-match="${matchId}"]`);
         let changed = false;
         inputs.forEach(t => {
           const val = t.value === "" ? null : Math.max(0, Math.min(99, Number(t.value)));
-          if (t.dataset.side === "home" && m.scoreHome !== val) { m.scoreHome = val; changed = true; }
-          if (t.dataset.side === "away" && m.scoreAway !== val) { m.scoreAway = val; changed = true; }
+          const leg = t.dataset.leg || "1";
+          if (leg === "1") {
+            if (t.dataset.side === "home" && m.scoreHome !== val) { m.scoreHome = val; changed = true; }
+            if (t.dataset.side === "away" && m.scoreAway !== val) { m.scoreAway = val; changed = true; }
+          } else if (leg === "2") {
+            if (t.dataset.side === "home" && m.scoreHome2 !== val) { m.scoreHome2 = val; changed = true; }
+            if (t.dataset.side === "away" && m.scoreAway2 !== val) { m.scoreAway2 = val; changed = true; }
+          }
         });
 
-        if (changed) {
-          if (m.scoreHome !== null && m.scoreAway !== null && m.scoreHome !== undefined && m.scoreAway !== undefined) {
-            m.status = "finished";
+        const tieSelect = document.querySelector(`.tie-penal-quick[data-match="${matchId}"]`);
+        if (tieSelect && tieSelect.value) {
+          if (m.tieBreakWinner !== tieSelect.value) {
+            m.tieBreakWinner = tieSelect.value;
+            changed = true;
           }
+        }
+
+        const isOk = matchScoreOk(m);
+        if (isOk) {
+          m.status = "finished";
+          changed = true;
+        } else if (hasScore(m.scoreHome) && hasScore(m.scoreAway)) {
+          m.status = "scheduled";
+        }
+
+        if (changed || true) {
           persist();
           renderAll({ announce: true });
           playScore();
