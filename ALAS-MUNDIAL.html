@@ -9944,8 +9944,9 @@ if(announce){
              
              let badgeHtml = "";
              if (ev.type === "goal") {
-               badgeHtml = `<div class="ev-badge-icon ev-badge-goal" title="Gol" style="display:flex; align-items:center; justify-content:center; width:40px; height:40px; filter:drop-shadow(0 4px 10px rgba(0,209,122,0.45)); flex-shrink:0;">
-                 <img src="${GOL_ICON_DATA}" alt="Gol" style="width:36px; height:36px; object-fit:contain;">
+               badgeHtml = `<div class="ev-badge-icon ev-badge-goal" title="Gol" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                 <img src="ICONO DE GOL SIN FONDO.png" alt="Gol" style="width:46px; height:46px; object-fit:contain; filter:drop-shadow(0 4px 10px rgba(0,209,122,0.55));">
+                 <span style="color:#ffffff; font-weight:900; font-size:16px; letter-spacing:0.06em; text-shadow:0 2px 8px rgba(0,0,0,0.8);">GOL</span>
                </div>`;
              } else if (ev.type === "yellow") {
                badgeHtml = `<div class="ev-badge-icon ev-badge-yellow" title="Tarjeta Amarilla" style="display:flex; align-items:center; justify-content:center; width:40px; height:40px; flex-shrink:0;">
@@ -10012,11 +10013,11 @@ if(announce){
         {t:"red",    lbl:"Roja",      acc:"#e0342c"}
       ];
       const REG_ICO={
-        goal:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm4.85 4.35L15 8.7L12 7l-3 1.7L7.15 6.35a8 8 0 0 1 9.7 0ZM5.5 10l3.1.8L9 14.5l-2.8 1.9a8 8 0 0 1-.7-6.4Zm6.5 8l-2-2.5v-3L12 11l2 1.5v3l-2 2.5Zm6.5-1.6l-2.8-1.9L15 14.5l.4-3.7 3.1-.8a8 8 0 0 1-.7 6.4Z"/></svg>`,
+        goal:`<img src="ICONO DE GOL SIN FONDO.png" style="width:36px; height:36px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,209,122,0.6));" alt="Gol">`,
         assist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5c3.4-7.4 8.6-10 15.3-9.6"/><path d="M15.4 3.6l4.2 3.3-3.3 4.2"/></svg>`,
-        yellow:`<svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="9.5" height="16" rx="1.5" fill="currentColor"/></svg>`,
-        red:`<svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="9.5" height="16" rx="1.5" fill="currentColor"/></svg>`,
-        mvp:`<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95z" fill="currentColor"/></svg>`
+        yellow:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #fff382 0%, #f5c518 50%, #c48b00 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:2px 4px 10px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.4); position:relative;"><div style="position:absolute; top:2px; left:2px; right:2px; height:8px; background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%); border-radius:2px 2px 0 0;"></div></div>`,
+        red:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #ff6b6b 0%, #e0342c 50%, #8b0000 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:2px 4px 10px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.7), inset 0 -1px 2px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.4); position:relative;"><div style="position:absolute; top:2px; left:2px; right:2px; height:8px; background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%); border-radius:2px 2px 0 0;"></div></div>`,
+        mvp:`<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #ffe066 0%, #e8b93b 50%, #b8860b 100%); display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.8); font-size:16px;">⭐</div>`
       };
       let regSel=null;
 
