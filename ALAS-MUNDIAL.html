@@ -7863,13 +7863,14 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                const tId = teams.find(t => t.id === e.team_id)?.legacy_id;
                
                match.events.push({
-                 id: e.id,
-                 uuid: e.id, // match events in local state don't use uuid strictly, but useful
-                 type: e.event_type,
-                 playerId: pId,
-                 teamId: tId,
-                 minute: e.minute
-               });
+                  id: e.id,
+                  uuid: e.id,
+                  type: e.type || e.event_type,
+                  playerId: pId,
+                  teamId: tId,
+                  minute: e.minute,
+                  leg: e.leg || 1
+                });
             });
             Object.values(state.matches).forEach(m => m.events.sort((a,b)=>a.minute-b.minute));
           }
@@ -12689,8 +12690,9 @@ boot();
                   match_id: m.uuid,
                   team_id: state.teams[ev.teamId]?.uuid || null,
                   player_id: state.players[ev.playerId]?.uuid || null,
-                  event_type: ev.type,
+                  type: ev.type,
                   minute: ev.minute,
+                  leg: ev.leg || 1,
                   legacy_id: ev.id
                 }));
                 await supabase.from('match_events').insert(eventPayloads);
