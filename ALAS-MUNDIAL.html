@@ -8515,7 +8515,9 @@ const HERO_PHOTO = "COPA.jpg";
           : [m.date?formatDateShort(m.date):"",m.time||""].filter(Boolean).join(" · ");
         const legs=(m.twoLegs&&played)
           ? `<span class="lt-legs">Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}</span>`
-          : m.twoLegs?`<span class="lt-legs">Ida y vuelta</span>`:"";
+          : (m.twoLegs&&hasScore(m.scoreHome)&&hasScore(m.scoreAway))
+          ? `<span class="lt-legs">Ida: ${m.scoreHome}-${m.scoreAway} · Vuelta pendiente</span>`
+          : m.twoLegs?`<span class="lt-legs">Serie de ida y vuelta</span>`:"";
         return `<article class="llave-tie ${extraCls||""}${tied?" is-tied":""}${m.status==="live"?" is-live":""}" id="node-${m.id}" data-open-match="${m.id}" style="cursor: pointer;">
           <div class="lt-head"><span class="lt-label">${esc(m.label||m.roundTitle||"")}</span>${m.status==="live"?'<span class="lt-live">EN VIVO</span>':""}</div>
           ${llaveSlot(m.homeSlot,home,agg.h,winner,played)}
