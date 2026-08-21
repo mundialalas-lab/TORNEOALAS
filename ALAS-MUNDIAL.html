@@ -2805,16 +2805,12 @@ body.album-fs .footer-strip{display:none}
   position: relative;
   width: clamp(150px, 20vw, 240px);
   aspect-ratio: 1;
-  background-size: 80%;
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  background-color: #ffffff;
-  border-radius: 32px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.05);
+  background-color: transparent;
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,0.5));
   margin-bottom: 24px;
-  /* Sin mix-blend-mode: el logo ya es un PNG con alfa real (LOGO_LIMPIO), así
-     que se recorta solo. El blend era un parche para el JPG con fondo negro y
-     encima se rompía en cuanto había un filter en la cadena. */
 }
 /* el resplandor dorado detrás del logo, separado para no filtrar al logo */
 .llave-center::before {
@@ -5865,7 +5861,7 @@ body{background:transparent !important}
   
   /* GRAN FINAL - Layout épico vertical en móvil */
   .llave-center { display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important; margin: 32px auto 0 !important; gap: 16px !important; }
-  .llave-trophy { width: 140px !important; height: 140px !important; margin: 0 auto !important; background-color: #fff !important; border-radius: 24px !important; box-shadow: 0 12px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.1) !important; background-size: 80% !important; background-position: center !important; background-repeat: no-repeat !important; }
+  .llave-trophy { width: 140px !important; height: 140px !important; margin: 0 auto !important; background-color: transparent !important; filter: drop-shadow(0 12px 24px rgba(0,0,0,0.6)); background-size: contain !important; background-position: center !important; background-repeat: no-repeat !important; }
   .lf-kicker { text-align: center !important; margin: 8px 0 0 0 !important; font-size: 16px !important; font-weight: 800 !important; color: var(--gold, #f5b30e) !important; letter-spacing: 0.1em !important; }
   .llave-center > .llave-tie.is-final { width: 100% !important; max-width: 400px !important; margin: 0 auto !important; padding: 14px !important; }
   .llave-champ { width: 100% !important; margin-top: 24px !important; }
@@ -6494,7 +6490,7 @@ body{background:transparent !important}
         <button class="tab-btn active" data-tab="mapa" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3"/><path d="M17 6h3v1a3 3 0 0 1-3 3"/></svg></span><span class="tab-label">Torneo</span></button>
         <button class="tab-btn" data-tab="equipos" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg></span><span class="tab-label">Equipos</span></button>
         <button class="tab-btn" data-tab="stats" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M12 9v9"/><path d="M17 5v13"/></svg></span><span class="tab-label tab-label-full">Estadísticas del torneo</span><span class="tab-label tab-label-short">Stats</span></button>
-        <button class="tab-btn admin-only" id="btnConfigureMob" type="button" title="Configurar torneo"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="tab-label">Config</span></button>
+        <button class="tab-btn admin-only" data-tab="config" type="button" title="Configurar torneo"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="tab-label">Config</span></button>
       </div>
       <div class="topbar-actions" aria-label="Acciones principales">
         <!-- La fase del torneo ya la anuncia el hero arriba del todo; repetirla
@@ -6676,16 +6672,15 @@ body{background:transparent !important}
     <footer class="footer-strip">
       <span class="save-state">Guardado local activo</span>
     </footer>
-  </main>
+      <div class="app-tab" id="tab-config">
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>Configuración del torneo</h2><p>Personalizá la competencia, equipos, colores y experiencia sonora.</p></div>
+          <span class="admin-tag">Sólo administrador</span>
+        </div>
+        <form id="configForm">
+          <div class="config-body" style="padding: 16px;">
 
-  <div class="modal-backdrop" id="configModal" role="dialog" aria-modal="true" aria-labelledby="configTitle">
-    <div class="modal">
-      <header class="modal-head">
-        <div><h2 id="configTitle">Configuración profesional del torneo</h2><p>Personalizá la competencia, equipos, colores y experiencia sonora.</p></div>
-        <button class="close-btn" id="btnCloseModal" type="button" aria-label="Cerrar">×</button>
-      </header>
-      <form id="configForm">
-        <div class="modal-body">
           <section class="form-section">
             <h3>Identidad del evento</h3>
             <div class="form-grid">
@@ -6744,18 +6739,22 @@ body{background:transparent !important}
               <div class="toggle-copy" style="width: 100%;">
                 <strong>Resetear puntos y resultados</strong>
                 <small style="display:block;margin-bottom:8px">Borra todos los resultados de los partidos (grupos y llaves). Esta acción no se puede deshacer.</small>
-                <button type="button" class="btn" style="background:var(--elimina, #dc2626);color:#fff;border:none" onclick="resetearPuntosTorneo()">Resetear Torneo</button>
+                <button type="button" class="btn" style="background:var(--elimina, #dc2626);color:#fff;border:none" onclick="resetearPuntosTorneo()">RESETEAR PUNTOS Y RESULTADOS</button>
               </div>
             </div>
           </section>
-        </div>
-        <footer class="modal-actions">
-          <button class="btn secondary" id="btnCancelModal" type="button">Cancelar</button>
-          <button class="btn" type="submit">Guardar configuración</button>
-        </footer>
-      </form>
+        
+          </div>
+          <div style="padding: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button class="btn primary" type="submit" style="width:100%; min-height:48px; border-radius:12px;">Guardar configuración</button>
+          </div>
+        </form>
+      </section>
     </div>
-  </div>
+
+  </main>
+
+  
 
   <div class="modal-backdrop" id="teamModal" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle">
     <div class="modal">
@@ -9258,7 +9257,7 @@ if(announce){
       };
 
       // ===== modal: configuración =====
-      function openConfig(){
+      function openConfig() {
         const countSpan = $("#onlineUsersCount");
         if(countSpan) {
           const now = Date.now();
@@ -9280,9 +9279,9 @@ if(announce){
         $("#confettiEnabledField").checked=state.settings.confetti;
         $("#volumeField").value=Math.round(state.settings.volume*100);
         $("#volumeValue").textContent=`${Math.round(state.settings.volume*100)}%`;
-        $("#configModal").classList.add("open");document.body.style.overflow="hidden";setTimeout(()=>$("#tournamentName").focus(),70);playClick();
+        document.querySelector('[data-tab="config"]')?.click();
       }
-      function closeConfig(){$("#configModal").classList.remove("open");document.body.style.overflow=""}
+      function closeConfig() { document.querySelector('[data-tab="mapa"]')?.click(); }
 
       // ===== modal: equipo =====
       function openTeamModal(teamId){
@@ -11733,9 +11732,9 @@ boot();
         persist();closeConfig();renderAll();playAdvance();showToast("Configuración guardada correctamente");
       });
       if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
-      $("#btnCloseModal").addEventListener("click",closeConfig);
-      $("#btnCancelModal").addEventListener("click",closeConfig);
-      $("#configModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeConfig()});
+      // modal removed
+      // modal removed
+      // modal removed
 
       $("#btnNewTeam").addEventListener("click",()=>openTeamModal(null));
       $("#btnBackTeams").addEventListener("click",()=>{currentTeamSheetId=null;renderAll()});
