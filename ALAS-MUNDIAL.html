@@ -7540,20 +7540,20 @@ const HERO_PHOTO = "COPA.jpg";
             matches.forEach(m => {
                let homeSlot = {}, awaySlot = {};
                if (m.home_source === 'team') {
-                 homeSlot = { type: 'team', teamId: teams.find(t => t.id === m.home_team_id)?.legacy_id };
-               } else if (m.home_source === 'group') {
-                 homeSlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.home_group_id)?.legacy_id, pos: m.home_group_pos };
-               } else if (m.home_source === 'match') {
-                 homeSlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.home_match_id)?.legacy_id };
-               }
-               
-               if (m.away_source === 'team') {
-                 awaySlot = { type: 'team', teamId: teams.find(t => t.id === m.away_team_id)?.legacy_id };
-               } else if (m.away_source === 'group') {
-                 awaySlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.away_group_id)?.legacy_id, pos: m.away_group_pos };
-               } else if (m.away_source === 'match') {
-                 awaySlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.away_match_id)?.legacy_id };
-               }
+                  homeSlot = { type: 'team', teamId: teams.find(t => t.id === m.home_team_id)?.legacy_id };
+                } else if (m.home_source === 'group_pos' || m.home_source === 'group') {
+                  homeSlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.home_group_id)?.legacy_id, pos: m.home_group_pos };
+                } else if (m.home_source === 'match_winner' || m.home_source === 'match') {
+                  homeSlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.home_match_id)?.legacy_id };
+                }
+                
+                if (m.away_source === 'team') {
+                  awaySlot = { type: 'team', teamId: teams.find(t => t.id === m.away_team_id)?.legacy_id };
+                } else if (m.away_source === 'group_pos' || m.away_source === 'group') {
+                  awaySlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.away_group_id)?.legacy_id, pos: m.away_group_pos };
+                } else if (m.away_source === 'match_winner' || m.away_source === 'match') {
+                  awaySlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.away_match_id)?.legacy_id };
+                }
 
                const gId = groups.find(g => g.id === m.group_id)?.legacy_id;
 
@@ -7786,10 +7786,14 @@ const HERO_PHOTO = "COPA.jpg";
         if(slot.type==="bye")return{id:null,name:"BYE",isBye:true};
         if(slot.type==="team")return teamSlot(slot.teamId);
         if(slot.type==="groupPos"){
-          if(!groupComplete(slot.groupId))return emptySlot(`${slot.pos+1}º ${state.groups[slot.groupId]?.name||slot.groupId}`);
+          const ms = groupMatches(slot.groupId);
+          const hasPlayedAny = ms.some(matchScoreOk);
+          if(!hasPlayedAny){
+            return emptySlot(`${slot.pos+1}º ${state.groups[slot.groupId]?.name||slot.groupId}`);
+          }
           const standings=getGroupStandings(slot.groupId);
           const r=standings[slot.pos];
-          return r?teamSlot(r.id):emptySlot();
+          return r?teamSlot(r.id):emptySlot(`${slot.pos+1}º ${state.groups[slot.groupId]?.name||slot.groupId}`);
         }
         if(slot.type==="matchWinner"){
           const m=state.matches[slot.matchId];if(!m)return emptySlot();
