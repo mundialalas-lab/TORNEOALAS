@@ -4716,6 +4716,7 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
     height: 14px;
   }
 
+  html, body { scroll-behavior: smooth !important; }
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -12058,29 +12059,43 @@ boot();
       // pestañas que sólo existen para el administrador
       const TABS_ADMIN=["fixture"];
 
-      function switchTab(tab){
-        /* Portero. No alcanza con ocultar el botón: la pestaña activa se guarda
-           en el estado, así que si el admin sale estando en "Cargar resultados"
-           y después entra alguien más, se abriría ahí sin poder volver (el botón
-           está oculto). Ante la duda, cae en Torneo. */
+            function switchTab(tab){
+        /* Portero: si es admin y no tiene permiso, vuelve a mapa */
         if(TABS_ADMIN.includes(tab)&&!esAdmin())tab="mapa";
         state.ui.activeTab=tab;
-        $$(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-        $$(".app-tab").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
-        // fondo por pestaña: Torneo lleva la pelota, el resto el cartel FIFA
+        $(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+        $(".app-tab").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
+        
+        // Fondo por pestaña: Torneo lleva la pelota, el resto el cartel FIFA
         document.body.classList.toggle("tab-torneo",tab==="mapa");
         moverIndicador();
-        // el álbum decide solo: si no hay usuario muestra la puerta, si hay
-        // usuario carga su colección
+        
+        // Scroll suave y automático al inicio de la página en cada cambio de pestaña
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+
         if(tab==="album")renderAlbumTab();
-        // en el álbum la página no scrollea: el que se mueve por dentro es él.
-        // Sin admin no hay panel de usuarios debajo, así que nada queda tapado.
         document.body.classList.toggle("album-fs",tab==="album"&&!esAdmin());
         updateHeroBar();
         requestConnectors();
+
+        // Animación suave y fluida de entrada de la pestaña
         if(window.gsap){
+          const pane = document.querySelector("#tab-" + tab);
+          if (pane) {
+            gsap.fromTo(pane, 
+              { y: 20, autoAlpha: 0, scale: 0.99 },
+              { y: 0, autoAlpha: 1, scale: 1, duration: 0.38, ease: "power3.out", clearProps: "transform,opacity,visibility" }
+            );
+          }
           const icon=document.querySelector("#tabBar .tab-btn.active .tab-icon");
-          if(icon)gsap.fromTo(icon,{scale:.4,rotation:-16,opacity:0},{scale:1,rotation:0,opacity:1,duration:.45,ease:"back.out(2.2)"});
+          if(icon){
+            gsap.fromTo(icon,
+              {scale:.4,rotation:-14,opacity:0},
+              {scale:1,rotation:0,opacity:1,duration:.42,ease:"back.out(2.2)"}
+            );
+          }
         }
       }
 
@@ -12102,8 +12117,6 @@ boot();
         const openDataBtn=e.target.closest("[data-open-match-data]");
         if(openDataBtn)openMatchDataModal(openDataBtn.getAttribute("data-open-match-data"));
       });
-      // la tarjeta del fixture es enfocable: sin esto se llega con Tab pero no
-      // se puede abrir sin mouse
       document.addEventListener("keydown",e=>{
         if(e.key!=="Enter"&&e.key!==" ")return;
         const card=e.target.closest&&e.target.closest(".fx-card[data-open-match]");
@@ -12113,9 +12126,6 @@ boot();
       });
 
       $("#tabBar").addEventListener("click",e=>{const b=e.target.closest(".tab-btn");if(!b)return;switchTab(b.dataset.tab);playClick()});
-      /* Las pestañas que salieron de la barra viven acá: el admin carga
-         resultados desde el botón flotante de Torneo, y el álbum desde el
-         topbar (arriba a la derecha). Ambas abren su panel de siempre. */
       $("#btnCargarResultados").addEventListener("click",()=>{switchTab("fixture");playClick()});
       $("#btnAlbumTop").addEventListener("click",()=>{switchTab("album");playClick()});
       const moreMenu=document.querySelector(".more-menu");
@@ -12169,9 +12179,6 @@ boot();
         closeConfig();renderAll();playAdvance();showToast("Configuración guardada en Supabase");
       });
       if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
-      // modal removed
-      // modal removed
-      // modal removed
 
       $("#btnNewTeam").addEventListener("click",()=>openTeamModal(null));
       $("#btnBackTeams").addEventListener("click",()=>{currentTeamSheetId=null;renderAll()});
@@ -12187,8 +12194,6 @@ boot();
         if(editBtn){openPlayerModal(editBtn.dataset.editPlayer);return}
         const delBtn=e.target.closest("[data-del-player]");
         if(delBtn){
-          // el permiso se comprueba también acá, no sólo al dibujar el botón:
-          // ocultar un control no impide que alguien lo dispare por consola
           const jug=state.players[delBtn.dataset.delPlayer];
           if(!jug||!puedeEditarEquipo(jug.teamId)){showToast("No tenés permiso para tocar este plantel");return}
           if(confirm("¿Eliminar este jugador?")){delete state.players[delBtn.dataset.delPlayer];persist();renderAll();showToast("Jugador eliminado")}
