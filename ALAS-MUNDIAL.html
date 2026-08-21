@@ -7454,6 +7454,16 @@ const HERO_PHOTO = "COPA.jpg";
           state.tournament.name = tourData.name;
           state.tournament.subtitle = tourData.subtitle;
           state.tournament.uuid = tid;
+          if (tourData.num_groups != null) state.format.numGroups = tourData.num_groups;
+          if (tourData.qualifiers_per_group != null) state.format.qualifiersPerGroup = tourData.qualifiers_per_group;
+          if (tourData.yellow_cards_suspension != null) state.format.yellowCardsSuspension = tourData.yellow_cards_suspension;
+          if (tourData.red_card_suspension != null) state.format.redCardSuspensionMatches = tourData.red_card_suspension;
+          if (tourData.double_round_robin != null) state.format.doubleRoundRobin = tourData.double_round_robin;
+          if (tourData.third_place_match != null) state.format.thirdPlaceMatch = tourData.third_place_match;
+          if (tourData.h2h_tiebreak != null) state.format.h2hTiebreak = tourData.h2h_tiebreak;
+          if (tourData.sound_enabled != null) state.settings.sound = tourData.sound_enabled;
+          if (tourData.confetti_enabled != null) state.settings.confetti = tourData.confetti_enabled;
+          if (tourData.volume != null) state.settings.volume = tourData.volume;
 
           const [{ data: groups }, { data: teams }, { data: players }, { data: matches }, { data: events }] = await Promise.all([
             supabase.from('groups').select('*').eq('tournament_id', tid),
@@ -11747,7 +11757,7 @@ boot();
       if(moreMenu)moreMenu.addEventListener("toggle",()=>{if(moreMenu.open&&window.gsap)gsap.from(".more-menu .more-item",{y:10,autoAlpha:0,stagger:.05,duration:.32,ease:"power2.out"})});
 
       $("#volumeField").addEventListener("input",e=>$("#volumeValue").textContent=`${e.target.value}%`);
-      $("#configForm").addEventListener("submit",e=>{
+      $("#configForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const name=$("#tournamentName").value.trim(),subtitle=$("#tournamentSubtitle").value.trim();
         if(!name||!subtitle)return;
@@ -11762,7 +11772,32 @@ boot();
         state.settings.sound=$("#soundEnabledField").checked;
         state.settings.confetti=$("#confettiEnabledField").checked;
         state.settings.volume=Number($("#volumeField").value)/100;
-        persist();closeConfig();renderAll();playAdvance();showToast("Configuración guardada correctamente");
+        persist();
+
+        if (window.supabase) {
+           const payload = {
+             legacy_id: 'alas-torneo-v3',
+             name: state.tournament.name,
+             subtitle: state.tournament.subtitle,
+             num_groups: state.format.numGroups,
+             qualifiers_per_group: state.format.qualifiersPerGroup,
+             yellow_cards_suspension: state.format.yellowCardsSuspension,
+             red_card_suspension: state.format.redCardSuspensionMatches,
+             double_round_robin: state.format.doubleRoundRobin,
+             third_place_match: state.format.thirdPlaceMatch,
+             h2h_tiebreak: state.format.h2hTiebreak,
+             sound_enabled: state.settings.sound,
+             confetti_enabled: state.settings.confetti,
+             volume: state.settings.volume
+           };
+           const { error } = await supabase.from('tournaments').upsert(payload, { onConflict: 'legacy_id' });
+           if (error) {
+              console.error('Config save error:', error);
+              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+           }
+        }
+
+        closeConfig();renderAll();playAdvance();showToast("Configuración guardada en Supabase");
       });
       if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
       // modal removed
@@ -11839,7 +11874,7 @@ boot();
            const g = state.groups[$("#teamGroupField").value];
            if (g && g.uuid) groupUuid = g.uuid;
 
-           const payload = { id: state.teams[id]?.uuid || undefined, legacy_id: id, tournament_id: state.meta.tournamentUuid || null,
+           const payload = { id: state.teams[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null,
              group_id: groupUuid || null, // fallback
              name: name,
              short_name: short,
@@ -11936,7 +11971,7 @@ boot();
 
         if (window.supabase) {
            const teamUuid = state.teams[currentTeamSheetId]?.uuid || null; // fallback
-           const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.meta.tournamentUuid || null, team_id: teamUuid,
+           const payload = { id: state.players[id]?.uuid || undefined, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
              first_name: first,
              last_name: last,
              number: num,
@@ -12044,7 +12079,7 @@ boot();
           const m=state.matches[editingMatchId];
           if(m)renderEventEditor(resolveSlot(m.homeSlot),resolveSlot(m.awaySlot));
         }));
-      $("#matchForm").addEventListener("submit",e=>{
+      $("#matchForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const m=state.matches[editingMatchId];if(!m)return;
         const clamp=v=>v===""?null:Math.max(0,Math.min(99,Number(v)));
@@ -12060,7 +12095,48 @@ boot();
         if(complete&&m.status==="scheduled")m.status="finished";
         m.events=pendingEvents.filter(ev=>ev.playerId).map(ev=>({id:ev.id,minute:ev.minute,type:ev.type,teamId:ev.teamId,playerId:ev.playerId}));
         m.mvpPlayerId=$("#matchMvpField").value||null;
-        persist();closeMatchModal();renderAll({announce:true});playScore();showToast("Partido actualizado");notifyAlbumResultLoaded();
+        persist();
+
+        if (window.supabase && m.uuid) {
+           const submitBtn = e.target.querySelector('button[type="submit"]');
+           const origText = submitBtn.textContent;
+           submitBtn.textContent = "Guardando...";
+           submitBtn.disabled = true;
+
+           const payload = {
+             score_home: m.scoreHome,
+             score_away: m.scoreAway,
+             score_home_leg2: m.scoreHome2,
+             score_away_leg2: m.scoreAway2,
+             tie_break_winner: m.tieBreakWinner,
+             mvp_player_id: m.mvpPlayerId,
+             status: m.status
+           };
+           const { error: err1 } = await supabase.from('matches').update(payload).eq('legacy_id', editingMatchId);
+           
+           if (!err1) {
+             await supabase.from('match_events').delete().eq('match_id', m.uuid);
+             if (m.events && m.events.length > 0) {
+                const eventPayloads = m.events.map(ev => ({
+                  match_id: m.uuid,
+                  team_id: state.teams[ev.teamId]?.uuid || null,
+                  player_id: state.players[ev.playerId]?.uuid || null,
+                  event_type: ev.type,
+                  minute: ev.minute,
+                  legacy_id: ev.id
+                }));
+                await supabase.from('match_events').insert(eventPayloads);
+             }
+           } else {
+             console.error("Match update error:", err1);
+             if(err1.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+           }
+
+           submitBtn.textContent = origText;
+           submitBtn.disabled = false;
+        }
+
+        closeMatchModal();renderAll({announce:true});playScore();showToast("Partido guardado en Supabase");notifyAlbumResultLoaded();
       });
 
       function openMatchDataModal(id){
@@ -12079,12 +12155,36 @@ boot();
         document.body.style.overflow="";
       }
       
-      $("#matchDataForm").addEventListener("submit",e=>{
+      $("#matchDataForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const m=state.matches[editingMatchId];if(!m)return;
         m.date=$("#matchDateField").value;m.time=$("#matchTimeField").value;m.venue=$("#matchVenueField").value.trim();
         m.status=$("#matchStatusField").value;
-        persist();closeMatchDataModal();renderAll();playScore();showToast("Datos actualizados");
+        persist();
+
+        if (window.supabase && m.uuid) {
+           const submitBtn = e.target.querySelector('button[type="submit"]');
+           const origText = submitBtn.textContent;
+           submitBtn.textContent = "Guardando...";
+           submitBtn.disabled = true;
+
+           const payload = {
+             match_date: m.date || null,
+             match_time: m.time || null,
+             venue: m.venue || null,
+             status: m.status
+           };
+           const { error } = await supabase.from('matches').update(payload).eq('legacy_id', editingMatchId);
+           if (error) {
+              console.error("Match data update error:", error);
+              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+           }
+
+           submitBtn.textContent = origText;
+           submitBtn.disabled = false;
+        }
+
+        closeMatchDataModal();renderAll();playScore();showToast("Datos guardados en Supabase");
       });
       
       $("#btnCloseMatchDataModal").addEventListener("click",closeMatchDataModal);
