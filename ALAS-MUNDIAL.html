@@ -7540,17 +7540,17 @@ const HERO_PHOTO = "COPA.jpg";
                if (m.home_source === 'team') {
                  homeSlot = { type: 'team', teamId: teams.find(t => t.id === m.home_team_id)?.legacy_id };
                } else if (m.home_source === 'group') {
-                 homeSlot = { type: 'group', groupId: groups.find(g => g.id === m.home_group_id)?.legacy_id, pos: m.home_group_pos };
+                 homeSlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.home_group_id)?.legacy_id, pos: m.home_group_pos };
                } else if (m.home_source === 'match') {
-                 homeSlot = { type: 'match', matchId: matches.find(x => x.id === m.home_match_id)?.legacy_id };
+                 homeSlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.home_match_id)?.legacy_id };
                }
                
                if (m.away_source === 'team') {
                  awaySlot = { type: 'team', teamId: teams.find(t => t.id === m.away_team_id)?.legacy_id };
                } else if (m.away_source === 'group') {
-                 awaySlot = { type: 'group', groupId: groups.find(g => g.id === m.away_group_id)?.legacy_id, pos: m.away_group_pos };
+                 awaySlot = { type: 'groupPos', groupId: groups.find(g => g.id === m.away_group_id)?.legacy_id, pos: m.away_group_pos };
                } else if (m.away_source === 'match') {
-                 awaySlot = { type: 'match', matchId: matches.find(x => x.id === m.away_match_id)?.legacy_id };
+                 awaySlot = { type: 'matchWinner', matchId: matches.find(x => x.id === m.away_match_id)?.legacy_id };
                }
 
                const gId = groups.find(g => g.id === m.group_id)?.legacy_id;
@@ -7573,6 +7573,10 @@ const HERO_PHOTO = "COPA.jpg";
                  status: m.status,
                  scoreHome: m.score_home,
                  scoreAway: m.score_away,
+                  twoLegs: Boolean(m.two_legs),
+                  dateLeg2: m.date_leg2 || "",
+                  scoreHome2: m.score_home_leg2,
+                  scoreAway2: m.score_away_leg2,
                  tieBreakWinner: m.tie_break_winner,
                  mvpPlayerId: players.find(p => p.id === m.mvp_player_id)?.legacy_id,
                  events: []
