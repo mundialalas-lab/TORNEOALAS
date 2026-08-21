@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Saira+Condensed:wght@500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
   <style>
 /* ==========================================================================
    MUNDIAL ALAS 2026 · SISTEMA DE DISEÑO "PIZARRA DE DT"
@@ -2004,8 +2005,8 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   transition:border-color var(--t-fast);
 }
 .user-chip:hover .uc-dot{border-color:#fff}
-.uc-txt{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:90px;}
-.uc-txt b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-txt{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:120px;}
+.uc-txt b{font-size:15px;font-weight:600;white-space:normal;word-break:break-word;line-height:1.2;}
 .uc-txt small{font-size:11px;color:#7d8ba1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ag-form{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:6px}
 .ag-form input{
@@ -6407,23 +6408,55 @@ body{background:transparent !important}
   .llave-col-mob {
     display: flex; flex-direction: column; gap: 12px;
   }
-  .llave-center-mob .llave-trophy {
-    width: 120px; height: 120px;
-    background-size: contain; background-repeat: no-repeat; background-position: center;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+  .llave-center-mob { position: relative; }
+  .llave-center-mob::before {
+    content: ""; position: absolute;
+    top: -20px; left: 50%; transform: translateX(-50%);
+    width: 200px; aspect-ratio: 1;
+    background: radial-gradient(circle, rgba(255, 217, 102, 0.35) 0%, rgba(245, 179, 14, 0.25) 30%, transparent 70%);
+    filter: blur(12px); pointer-events: none; z-index: -1;
   }
+  .llave-center-mob .llave-trophy {
+    position: relative;
+    width: 140px; height: 140px; margin: 0 auto 12px !important;
+    background-size: 80%; background-repeat: no-repeat; background-position: center;
+    background-color: #ffffff; border-radius: 28px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  
+  /* Celda PRO del Campeón en Móvil */
   .llave-center-mob .llave-champ {
-    margin-top: 16px; opacity: 0; transform: translateY(10px); transition: all 0.6s ease;
+    margin: 16px auto 0; width: 100%; max-width: 320px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+    border: 1px dashed rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 18px 16px;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .llave-center-mob .llave-champ.is-crowned {
-    opacity: 1; transform: translateY(0);
+    border-style: solid; border-color: rgba(245, 179, 14, 0.8);
+    background: linear-gradient(180deg, rgba(245, 179, 14, 0.2) 0%, rgba(245, 179, 14, 0.05) 100%);
+    box-shadow: 0 12px 32px rgba(245, 179, 14, 0.15), inset 0 2px 10px rgba(245, 179, 14, 0.2);
+    transform: scale(1.02);
   }
   .llave-center-mob .lch-lab {
-    font-family: var(--font-ui); font-size: 14px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ll-gold);
+    font-family: var(--font-ui); font-size: 11px; font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ll-dim);
   }
+  .llave-center-mob .is-crowned .lch-lab { color: var(--ll-gold); }
   .llave-center-mob .lch-name {
-    font-family: var(--font-display); font-size: 32px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 4px;
+    font-family: var(--font-display); font-size: 26px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 6px; text-transform: uppercase;
   }
+  .llave-center-mob .is-crowned .lch-name { font-size: 32px; color: var(--ll-gold-hi); text-shadow: 0 2px 10px rgba(245,179,14,0.4); }
+
+  /* Flechas Animadas */
+  .llave-arrow-down {
+    display: flex; justify-content: center; align-items: center;
+    color: rgba(255,255,255,0.2); margin: 0;
+  }
+  .llave-arrow-down svg { width: 32px; height: 42px; }
+  .arrow-line { stroke-dasharray: 6 6; animation: march-ants 1.2s linear infinite; }
+  @keyframes march-ants { to { stroke-dashoffset: -12; } }
+  .arrow-head { animation: bounce-arrow 2s infinite ease-in-out; }
+  @keyframes bounce-arrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 }
 </style>
 <!-- SPLASH VIDEO -->
@@ -6461,6 +6494,7 @@ body{background:transparent !important}
         <button class="tab-btn active" data-tab="mapa" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3"/><path d="M17 6h3v1a3 3 0 0 1-3 3"/></svg></span><span class="tab-label">Torneo</span></button>
         <button class="tab-btn" data-tab="equipos" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg></span><span class="tab-label">Equipos</span></button>
         <button class="tab-btn" data-tab="stats" type="button"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M12 9v9"/><path d="M17 5v13"/></svg></span><span class="tab-label tab-label-full">Estadísticas del torneo</span><span class="tab-label tab-label-short">Stats</span></button>
+        <button class="tab-btn admin-only" id="btnConfigureMob" type="button" title="Configurar torneo"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="tab-label">Config</span></button>
       </div>
       <div class="topbar-actions" aria-label="Acciones principales">
         <!-- La fase del torneo ya la anuncia el hero arriba del todo; repetirla
@@ -6921,8 +6955,9 @@ body{background:transparent !important}
       </header>
       <div class="modal-body">
         <div class="admin-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg></div>
-        <div class="field"><label for="adminKeyField">Clave de administrador</label><input type="password" id="adminKeyField" maxlength="12" autocomplete="off" placeholder="Ingresá la clave…" /></div>
-        <div class="admin-err" id="adminErr" role="alert">Clave incorrecta. Revisala y probá de nuevo.</div>
+        <div class="field" style="margin-bottom: 12px;"><label for="adminEmailField">Correo electrónico</label><input type="email" id="adminEmailField" autocomplete="email" placeholder="Ingresa tu email…" /></div>
+        <div class="field"><label for="adminKeyField">Contraseña</label><input type="password" id="adminKeyField" maxlength="32" autocomplete="off" placeholder="Ingresá la clave…" /></div>
+        <div class="admin-err" id="adminErr" role="alert">Credenciales incorrectas. Revisalas y probá de nuevo.</div>
       </div>
       <footer class="modal-actions">
         <button class="btn secondary" id="btnCancelAdminModal" type="button">Cancelar</button>
@@ -7241,6 +7276,11 @@ const HERO_PHOTO = "COPA.jpg";
 
       const $=(s,r=document)=>r.querySelector(s);
       const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+      
+      const SUPABASE_URL = "https://ydrywhirvztjtqntutzl.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlkcnl3aGlydnp0anRxbnR1dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxODI1ODksImV4cCI6MjEwMjc1ODU4OX0.EpLTTK0n-T3yRpPsHs_OWt7osfAItw0UEcqOzYRktHY";
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
       const uid=p=>p+Math.random().toString(36).slice(2,9);
       const clone=v=>JSON.parse(JSON.stringify(v));
       const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -7355,7 +7395,154 @@ const HERO_PHOTO = "COPA.jpg";
       }
 
       let state=loadState();
-      function persist(){state.meta.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+      
+      async function syncFromSupabase() {
+        if (!supabase) return;
+        try {
+          const { data: tourData } = await supabase.from('tournaments').select('*').eq('legacy_id', 'alas-torneo-v3').single();
+          if (!tourData) return;
+          const tid = tourData.id;
+          
+          state.tournament.name = tourData.name;
+          state.tournament.subtitle = tourData.subtitle;
+          state.tournament.uuid = tid;
+
+          const [{ data: groups }, { data: teams }, { data: players }, { data: matches }, { data: events }] = await Promise.all([
+            supabase.from('groups').select('*').eq('tournament_id', tid),
+            supabase.from('teams').select('*').eq('tournament_id', tid),
+            supabase.from('players').select('*').eq('tournament_id', tid),
+            supabase.from('matches').select('*').eq('tournament_id', tid),
+            supabase.from('match_events').select('*, matches!inner(tournament_id)').eq('matches.tournament_id', tid)
+          ]);
+
+          if (groups) {
+            state.groups = {};
+            groups.forEach(g => {
+              state.groups[g.legacy_id] = { id: g.legacy_id, uuid: g.id, name: g.name, order: g.sort_order };
+            });
+          }
+
+          if (teams) {
+            state.teams = {};
+            teams.forEach(t => {
+              const gId = groups.find(g => g.id === t.group_id)?.legacy_id;
+              state.teams[t.legacy_id] = {
+                id: t.legacy_id,
+                uuid: t.id,
+                name: t.name,
+                shortName: t.short_name,
+                country: t.country_name,
+                city: t.city,
+                category: t.category,
+                groupId: gId,
+                colorPrimary: t.color_primary,
+                colorSecondary: t.color_secondary,
+                logoDataUrl: t.photo_path || "", 
+                photoDataUrl: t.photo_path || "",
+                createdAt: t.created_at
+              };
+            });
+          }
+
+          if (players) {
+            state.players = {};
+            players.forEach(p => {
+              const tId = teams.find(t => t.id === p.team_id)?.legacy_id;
+              if (!tId) return;
+              state.players[p.legacy_id] = {
+                id: p.legacy_id,
+                uuid: p.id,
+                teamId: tId,
+                firstName: p.first_name,
+                lastName: p.last_name,
+                number: p.number,
+                position: p.position,
+                birthDate: p.birth_date,
+                photoDataUrl: p.photo_path || ""
+              };
+            });
+          }
+
+          if (matches) {
+            state.matches = {};
+            matches.forEach(m => {
+               let homeSlot = {}, awaySlot = {};
+               if (m.home_source === 'team') {
+                 homeSlot = { type: 'team', teamId: teams.find(t => t.id === m.home_team_id)?.legacy_id };
+               } else if (m.home_source === 'group') {
+                 homeSlot = { type: 'group', groupId: groups.find(g => g.id === m.home_group_id)?.legacy_id, pos: m.home_group_pos };
+               } else if (m.home_source === 'match') {
+                 homeSlot = { type: 'match', matchId: matches.find(x => x.id === m.home_match_id)?.legacy_id };
+               }
+               
+               if (m.away_source === 'team') {
+                 awaySlot = { type: 'team', teamId: teams.find(t => t.id === m.away_team_id)?.legacy_id };
+               } else if (m.away_source === 'group') {
+                 awaySlot = { type: 'group', groupId: groups.find(g => g.id === m.away_group_id)?.legacy_id, pos: m.away_group_pos };
+               } else if (m.away_source === 'match') {
+                 awaySlot = { type: 'match', matchId: matches.find(x => x.id === m.away_match_id)?.legacy_id };
+               }
+
+               const gId = groups.find(g => g.id === m.group_id)?.legacy_id;
+
+               state.matches[m.legacy_id] = {
+                 id: m.legacy_id,
+                 uuid: m.id,
+                 phase: m.phase,
+                 groupId: gId,
+                 round: m.round,
+                 bracketRound: m.bracket_round,
+                 bracketOrder: m.bracket_order,
+                 roundTitle: m.round_title,
+                 label: m.label,
+                 homeSlot,
+                 awaySlot,
+                 date: m.match_date,
+                 time: m.match_time || "",
+                 venue: m.venue,
+                 status: m.status,
+                 scoreHome: m.score_home,
+                 scoreAway: m.score_away,
+                 tieBreakWinner: m.tie_break_winner,
+                 mvpPlayerId: players.find(p => p.id === m.mvp_player_id)?.legacy_id,
+                 events: []
+               };
+            });
+          }
+
+          if (events && state.matches) {
+            events.forEach(e => {
+               const m = matches.find(mx => mx.id === e.match_id);
+               if (!m || !state.matches[m.legacy_id]) return;
+               const match = state.matches[m.legacy_id];
+               
+               const pId = players.find(p => p.id === e.player_id)?.legacy_id;
+               const tId = teams.find(t => t.id === e.team_id)?.legacy_id;
+               
+               match.events.push({
+                 id: e.id,
+                 uuid: e.id, // match events in local state don't use uuid strictly, but useful
+                 type: e.event_type,
+                 playerId: pId,
+                 teamId: tId,
+                 minute: e.minute
+               });
+            });
+            Object.values(state.matches).forEach(m => m.events.sort((a,b)=>a.minute-b.minute));
+          }
+
+          renderAll();
+          setTimeout(requestConnectors, 150);
+        } catch (e) {
+          console.error("Error syncing from Supabase:", e);
+        }
+      }
+
+      function persist(){
+        state.meta.updatedAt=new Date().toISOString();
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+        // TODO: Cola de updates optimistas a Supabase
+      }
 
       // ===== groups / teams helpers =====
       function groupIds(){return Object.values(state.groups).sort((a,b)=>a.order-b.order).map(g=>g.id)}
@@ -8003,15 +8190,21 @@ const HERO_PHOTO = "COPA.jpg";
           :played?"<span class='chip-status chip-green'>Finalizado</span>":"<span class='chip-status chip-blue'>A jugar</span>";
         
         const isAdmin = document.body.classList.contains("admin-mode");
-        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="margin: 8px auto 0; display: block; font-size:12px; padding: 6px 20px; min-height:36px; border-radius:18px;">Registrar</button>` : '';
-        const verResultadosBtn = played ? `<button type="button" class="btn secondary btn-ver-resultados" data-view-match="${m.id}" style="margin: 8px auto 0; display: block; font-size:12px; padding: 6px 20px; min-height:36px; border-radius:18px; width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">VER RESULTADOS</button>` : '';
+        const btnStyle = "flex:1; font-size:12px; padding: 6px 10px; min-height:36px; border-radius:18px; text-align:center;";
+        const secStyle = btnStyle + " border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);";
+        
+        const registrarBtn = isAdmin && !played ? `<button type="button" class="btn primary btn-registrar-score" data-match="${m.id}" style="${btnStyle}">REGISTRAR</button>` : '';
+        const verResultadosBtn = played ? `<button type="button" class="btn secondary btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">RESULTADOS</button>` : '';
+        const editBtn = isAdmin ? `<button type="button" class="btn secondary mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR EVENTOS</button>` : '';
 
         return `<div class="mt-foot" style="display:flex; flex-direction:column; width:100%;">
-          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <div style="text-align:center; width:100%; margin-bottom:4px;">
             <span>${label}${extra?"  "+extra:""}</span>
-            ${isAdmin ? `<button type="button" class="mt-open admin-only" data-open-match="${m.id}" style="transform: scale(1.4); transform-origin: right;" title="Editar Eventos" aria-label="Editar Eventos del partido">${ICO.sheet}</button>` : ''}
           </div>
-          ${registrarBtn || verResultadosBtn}
+          <div style="display:flex; gap:8px; width:100%; margin-top:4px;">
+            ${editBtn}
+            ${registrarBtn || verResultadosBtn}
+          </div>
         </div>`;
       }
 
@@ -8043,8 +8236,10 @@ const HERO_PHOTO = "COPA.jpg";
       });
 
       function groupMatchRow(m){
-        const home = state.teams[m.homeSlot.teamId] || { name: m.homeSlot.name || "?", id: null };
-        const away = state.teams[m.awaySlot.teamId] || { name: m.awaySlot.name || "?", id: null };
+        const homeRes = resolveSlot(m.homeSlot);
+        const awayRes = resolveSlot(m.awaySlot);
+        const home = homeRes.id ? state.teams[homeRes.id] : { name: homeRes.name || "?", id: null };
+        const away = awayRes.id ? state.teams[awayRes.id] : { name: awayRes.name || "?", id: null };
         const live = m.status === "live";
         const played = matchScoreOk(m);
         const hs = Number(m.scoreHome), as = Number(m.scoreAway);
@@ -11484,6 +11679,8 @@ boot();
       $("#btnCargarResultados").addEventListener("click",()=>{switchTab("fixture");playClick()});
       $("#btnAlbumTop").addEventListener("click",()=>{switchTab("album");playClick()});
       const moreMenu=document.querySelector(".more-menu");
+      $("#btnConfigure").addEventListener("click",openConfig);
+      if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
       if(moreMenu)moreMenu.addEventListener("toggle",()=>{if(moreMenu.open&&window.gsap)gsap.from(".more-menu .more-item",{y:10,autoAlpha:0,stagger:.05,duration:.32,ease:"power2.out"})});
 
       $("#volumeField").addEventListener("input",e=>$("#volumeValue").textContent=`${e.target.value}%`);
@@ -11504,7 +11701,7 @@ boot();
         state.settings.volume=Number($("#volumeField").value)/100;
         persist();closeConfig();renderAll();playAdvance();showToast("Configuración guardada correctamente");
       });
-      $("#btnConfigure").addEventListener("click",openConfig);
+      if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
       $("#btnCloseModal").addEventListener("click",closeConfig);
       $("#btnCancelModal").addEventListener("click",closeConfig);
       $("#configModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeConfig()});
@@ -12114,13 +12311,13 @@ boot();
       let adminRecordado=false;
       try{ adminRecordado=localStorage.getItem(ADMIN_FLAG)==="1"; }catch(e){}
       applyAdmin(adminRecordado,false);
-      if(btnAdmin)btnAdmin.addEventListener("click",()=>{
+      if(btnAdmin)btnAdmin.addEventListener("click",async ()=>{
         if(document.body.classList.contains("admin-mode")){
           applyAdmin(false);
-          // si estaba cargando resultados, no puede quedarse ahí sin ser admin
+          await supabase.auth.signOut();
           if(TABS_ADMIN.includes(state.ui.activeTab))switchTab("mapa");
-          renderAll();   // los mensajes de estado vacío cambian según quién mira
-          showToast("🔑 Modo administrador desactivado: vista de usuarios");
+          renderAll();
+          showToast("🔑 Sesión cerrada: vista de usuarios");
           playClick();
           return;
         }
@@ -12133,21 +12330,45 @@ boot();
         setTimeout(()=>{if(adminKeyField)adminKeyField.focus()},60);
       });
       const adminModalEl=$("#adminModal");
+      const adminEmailFieldEl=$("#adminEmailField");
       const adminKeyFieldEl=$("#adminKeyField");
       const adminErrEl=$("#adminErr");
       const closeAdminModal=()=>{ if(adminModalEl)adminModalEl.classList.remove("open"); };
-      const tryAdminKey=()=>{
-        const val=adminKeyFieldEl?adminKeyFieldEl.value.trim():"";
-        if(val===ADMIN_KEY){
-          closeAdminModal();
-          applyAdmin(true);
-          renderAll();
-          playWhistle();
-          showToast("Modo administrador activado");
-        } else {
-          if(adminErrEl){adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
+      
+      const tryAdminKey=async ()=>{
+        const email=adminEmailFieldEl?adminEmailFieldEl.value.trim():"";
+        const password=adminKeyFieldEl?adminKeyFieldEl.value.trim():"";
+        
+        if(!email || !password) return;
+
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (authError) {
+          if(adminErrEl){adminErrEl.textContent = "Credenciales incorrectas."; adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
           if(adminKeyFieldEl){adminKeyFieldEl.select();adminKeyFieldEl.focus();}
+          return;
         }
+
+        // Fetch profile to verify role
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, team_id')
+          .eq('user_id', authData.user.id)
+          .single();
+
+        if (profileError || !profileData || profileData.role !== 'admin') {
+          // Si no es admin (ej. es un capitan o no tiene perfil) lo deslogueamos.
+          await supabase.auth.signOut();
+          if(adminErrEl){adminErrEl.textContent = "No tienes permisos de administrador."; adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
+          return;
+        }
+
+        // Login Exitoso como admin
+        closeAdminModal();
+        applyAdmin(true);
+        renderAll();
+        playWhistle();
+        showToast("Modo administrador activado");
       };
       if($("#btnAdminEnter"))$("#btnAdminEnter").addEventListener("click",tryAdminKey);
       if(adminKeyFieldEl)adminKeyFieldEl.addEventListener("keydown",e=>{if(e.key==="Enter")tryAdminKey()});
@@ -12160,6 +12381,21 @@ boot();
       applyTheme();
       renderAll();
       setTimeout(requestConnectors,150);
+
+      // == SUPABASE INIT ==
+      syncFromSupabase().then(() => {
+        // Verificar si ya hay una sesión activa de Admin
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            supabase.from('profiles').select('role').eq('user_id', session.user.id).single().then(({data}) => {
+              if (data && data.role === 'admin') {
+                applyAdmin(true, false);
+                renderAll();
+              }
+            });
+          }
+        });
+      });
 
       /* ====================================================================
          CAPA "AFICHE OFICIAL" · comportamiento
