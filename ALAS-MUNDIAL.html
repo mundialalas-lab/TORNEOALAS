@@ -13547,67 +13547,49 @@ document.addEventListener("DOMContentLoaded", () => {
       video.addEventListener("canplay", playVideo);
       video.addEventListener("error", (e) => { console.warn("Video playback error", e); });
 
-      /* ================= AUDIO DE LA INTRO =================================
-         Regla del navegador: un video puede autoreproducirse SÓLO si está en
-         mudo. Apenas se lo desmutea sin que el usuario haya interactuado,
-         Chrome NO tira error: deja el video andando un instante y después lo
-         PAUSA. Ese es el detalle que rompía la intro.
-
-         Qué estaba mal:
-         · Un setInterval desmuteaba cada 250 ms sin que nadie hubiera tocado
-           nada. Chrome respondía pausando, y como la promesa no se rechazaba,
-           nada lo volvía a mudo: el video quedaba congelado en el primer cuadro
-           y sin sonido. (Medido: paused=true, muted=false.)
-         · La lista de gestos incluía mousemove, mouseover, wheel y focus, que
-           NO cuentan como activación del usuario para el navegador. Mover el
-           mouse disparaba el desmuteo y provocaba exactamente ese pausado.
-
-         Cómo queda: el video se mantiene MUDO y andando pase lo que pase, y el
-         sonido se intenta sólo con gestos que de verdad habilitan audio. Si el
-         intento falla (se pausa), vuelve a mudo y sigue reproduciendo: nunca se
-         queda congelado.
+      /* ================= AUDIO DE LA INTRO (OPTIMIZADO PARA ANDROID E IPHONE) =================================
+         En Android y navegadores móviles modernos, el audio sólo puede activarse
+         dentro de un gesto explícito de usuario ('click' o 'touchend').
+         Aseguramos que el video se desmutee y continúe reproduciendo tanto al tocar
+         la pantalla como al presionar 'Ingresar ahora'.
          ===================================================================== */
       const marcarMudo = () => { if (el) el.classList.toggle("is-muted", video.muted); };
 
-      const volverAMudo = () => {
-        video.muted = true;
-        marcarMudo();
-        video.play().catch(()=>{});
-      };
-
-      const enableSound = () => {
-        if (!video || dismissed) return;
+      const unlockAudio = () => {
+        if (!video) return;
         video.muted = false;
         video.volume = 1;
         const pr = video.play();
-        if (pr && pr.catch) pr.catch(volverAMudo);
-        // si el navegador lo frena sin rechazar la promesa, se detecta acá
-        setTimeout(() => { if (!dismissed && video.paused) volverAMudo(); else marcarMudo(); }, 250);
+        if (pr && pr.catch) {
+          pr.then(() => {
+            marcarMudo();
+          }).catch(() => {
+            // si el navegador aún bloquea antes del clic de entrada, mantiene video mudo
+            video.muted = true;
+            video.play().catch(()=>{});
+            marcarMudo();
+          });
+        } else {
+          marcarMudo();
+        }
       };
 
-      // sólo eventos que otorgan activación de usuario real
-      const gestos = ["pointerdown","touchstart","keydown","click"];
-      const onGesto = () => {
-        enableSound();
-        gestos.forEach(t => {
-          try { document.removeEventListener(t, onGesto, true); } catch(e){}
-        });
-      };
-      gestos.forEach(t => {
-        try { document.addEventListener(t, onGesto, true); } catch(e){}
+      // Escuchar eventos válidos de interacción en Android e iOS
+      el.addEventListener("click", unlockAudio, { passive: true });
+      el.addEventListener("touchend", unlockAudio, { passive: true });
+      document.addEventListener("keydown", unlockAudio, { once: true, passive: true });
+
+      // Intento inicial con sonido si el entorno lo permite (ej. PWA o flags)
+      unlockAudio();
+
+      video.addEventListener("pause", () => {
+        if (!dismissed && video.paused) {
+          video.play().catch(()=>{
+            video.muted = true;
+            video.play().catch(()=>{});
+          });
+        }
       });
-
-      /* Primer intento CON sonido, sin esperar gesto. Funciona cuando se abre
-         con el .bat (que lanza Chrome con la política de autoplay desactivada)
-         o cuando Chrome ya confía en el sitio. Si el navegador lo frena, los
-         guardas de abajo lo devuelven a mudo y el video sigue andando igual:
-         el intento no cuesta nada y es lo que hace que la intro suene sola. */
-      enableSound();
-
-      // el video nunca debe quedar pausado: si algo lo frena, sigue en mudo
-      video.addEventListener("pause", () => { if (!dismissed && !video.muted) volverAMudo(); });
-      setTimeout(() => { if (!dismissed && video.paused) volverAMudo(); }, 600);
-      setTimeout(marcarMudo, 900);
     }
 
     /* --- entrada: los elementos llegan como una alineación que se presenta --- */
@@ -13622,7 +13604,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       g.timeline({delay:.35})
         .to(logo,  {y:0, autoAlpha:1, duration:.7, ease:"power3.out"})
-        // el kicker "abre" cerrando su tracking: gesto clásico de placa de TV
         .to(kicker,{y:0, autoAlpha:1, letterSpacing:".44em", duration:.9, ease:"power3.out"}, "-=.45")
         .to(lines, {yPercent:0, autoAlpha:1, duration:.75, ease:"power4.out", stagger:.09}, "-=.55")
         .to(rule,  {scaleX:1, duration:.85, ease:"power2.inOut"}, "-=.35")
@@ -13648,47 +13629,49 @@ document.addEventListener("DOMContentLoaded", () => {
         revealApp();
       }
     }
-    /* La música de la intro tiene que SOBREVIVIR a la portada.
-       Antes `el.remove()` se llevaba puesto el <video>, y como en el camino sin
-       la política de autoplay el sonido se activa justamente con el clic en
-       "Ingresar", la música se desmuteaba y se destruía medio segundo después:
-       no se escuchaba nunca. Ahora el video se saca de la portada, sigue
-       sonando dentro de la app y se apaga con un fundido, como el cierre de una
-       cortina de TV. */
+
+    /* La música de la intro SOBREVIVE a la portada y transiciona a la app con fadeout */
     function carryAudio(){
-      if (!video || video.muted || video.paused) return;
-      // suena sólo si el usuario no tiene el sonido apagado en la app
+      if (!video) return;
       try {
         const st = JSON.parse(localStorage.getItem("alas-torneo-v3") || "null");
         if (st && st.settings && st.settings.sound === false) return;
       } catch(e){}
+
+      // Forzar desmuteo y play durante el clic del usuario (clave para Android)
+      video.muted = false;
+      video.volume = 1;
+      const playPromise = video.play();
+      if (playPromise && playPromise.catch) playPromise.catch(()=>{});
+
       video.classList.remove("splash-video");
       video.setAttribute("aria-hidden","true");
       video.style.cssText =
         "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1";
       document.body.appendChild(video);
 
-      const DUR = 7000, t0 = performance.now(), v0 = video.volume || 1;
+      const DUR = 7500, t0 = performance.now(), v0 = 1;
       (function fade(){
         const p = Math.min(1, (performance.now() - t0) / DUR);
-        // curva suave: se mantiene arriba y recién sobre el final cae
         video.volume = Math.max(0, v0 * (1 - p * p));
         if (p < 1) requestAnimationFrame(fade);
         else { try { video.pause(); } catch(e){} video.remove(); }
       })();
     }
+
     function revealApp(){
       carryAudio();
       el.remove();
       window.dispatchEvent(new Event("splashDone"));
-      /* Al salir de la intro se pide el perfil, salvo que este dispositivo ya
-         tenga una sesión guardada (hincha/capitán elegido antes, o modo
-         administrador activo). Se avisa por evento para no acoplar el splash
-         con el script de la app, que vive en otro bloque. */
       window.dispatchEvent(new Event("pedirPerfil"));
     }
 
     if (enter) enter.addEventListener("click", () => {
+      if (video) {
+        video.muted = false;
+        video.volume = 1;
+        try { video.play(); } catch(e){}
+      }
       try { if (window.playClick) window.playClick(); } catch(e){}
       finish();
     });
