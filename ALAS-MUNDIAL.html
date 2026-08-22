@@ -9204,7 +9204,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          desincronizan.
          ====================================================================== */
       function legendList(){
-        return Object.values(state.legends||{}).sort((a,b)=>(b.ovr||0)-(a.ovr||0)||a.name.localeCompare(b.name));
+        return Object.values(state.legends||{}).filter(l=>!l.name?.startsWith("__SYSTEM_")&&l.legacy_id!=="sys-users").sort((a,b)=>(b.ovr||0)-(a.ovr||0)||a.name.localeCompare(b.name));
       }
 
       function buildCards(){
@@ -9697,19 +9697,23 @@ if(announce){
           m.scoreAway = null;
           m.scoreHome2 = null;
           m.scoreAway2 = null;
-          m.penaltiesHome = null;
-          m.penaltiesAway = null;
-          m.mvp = null;
+          m.tieBreakWinner = null;
+          m.mvpPlayerId = null;
           m.status = "scheduled";
           m.events = [];
-          if(m.phase === "knockout" || m.phase === "repechaje" || m.phase === "semifinal" || m.phase === "final"){
-            if(m.homeSlot && m.homeSlot.type !== "team") m.homeSlot.teamId = null;
-            if(m.awaySlot && m.awaySlot.type !== "team") m.awaySlot.teamId = null;
-          }
+          if(m.homeSlot && m.homeSlot.type !== "team") m.homeSlot.teamId = null;
+          if(m.awaySlot && m.awaySlot.type !== "team") m.awaySlot.teamId = null;
         });
+        
+        previousChampion = null;
+        lastPlayedCount = 0;
         
         persist();
         renderAll();
+
+        // Limpiar inputs manuales en pantalla si están abiertos
+        document.querySelectorAll(".group-score-manual").forEach(inp => { inp.value = ""; });
+        document.querySelectorAll(".tie-penal-quick").forEach(sel => { sel.value = ""; });
 
         if (window.supabase && state.tournament.uuid) {
           try {
@@ -9723,10 +9727,9 @@ if(announce){
                 score_away: null,
                 score_home_leg2: null,
                 score_away_leg2: null,
-                penalties_home: null,
-                penalties_away: null,
-                status: 'scheduled',
-                mvp_player_id: null
+                tie_break_winner: null,
+                mvp_player_id: null,
+                status: 'scheduled'
               }).eq('tournament_id', tid);
             }
           } catch(err) {
@@ -9734,7 +9737,7 @@ if(announce){
           }
         }
         
-        showToast("🏆 Todos los puntos y resultados fueron reseteados en la base de datos.");
+        showToast("🏆 Torneo reseteado: todos los puntos y resultados quedaron en cero.");
         if (typeof playAdvance === 'function') playAdvance();
       };
 
@@ -10431,6 +10434,24 @@ if(announce){
         }
         renderAlbumTab();
       }
+      
+      async function syncUsersToSupabase() {
+        if (!window.supabase || !state.tournament.uuid) return;
+        try {
+          const tid = state.tournament.uuid;
+          const payload = {
+            tournament_id: tid,
+            name: '__SYSTEM_USERS__',
+            team: JSON.stringify(state.users || {}),
+            country: 'SYS',
+            legacy_id: 'sys-users'
+          };
+          await supabase.from('legends').upsert(payload, { onConflict: 'tournament_id, legacy_id' });
+        } catch(e) {
+          console.error("Error saving users to Supabase:", e);
+        }
+      }
+
       function createUser(nombre,extra){
         const name=String(nombre||"").trim().slice(0,40);
         if(!name)return null;
@@ -10468,7 +10489,7 @@ if(announce){
         delete state.users[id];
         if(state.albums)delete state.albums[id];
         if(currentUserId===id)setCurrentUser(null);
-        persist();renderAlbumTab();showToast("Usuario eliminado");
+        persist();syncUsersToSupabase();renderAlbumTab();showToast("Usuario eliminado");
       }
       /* Progreso de un usuario, para el panel del admin. */
       function albumProgress(uid){
@@ -12984,7 +13005,7 @@ boot();
             if(!c)return;
             if(!confirm(`¿Eliminar al capitán ${c.name}?`))return;
             delete state.users[b.dataset.delCap];
-            persist();renderCapitanes();showToast("Capitán eliminado");
+            persist();syncUsersToSupabase();renderCapitanes();showToast("Capitán eliminado");
           };
         });
       }
