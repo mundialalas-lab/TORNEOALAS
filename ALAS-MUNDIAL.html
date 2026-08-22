@@ -1554,6 +1554,131 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   color: #fff;
 }
 
+/* ==========================================================================
+   MONITOR PRO DE USUARIOS (MINIMALISTA)
+   ========================================================================== */
+.btn-usuarios-pro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.4);
+  color: #4ade80;
+  font-family: 'Saira Condensed', var(--font-ui), sans-serif;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-usuarios-pro:hover {
+  background: rgba(34,197,94,0.22);
+  border-color: #4ade80;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.btn-usuarios-pro:active {
+  transform: scale(0.97);
+}
+.live-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+  animation: livePulseAnim 1.8s infinite;
+}
+@keyframes livePulseAnim {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.u-min-pill {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.u-min-pill.active {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+.u-clean-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
+  transition: background 0.15s ease;
+}
+.u-clean-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.u-clean-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.u-clean-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.u-clean-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+.u-clean-dot.red {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+.u-clean-name {
+  font-family: 'Saira Condensed', var(--font-ui), sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.u-clean-role {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.u-clean-right {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+}
+.u-clean-right.green { color: #4ade80; }
+.u-clean-right.red { color: #64748b; }
+
 .pf-lista{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:12px}
 .pf-sep{
   display:flex;align-items:center;gap:10px;
@@ -7496,49 +7621,34 @@ body{background:transparent !important}
   </div>
 
   
-  <!-- Modal: Monitor de Usuarios Activos e Inactivos -->
+  <!-- Modal: Monitor de Usuarios (Minimalista PRO) -->
   <div class="modal-backdrop" id="usersMonitorModal" role="dialog" aria-modal="true" aria-labelledby="usersMonitorModalTitle">
-    <div class="modal users-monitor-modal" style="max-width: 620px; max-height: 90dvh; display: flex; flex-direction: column;">
-      <header class="modal-head" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px;">
+    <div class="modal" style="max-width: 460px; max-height: 85dvh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; background: #0c1424; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+      
+      <header class="modal-head" style="padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
         <div>
-          <h2 id="usersMonitorModalTitle" style="display:flex; align-items:center; gap:8px;">
-            <span>👥</span> Monitor de Usuarios
+          <h2 id="usersMonitorModalTitle" style="font-family:'Saira Condensed',sans-serif; font-size: 19px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #fff; margin: 0;">
+            Usuarios del Sistema
           </h2>
-          <p style="margin-top:2px;">Conexiones en vivo y estado del álbum en el torneo.</p>
+          <p style="margin: 2px 0 0; font-size: 12px; color: #94a3b8;">
+            Total: <b id="uKpiTotal" style="color:#fff;">0</b> · <span style="color:#4ade80;">🟢 <span id="uKpiOnline">0</span> activos</span> · <span style="color:#f87171;">🔴 <span id="uKpiOffline">0</span> inactivos</span>
+          </p>
         </div>
-        <button class="close-btn" id="btnCloseUsersMonitor" type="button" aria-label="Cerrar">×</button>
+        <button class="close-btn" id="btnCloseUsersMonitor" type="button" aria-label="Cerrar" style="width: 32px; height: 32px; font-size: 20px;">×</button>
       </header>
 
-      <div class="users-kpi-bar" id="usersKpiBar">
-        <div class="u-kpi-card total">
-          <span class="u-kpi-val" id="uKpiTotal">0</span>
-          <span class="u-kpi-lbl">Total Registrados</span>
-        </div>
-        <div class="u-kpi-card online">
-          <span class="u-kpi-val" id="uKpiOnline">0</span>
-          <span class="u-kpi-lbl"><i class="dot green"></i> Activos Ahora</span>
-        </div>
-        <div class="u-kpi-card offline">
-          <span class="u-kpi-val" id="uKpiOffline">0</span>
-          <span class="u-kpi-lbl"><i class="dot red"></i> Desconectados</span>
-        </div>
+      <div style="padding: 10px 14px; display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
+        <button class="u-min-pill active" type="button" data-filter="all">Todos (<span id="countPillAll">0</span>)</button>
+        <button class="u-min-pill" type="button" data-filter="online">🟢 Activos (<span id="countPillOnline">0</span>)</button>
+        <button class="u-min-pill" type="button" data-filter="offline">🔴 Inactivos (<span id="countPillOffline">0</span>)</button>
       </div>
 
-      <div class="users-filter-wrap">
-        <input type="text" id="usersSearchInput" class="users-search-input" placeholder="🔍 Buscar por nombre o equipo..." autocomplete="off">
-        <div class="users-filter-pills" id="usersFilterPills">
-          <button class="u-pill active" type="button" data-filter="all">Todos (<span id="countPillAll">0</span>)</button>
-          <button class="u-pill" type="button" data-filter="online">🟢 Activos (<span id="countPillOnline">0</span>)</button>
-          <button class="u-pill" type="button" data-filter="offline">🔴 Inactivos (<span id="countPillOffline">0</span>)</button>
-        </div>
-      </div>
-
-      <div class="modal-body users-list-body" id="usersModalList">
+      <div class="modal-body" id="usersModalList" style="padding: 12px 14px; overflow-y: auto; max-height: 52vh; display: flex; flex-direction: column; gap: 6px;">
         <!-- Contenido generado por JS -->
       </div>
 
-      <footer class="modal-actions" style="border-top: 1px solid rgba(255,255,255,0.08); padding: 12px 16px;">
-        <button class="btn secondary" id="btnCancelUsersMonitor" type="button" style="width: 100%;">Cerrar</button>
+      <footer class="modal-actions" style="padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+        <button class="btn secondary" id="btnCancelUsersMonitor" type="button" style="width: 100%; height: 40px; border-radius: 10px; font-weight: 700;">Cerrar</button>
       </footer>
     </div>
   </div>
@@ -10075,16 +10185,12 @@ if(announce){
       }
 
       
-      // ===== MODAL MONITOR DE USUARIOS =====
+      // ===== MODAL MONITOR DE USUARIOS (MINIMALISTA) =====
       let currentUsersFilter = "all";
-      let currentUsersSearch = "";
 
       function openUsersMonitorModal() {
         currentUsersFilter = "all";
-        currentUsersSearch = "";
-        const input = $("#usersSearchInput");
-        if(input) input.value = "";
-        const pills = document.querySelectorAll("#usersFilterPills .u-pill");
+        const pills = document.querySelectorAll(".u-min-pill");
         pills.forEach(p => p.classList.toggle("active", p.dataset.filter === "all"));
         renderUsersMonitorModal();
         $("#usersMonitorModal").classList.add("open");
@@ -10100,7 +10206,7 @@ if(announce){
       function renderUsersMonitorModal() {
         const allUsers = usersList();
         const now = Date.now();
-        const onlineThreshold = 10 * 60 * 1000; // 10 minutos
+        const onlineThreshold = 10 * 60 * 1000;
         
         const onlineCount = allUsers.filter(u => u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold).length;
         const offlineCount = allUsers.length - onlineCount;
@@ -10120,14 +10226,6 @@ if(announce){
           const isOnline = u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold;
           if(currentUsersFilter === "online" && !isOnline) return false;
           if(currentUsersFilter === "offline" && isOnline) return false;
-          if(currentUsersSearch) {
-            const q = currentUsersSearch.toLowerCase();
-            const t = u.teamId && state.teams[u.teamId];
-            const matchName = String(u.name||"").toLowerCase().includes(q);
-            const matchTeam = String(t?.name||"").toLowerCase().includes(q);
-            const matchRole = String(u.role||"").toLowerCase().includes(q);
-            if(!matchName && !matchTeam && !matchRole) return false;
-          }
           return true;
         });
         
@@ -10143,20 +10241,16 @@ if(announce){
         if(!listCont) return;
         
         if(!filtered.length) {
-          listCont.innerHTML = `<div class="empty-state" style="padding: 28px 12px; text-align:center;">No se encontraron usuarios para este filtro.</div>`;
+          listCont.innerHTML = `<div class="empty-state" style="padding: 24px 12px; text-align:center; font-size:13px; color:#94a3b8;">No hay usuarios en este estado.</div>`;
           return;
         }
         
         listCont.innerHTML = filtered.map(u => {
           const isOnline = u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold;
-          const album = (state.albums && state.albums[u.id]) || (state.users[u.id]?.album) || { collection: {}, packs: 0 };
-          const collCount = Object.keys(album.collection || {}).length;
-          const totalCards = 32;
-          const pct = Math.min(100, Math.round((collCount / totalCards) * 100));
-
+          
           let timeText = "Desconectado";
           if (isOnline) {
-            timeText = "🟢 En línea";
+            timeText = "En línea";
           } else if (u.lastSeen) {
             const diffMins = Math.round((now - new Date(u.lastSeen).getTime()) / (60 * 1000));
             if (diffMins < 60) timeText = `Hace ${diffMins} min`;
@@ -10164,28 +10258,19 @@ if(announce){
             else timeText = `Hace ${Math.round(diffMins / 1440)}d`;
           }
 
-          const roleClass = u.role === ROL.ADMIN ? "admin" : u.role === ROL.CAPITAN ? "capitan" : "hincha";
-          const roleName = u.role === ROL.ADMIN ? "Admin" : u.role === ROL.CAPITAN ? "Capitán" : "Hincha";
+          const roleName = u.role === ROL.ADMIN ? "Admin" : (u.role === ROL.CAPITAN ? "Capitán" : "Hincha");
           const team = u.teamId && state.teams[u.teamId];
+          const teamStr = team ? ` (${esc(team.name)})` : "";
 
           return `
-            <div class="u-row-card ${isOnline ? 'online' : 'offline'}">
-              <div class="u-row-left">
-                <div class="u-row-avatar ${isOnline ? 'online' : 'offline'}">
-                  ${esc(initials(u.name))}
-                  <span class="u-status-indicator ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Activo' : 'Inactivo'}"></span>
-                </div>
-                <div class="u-row-info">
-                  <div class="u-row-name">${esc(u.name)}</div>
-                  <div class="u-row-meta">
-                    <span class="u-role-tag ${roleClass}">${roleName}</span>
-                    ${team ? `<span>· ${esc(team.name)}</span>` : ''}
-                  </div>
-                </div>
+            <div class="u-clean-row">
+              <div class="u-clean-left">
+                <span class="u-clean-dot ${isOnline ? 'green' : 'red'}"></span>
+                <span class="u-clean-name">${esc(u.name)}</span>
+                <span class="u-clean-role">· ${roleName}${teamStr}</span>
               </div>
-              <div class="u-row-right">
-                <span class="u-status-text ${isOnline ? 'online' : 'offline'}">${timeText}</span>
-                <span class="u-album-text">Álbum: ${collCount}/${totalCards} (${pct}%)</span>
+              <div class="u-clean-right ${isOnline ? 'green' : 'red'}">
+                ${timeText}
               </div>
             </div>
           `;
@@ -10197,15 +10282,10 @@ if(announce){
       $("#btnCloseUsersMonitor")?.addEventListener("click", closeUsersMonitorModal);
       $("#btnCancelUsersMonitor")?.addEventListener("click", closeUsersMonitorModal);
       $("#usersMonitorModal")?.addEventListener("click", e => { if (e.target === e.currentTarget) closeUsersMonitorModal(); });
-      
-      $("#usersSearchInput")?.addEventListener("input", e => {
-        currentUsersSearch = e.target.value.trim();
-        renderUsersMonitorModal();
-      });
 
-      document.querySelectorAll("#usersFilterPills .u-pill").forEach(p => {
+      document.querySelectorAll(".u-min-pill").forEach(p => {
         p.addEventListener("click", () => {
-          document.querySelectorAll("#usersFilterPills .u-pill").forEach(x => x.classList.remove("active"));
+          document.querySelectorAll(".u-min-pill").forEach(x => x.classList.remove("active"));
           p.classList.add("active");
           currentUsersFilter = p.dataset.filter;
           renderUsersMonitorModal();
