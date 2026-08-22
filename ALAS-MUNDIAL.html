@@ -7156,9 +7156,10 @@ body{background:transparent !important}
         <div class="panel-head" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
           <div><h2>Configuración del torneo</h2><p>Personalizá la competencia, equipos, colores y experiencia sonora.</p></div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="btn secondary" id="btnVerUsuariosActivos" style="font-size:11px; padding:6px 12px; border-radius:10px; display:inline-flex; align-items:center; gap:6px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#4ade80; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; cursor:pointer;">
-              <span class="live-dot" style="background:#22c55e; box-shadow:0 0 8px #22c55e;"></span>
-              USUARIOS ACTIVOS (<span id="activeUsersBadge">0</span>)
+            <button type="button" class="btn-usuarios-pro" id="btnVerUsuariosActivos" title="Ver lista completa de usuarios">
+              <span class="live-pulse-dot"></span>
+              <span>USUARIOS ACTIVOS ( <strong id="activeUsersBadge">0</strong> )</span>
+              <span style="font-size:14px; opacity:0.8;">↗</span>
             </button>
             <span class="admin-tag">Sólo administrador</span>
           </div>
@@ -7490,6 +7491,54 @@ body{background:transparent !important}
       <footer class="modal-actions">
         <button class="btn secondary" id="btnCancelResetModal" type="button">Cancelar</button>
         <button class="btn danger" id="btnConfirmReset" type="button">Sí, reiniciar todo</button>
+      </footer>
+    </div>
+  </div>
+
+  
+  <!-- Modal: Monitor de Usuarios Activos e Inactivos -->
+  <div class="modal-backdrop" id="usersMonitorModal" role="dialog" aria-modal="true" aria-labelledby="usersMonitorModalTitle">
+    <div class="modal users-monitor-modal" style="max-width: 620px; max-height: 90dvh; display: flex; flex-direction: column;">
+      <header class="modal-head" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px;">
+        <div>
+          <h2 id="usersMonitorModalTitle" style="display:flex; align-items:center; gap:8px;">
+            <span>👥</span> Monitor de Usuarios
+          </h2>
+          <p style="margin-top:2px;">Conexiones en vivo y estado del álbum en el torneo.</p>
+        </div>
+        <button class="close-btn" id="btnCloseUsersMonitor" type="button" aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="users-kpi-bar" id="usersKpiBar">
+        <div class="u-kpi-card total">
+          <span class="u-kpi-val" id="uKpiTotal">0</span>
+          <span class="u-kpi-lbl">Total Registrados</span>
+        </div>
+        <div class="u-kpi-card online">
+          <span class="u-kpi-val" id="uKpiOnline">0</span>
+          <span class="u-kpi-lbl"><i class="dot green"></i> Activos Ahora</span>
+        </div>
+        <div class="u-kpi-card offline">
+          <span class="u-kpi-val" id="uKpiOffline">0</span>
+          <span class="u-kpi-lbl"><i class="dot red"></i> Desconectados</span>
+        </div>
+      </div>
+
+      <div class="users-filter-wrap">
+        <input type="text" id="usersSearchInput" class="users-search-input" placeholder="🔍 Buscar por nombre o equipo..." autocomplete="off">
+        <div class="users-filter-pills" id="usersFilterPills">
+          <button class="u-pill active" type="button" data-filter="all">Todos (<span id="countPillAll">0</span>)</button>
+          <button class="u-pill" type="button" data-filter="online">🟢 Activos (<span id="countPillOnline">0</span>)</button>
+          <button class="u-pill" type="button" data-filter="offline">🔴 Inactivos (<span id="countPillOffline">0</span>)</button>
+        </div>
+      </div>
+
+      <div class="modal-body users-list-body" id="usersModalList">
+        <!-- Contenido generado por JS -->
+      </div>
+
+      <footer class="modal-actions" style="border-top: 1px solid rgba(255,255,255,0.08); padding: 12px 16px;">
+        <button class="btn secondary" id="btnCancelUsersMonitor" type="button" style="width: 100%;">Cerrar</button>
       </footer>
     </div>
   </div>
@@ -10025,6 +10074,144 @@ if(announce){
         renderUsersPanel();
       }
 
+      
+      // ===== MODAL MONITOR DE USUARIOS =====
+      let currentUsersFilter = "all";
+      let currentUsersSearch = "";
+
+      function openUsersMonitorModal() {
+        currentUsersFilter = "all";
+        currentUsersSearch = "";
+        const input = $("#usersSearchInput");
+        if(input) input.value = "";
+        const pills = document.querySelectorAll("#usersFilterPills .u-pill");
+        pills.forEach(p => p.classList.toggle("active", p.dataset.filter === "all"));
+        renderUsersMonitorModal();
+        $("#usersMonitorModal").classList.add("open");
+        document.body.style.overflow = "hidden";
+        playClick();
+      }
+
+      function closeUsersMonitorModal() {
+        $("#usersMonitorModal").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      function renderUsersMonitorModal() {
+        const allUsers = usersList();
+        const now = Date.now();
+        const onlineThreshold = 10 * 60 * 1000; // 10 minutos
+        
+        const onlineCount = allUsers.filter(u => u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold).length;
+        const offlineCount = allUsers.length - onlineCount;
+        
+        const badge = $("#activeUsersBadge");
+        if(badge) badge.textContent = onlineCount;
+        
+        const kpiTot = $("#uKpiTotal"); if(kpiTot) kpiTot.textContent = allUsers.length;
+        const kpiOn = $("#uKpiOnline"); if(kpiOn) kpiOn.textContent = onlineCount;
+        const kpiOff = $("#uKpiOffline"); if(kpiOff) kpiOff.textContent = offlineCount;
+        
+        const pAll = $("#countPillAll"); if(pAll) pAll.textContent = allUsers.length;
+        const pOn = $("#countPillOnline"); if(pOn) pOn.textContent = onlineCount;
+        const pOff = $("#countPillOffline"); if(pOff) pOff.textContent = offlineCount;
+        
+        let filtered = allUsers.filter(u => {
+          const isOnline = u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold;
+          if(currentUsersFilter === "online" && !isOnline) return false;
+          if(currentUsersFilter === "offline" && isOnline) return false;
+          if(currentUsersSearch) {
+            const q = currentUsersSearch.toLowerCase();
+            const t = u.teamId && state.teams[u.teamId];
+            const matchName = String(u.name||"").toLowerCase().includes(q);
+            const matchTeam = String(t?.name||"").toLowerCase().includes(q);
+            const matchRole = String(u.role||"").toLowerCase().includes(q);
+            if(!matchName && !matchTeam && !matchRole) return false;
+          }
+          return true;
+        });
+        
+        filtered.sort((a, b) => {
+          const aOn = a.lastSeen && (now - new Date(a.lastSeen).getTime()) < onlineThreshold;
+          const bOn = b.lastSeen && (now - new Date(b.lastSeen).getTime()) < onlineThreshold;
+          if(aOn && !bOn) return -1;
+          if(!aOn && bOn) return 1;
+          return (b.lastSeen||"").localeCompare(a.lastSeen||"") || a.name.localeCompare(b.name);
+        });
+        
+        const listCont = $("#usersModalList");
+        if(!listCont) return;
+        
+        if(!filtered.length) {
+          listCont.innerHTML = `<div class="empty-state" style="padding: 28px 12px; text-align:center;">No se encontraron usuarios para este filtro.</div>`;
+          return;
+        }
+        
+        listCont.innerHTML = filtered.map(u => {
+          const isOnline = u.lastSeen && (now - new Date(u.lastSeen).getTime()) < onlineThreshold;
+          const album = (state.albums && state.albums[u.id]) || (state.users[u.id]?.album) || { collection: {}, packs: 0 };
+          const collCount = Object.keys(album.collection || {}).length;
+          const totalCards = 32;
+          const pct = Math.min(100, Math.round((collCount / totalCards) * 100));
+
+          let timeText = "Desconectado";
+          if (isOnline) {
+            timeText = "🟢 En línea";
+          } else if (u.lastSeen) {
+            const diffMins = Math.round((now - new Date(u.lastSeen).getTime()) / (60 * 1000));
+            if (diffMins < 60) timeText = `Hace ${diffMins} min`;
+            else if (diffMins < 1440) timeText = `Hace ${Math.round(diffMins / 60)}h`;
+            else timeText = `Hace ${Math.round(diffMins / 1440)}d`;
+          }
+
+          const roleClass = u.role === ROL.ADMIN ? "admin" : u.role === ROL.CAPITAN ? "capitan" : "hincha";
+          const roleName = u.role === ROL.ADMIN ? "Admin" : u.role === ROL.CAPITAN ? "Capitán" : "Hincha";
+          const team = u.teamId && state.teams[u.teamId];
+
+          return `
+            <div class="u-row-card ${isOnline ? 'online' : 'offline'}">
+              <div class="u-row-left">
+                <div class="u-row-avatar ${isOnline ? 'online' : 'offline'}">
+                  ${esc(initials(u.name))}
+                  <span class="u-status-indicator ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Activo' : 'Inactivo'}"></span>
+                </div>
+                <div class="u-row-info">
+                  <div class="u-row-name">${esc(u.name)}</div>
+                  <div class="u-row-meta">
+                    <span class="u-role-tag ${roleClass}">${roleName}</span>
+                    ${team ? `<span>· ${esc(team.name)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="u-row-right">
+                <span class="u-status-text ${isOnline ? 'online' : 'offline'}">${timeText}</span>
+                <span class="u-album-text">Álbum: ${collCount}/${totalCards} (${pct}%)</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // Event Listeners para Monitor de Usuarios
+      $("#btnVerUsuariosActivos")?.addEventListener("click", openUsersMonitorModal);
+      $("#btnCloseUsersMonitor")?.addEventListener("click", closeUsersMonitorModal);
+      $("#btnCancelUsersMonitor")?.addEventListener("click", closeUsersMonitorModal);
+      $("#usersMonitorModal")?.addEventListener("click", e => { if (e.target === e.currentTarget) closeUsersMonitorModal(); });
+      
+      $("#usersSearchInput")?.addEventListener("input", e => {
+        currentUsersSearch = e.target.value.trim();
+        renderUsersMonitorModal();
+      });
+
+      document.querySelectorAll("#usersFilterPills .u-pill").forEach(p => {
+        p.addEventListener("click", () => {
+          document.querySelectorAll("#usersFilterPills .u-pill").forEach(x => x.classList.remove("active"));
+          p.classList.add("active");
+          currentUsersFilter = p.dataset.filter;
+          renderUsersMonitorModal();
+        });
+      });
+
       function renderUsersPanel() {
         const grid = $("#usersActiveGrid");
         const summary = $("#onlineUsersSummary");
@@ -11415,6 +11602,7 @@ body:has(#teamModal.open) #tabBar,
 body:has(#playerModal.open) #tabBar,
 body:has(#teamPhotoModal.open) #tabBar,
 body:has(#viewResultsModal.open) #tabBar,
+body:has(#usersMonitorModal.open) #tabBar,
 body:has(#matchDataModal.open) #tabBar,
 body:has(#resetModal.open) #tabBar,
 body:has(#pantallaPerfiles:not([hidden])) #tabBar,
