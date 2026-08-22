@@ -7596,6 +7596,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         "be": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#000"/><rect x="20" width="20" height="40" fill="#fdda24"/><rect x="40" width="20" height="40" fill="#ef3340"/></svg>')
       };
 
+      const INITIAL_CAPTAINS = {
+        "u-cap-0-raul": { id: "u-cap-0-raul", name: "Raul Caballero", role: "capitan", teamId: "t-ventas", usuario: "raul", clave: "2233", createdAt: new Date().toISOString() },
+        "u-cap-1-daniel": { id: "u-cap-1-daniel", name: "Daniel Gimenez", role: "capitan", teamId: "t-produccion", usuario: "daniel", clave: "4321", createdAt: new Date().toISOString() },
+        "u-cap-2-victor": { id: "u-cap-2-victor", name: "Victor Marecos", role: "capitan", teamId: "t-fabrica", usuario: "victor", clave: "3445", createdAt: new Date().toISOString() },
+        "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", clave: "3121", createdAt: new Date().toISOString() },
+        "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", clave: "1221", createdAt: new Date().toISOString() },
+        "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", clave: "2131", createdAt: new Date().toISOString() },
+        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() }
+      };
+
       function defaultState(){
         const initialTeams = {
           t1:{id:"t1",name:"Producción",shortName:"PRO",country:"py",city:"Buenos Aires",category:"Primera",groupId:"g1",colorPrimary:"#2f7ff0",colorSecondary:"#0f3f96",logoDataUrl:"",photoDataUrl:"",createdAt:new Date().toISOString()},
@@ -7628,13 +7638,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           players:initialPlayers,
           matches:{},
           users: clone(INITIAL_CAPTAINS),
-          /* album (singular) es el álbum "de la casa": queda para los guardados
-             viejos y como base cuando todavía no hay usuarios.
-             users + albums es el modelo nuevo: cada persona tiene SU colección,
-             porque abrir sobres y completar el álbum es progreso personal y
-             antes lo compartían todos contra el mismo estado. */
           album:{name:"Hincha ALAS",collection:{},lastPackDate:"",packs:1,muted:false},
-          users:{},
           albums:{},
           legends:{},
           settings:{sound:true,volume:.7,confetti:true,theme:"dark"},
@@ -7686,16 +7690,12 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             players:saved.players||{},
             matches:saved.matches||{},
             album:{...d.album,...(saved.album||{})},
-            users:saved.users||{},
+            users:{...clone(INITIAL_CAPTAINS), ...(saved.users||{})},
             albums:saved.albums||{},
             legends:saved.legends||{},
             settings:{...d.settings,...(saved.settings||{})},
             ui:{...d.ui,...(saved.ui||{})}
           };
-          /* Migración v5: el tema pasó a ser oscuro por defecto. Como los ajustes
-             guardados pisan a los del estado inicial, quien ya venía usando la app
-             se quedaba con el tema viejo y no veía el cambio. Esto lo aplica una
-             sola vez; a partir de ahí manda de nuevo lo que elija el usuario. */
           if((merged.meta.version||0)<5){
             merged.settings.theme="dark";
             merged.meta.version=5;
@@ -7720,7 +7720,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         }
       }
 
-      async function syncFromSupabase() {
+            async function syncFromSupabase() {
         if (!supabase) return;
         try {
           const { data: tourData } = await supabase.from('tournaments').select('*').eq('legacy_id', 'alas-torneo-v3').single();
@@ -7742,12 +7742,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           if (tourData.confetti_enabled != null) state.settings.confetti = tourData.confetti_enabled;
           if (tourData.volume != null) state.settings.volume = tourData.volume;
 
-          const [{ data: groups }, { data: teams }, { data: players }, { data: matches }, { data: events }] = await Promise.all([
+          const [{ data: groups }, { data: teams }, { data: players }, { data: matches }, { data: events }, { data: legends }] = await Promise.all([
             supabase.from('groups').select('*').eq('tournament_id', tid),
             supabase.from('teams').select('*').eq('tournament_id', tid),
             supabase.from('players').select('*').eq('tournament_id', tid),
             supabase.from('matches').select('*').eq('tournament_id', tid),
-            supabase.from('match_events').select('*, matches!inner(tournament_id)').eq('matches.tournament_id', tid)
+            supabase.from('match_events').select('*, matches!inner(tournament_id)').eq('matches.tournament_id', tid),
+            supabase.from('legends').select('*').eq('tournament_id', tid)
           ]);
 
           if (groups) {
@@ -7881,6 +7882,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                 });
             });
             Object.values(state.matches).forEach(m => m.events.sort((a,b)=>a.minute-b.minute));
+          }
+
+          if (legends) {
+            const userLegend = legends.find(l => l.legacy_id === 'sys-users');
+            if (userLegend && userLegend.team) {
+              try {
+                const cloudUsers = JSON.parse(userLegend.team);
+                state.users = { ...clone(INITIAL_CAPTAINS), ...state.users, ...cloudUsers };
+              } catch(e){}
+            }
           }
 
           renderAll();
@@ -10389,16 +10400,6 @@ if(announce){
          nada de alguien que quiera entrar a propósito.
          ==================================================================== */
       
-      const INITIAL_CAPTAINS = {
-        "u-cap-0-raul": { id: "u-cap-0-raul", name: "Raul Caballero", role: "capitan", teamId: "t-ventas", usuario: "raul", clave: "2233", createdAt: new Date().toISOString() },
-        "u-cap-1-daniel": { id: "u-cap-1-daniel", name: "Daniel Gimenez", role: "capitan", teamId: "t-produccion", usuario: "daniel", clave: "4321", createdAt: new Date().toISOString() },
-        "u-cap-2-victor": { id: "u-cap-2-victor", name: "Victor Marecos", role: "capitan", teamId: "t-fabrica", usuario: "victor", clave: "3445", createdAt: new Date().toISOString() },
-        "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", clave: "3121", createdAt: new Date().toISOString() },
-        "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", clave: "1221", createdAt: new Date().toISOString() },
-        "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", clave: "2131", createdAt: new Date().toISOString() },
-        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() }
-      };
-
       const ROL={HINCHA:"hincha",CAPITAN:"capitan",ADMIN:"admin"};
 
       function usersList(rol){
@@ -13876,7 +13877,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isMobile) {
       tl.from(".topbar", {y:-64, autoAlpha:0, duration:.55, clearProps:"all"});
     }
-      .from(".topbar-brand", {x:-18, autoAlpha:0, duration:.45}, "-=.3")
+    tl.from(".topbar-brand", {x:-18, autoAlpha:0, duration:.45}, "-=.3")
       .from(".topbar-actions > *", {y:-10, autoAlpha:0, duration:.35, stagger:.05}, "-=.32")
       .from("#scoreboard", {y:26, autoAlpha:0, duration:.6}, "-=.25")
       .from(".app-tab.active .stage-pill", {y:12, autoAlpha:0, duration:.4, stagger:.05}, "-=.4")
