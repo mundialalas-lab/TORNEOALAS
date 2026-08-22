@@ -1402,6 +1402,134 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 }
 .pf-error.show{display:block}
 /* lista de hinchas ya registrados */
+
+/* ==========================================================================
+   SELECCIÓN PRO DE EQUIPO PARA CAPITANES
+   ========================================================================== */
+.pf-cap-select-wrap {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.pf-cap-teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin: 16px auto 18px;
+}
+.pf-cap-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 10px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.22s var(--ease-out), border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.pf-cap-card:hover, .pf-cap-card:focus-visible {
+  transform: translateY(-5px) scale(1.02);
+  border-color: rgba(61, 220, 139, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(61, 220, 139, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+.pf-cap-card:active {
+  transform: scale(0.96);
+}
+.pf-cap-crest {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-family: 'Anton', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,0.2);
+}
+.pf-cap-crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pf-cap-team-name {
+  font-family: 'Saira Condensed', var(--font-ui), sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  line-height: 1.15;
+  text-align: center;
+}
+.pf-cap-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3ddc8b;
+  background: rgba(61, 220, 139, 0.12);
+  border: 1px solid rgba(61, 220, 139, 0.3);
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  max-width: 95%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pf-cap-selected-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  margin-bottom: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.pf-cap-back-team {
+  background: none;
+  border: 0;
+  color: #9aa8bd;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pf-cap-back-team:hover {
+  color: #3ddc8b;
+}
+.pf-manual-link {
+  background: none;
+  border: 0;
+  color: #7d8ba1;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 10px;
+  text-align: center;
+}
+.pf-manual-link:hover {
+  color: #fff;
+}
+
 .pf-lista{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:12px}
 .pf-sep{
   display:flex;align-items:center;gap:10px;
@@ -13072,24 +13200,143 @@ function loop(){
         }
 
         else if(rol===ROL.CAPITAN){
-          const hay=usersList(ROL.CAPITAN).length;
-          cont.innerHTML=`
-            <form class="pf-form" id="pfFormCap">
-              <h3>Entrar como capitán</h3>
-              <p class="ayuda">${hay
-                ? "Ingresá con los datos que te pasó el admin."
-                : "Aún no hay capitanes (los arma el admin)."}</p>
-              <input type="text" id="pfUsuario" maxlength="24" placeholder="Usuario" autocomplete="off" required>
-              <input type="password" id="pfClave" maxlength="32" placeholder="Clave" required>
-              <div class="pf-error" id="pfErr">Usuario o clave incorrectos.</div>
-              <button class="btn" type="submit">Entrar</button>
-            </form>`;
-          $("#pfFormCap").onsubmit=e=>{
-            e.preventDefault();
-            const u=loginCapitan($("#pfUsuario").value,$("#pfClave").value);
-            if(!u){ sacudir($("#pfErr")); return; }
-            entrarComo(u.id);
-          };
+          function getCaptainForTeam(teamId) {
+            const caps = usersList(ROL.CAPITAN);
+            return caps.find(c => {
+              if(c.teamId === teamId) return true;
+              const t = state.teams[teamId];
+              if(t && (c.teamId === t.uuid || c.teamId === t.id)) return true;
+              const cleanU = String(c.teamId||'').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const cleanT = String(teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
+              const cleanName = String(t?.name||'').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if(cleanU && cleanT && cleanU === cleanT) return true;
+              if(cleanName && cleanU && (cleanName.includes(cleanU) || cleanU.includes(cleanName))) return true;
+              const aliasMap = {
+                "t1": "t-produccion", "t-produccion": "t1",
+                "t2": "t-deposito",   "t-deposito": "t2",
+                "t3": "t-picking",    "t-picking": "t3",
+                "t4": "t-distlocal",  "t-distlocal": "t4",
+                "t5": "t-ventas",     "t-ventas": "t5",
+                "t6": "t-admin",      "t-admin": "t6",
+                "t7": "t-distinterior","t-distinterior": "t7",
+                "t8": "t-fabrica",    "t-fabrica": "t8"
+              };
+              if(aliasMap[teamId] === c.teamId || aliasMap[c.teamId] === teamId) return true;
+              return false;
+            }) || null;
+          }
+
+          function renderPasoCapitan(selectedTeamId = null, modoManual = false){
+            if(modoManual){
+              cont.innerHTML=`
+                <form class="pf-form" id="pfFormCap">
+                  <button class="pf-cap-back-team" type="button" id="btnBackToTeams">← Volver a elegir equipo</button>
+                  <h3>Ingreso de Capitán</h3>
+                  <p class="ayuda">Ingresá con tu usuario y clave.</p>
+                  <input type="text" id="pfUsuario" maxlength="48" placeholder="Usuario o Nombre" autocomplete="off" required>
+                  <input type="password" id="pfClave" maxlength="32" placeholder="Clave / PIN" required>
+                  <div class="pf-error" id="pfErr">Usuario o clave incorrectos.</div>
+                  <button class="btn" type="submit">Entrar como Capitán</button>
+                </form>`;
+              const btnBack = $("#btnBackToTeams");
+              if(btnBack) btnBack.onclick = () => { playClick(); renderPasoCapitan(); };
+              $("#pfFormCap").onsubmit=e=>{
+                e.preventDefault();
+                const u=loginCapitan($("#pfUsuario").value,$("#pfClave").value);
+                if(!u){ sacudir($("#pfErr")); return; }
+                entrarComo(u.id);
+              };
+              if(anim()) gsap.fromTo(cont,{y:14,autoAlpha:0},{y:0,autoAlpha:1,duration:.3,ease:"power3.out"});
+              return;
+            }
+
+            if(!selectedTeamId){
+              const teams = Object.values(state.teams).sort((a,b)=>a.name.localeCompare(b.name));
+              cont.innerHTML = `
+                <div class="pf-cap-select-wrap">
+                  <h3 style="font-family:'Saira Condensed',sans-serif; font-size:20px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; text-align:center;">Seleccioná tu equipo</h3>
+                  <p class="ayuda" style="text-align:center;">Tocá tu equipo para identificarte e ingresar tu código de capitán.</p>
+                  <div class="pf-cap-teams-grid">
+                    ${teams.map(t => {
+                      const cap = getCaptainForTeam(t.id);
+                      const kit = teamKitStyle(t);
+                      return `
+                        <button class="pf-cap-card" type="button" data-cap-team="${esc(t.id)}">
+                          <div class="pf-cap-crest" style="${kit}">
+                            ${t.logoDataUrl ? `<img src="${t.logoDataUrl}" alt="">` : esc(initials(t.name))}
+                          </div>
+                          <span class="pf-cap-team-name">${esc(t.name)}</span>
+                          ${cap ? `<span class="pf-cap-badge">👑 ${esc(cap.name)}</span>` : `<span class="pf-cap-badge" style="opacity:0.6; color:#9aa8bd; border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.05);">Sin asignar</span>`}
+                        </button>
+                      `;
+                    }).join("")}
+                  </div>
+                  <div style="text-align:center;">
+                    <button type="button" class="pf-manual-link" id="btnManualCap">O ingresar con usuario y clave manual</button>
+                  </div>
+                </div>
+              `;
+              cont.querySelectorAll("[data-cap-team]").forEach(b => {
+                b.onclick = () => {
+                  playClick();
+                  renderPasoCapitan(b.dataset.capTeam);
+                };
+              });
+              const btnManual = $("#btnManualCap");
+              if(btnManual) btnManual.onclick = () => { playClick(); renderPasoCapitan(null, true); };
+              if(anim()) gsap.fromTo(".pf-cap-card",{y:18,scale:.95,autoAlpha:0},{y:0,scale:1,autoAlpha:1,stagger:.04,duration:.35,ease:"back.out(1.5)"});
+              return;
+            }
+
+            // Equipo seleccionado: pedir clave
+            const t = state.teams[selectedTeamId];
+            const cap = getCaptainForTeam(selectedTeamId);
+            const kit = teamKitStyle(t);
+            cont.innerHTML = `
+              <form class="pf-form" id="pfFormCapPin">
+                <button class="pf-cap-back-team" type="button" id="btnBackToTeamList">← Elegir otro equipo</button>
+                <div class="pf-cap-selected-card">
+                  <div class="pf-cap-crest" style="${kit}; width: 66px; height: 66px; border-radius: 16px; font-size:22px;">
+                    ${t.logoDataUrl ? `<img src="${t.logoDataUrl}" alt="">` : esc(initials(t.name))}
+                  </div>
+                  <h3 style="margin:6px 0 2px; font-size:18px;">${esc(t.name)}</h3>
+                  <p class="ayuda" style="margin:0; font-size:13px;">Capitán: <b style="color:#3ddc8b;">${esc(cap ? cap.name : t.name)}</b></p>
+                </div>
+                <p class="ayuda" style="margin-top:4px;">Ingresá tu código o PIN de capitán para continuar.</p>
+                <input type="password" id="pfClave" maxlength="32" placeholder="Código / PIN de capitán" autocomplete="current-password" required autofocus>
+                <div class="pf-error" id="pfErr">Código incorrecto para ${esc(t.name)}.</div>
+                <button class="btn" type="submit">Ingresar como Capitán</button>
+              </form>
+            `;
+            const btnBack = $("#btnBackToTeamList");
+            if(btnBack) btnBack.onclick = () => { playClick(); renderPasoCapitan(); };
+            
+            const form = $("#pfFormCapPin");
+            form.onsubmit = e => {
+              e.preventDefault();
+              const pin = $("#pfClave").value.trim();
+              if(!pin) return;
+              
+              let u = null;
+              if(cap && String(cap.clave||"").trim() === pin) {
+                u = cap;
+              } else {
+                u = loginCapitan(cap ? (cap.usuario || cap.name) : selectedTeamId, pin);
+              }
+              if(!u) {
+                const allCaps = usersList(ROL.CAPITAN);
+                u = allCaps.find(c => puedeEditarEquipo(selectedTeamId) && String(c.clave||"").trim() === pin);
+              }
+              if(!u) {
+                sacudir($("#pfErr"));
+                return;
+              }
+              entrarComo(u.id);
+            };
+            if(anim()) gsap.fromTo(cont,{y:14,autoAlpha:0},{y:0,autoAlpha:1,duration:.3,ease:"power3.out"});
+          }
+
+          renderPasoCapitan();
         }
 
         else{
