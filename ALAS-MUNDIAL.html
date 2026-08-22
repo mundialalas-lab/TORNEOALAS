@@ -7803,7 +7803,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                 colorPrimary: t.color_primary,
                 colorSecondary: t.color_secondary,
                 logoDataUrl: t.logo_path || countryToFlag[t.country_name] || "", 
-                photoDataUrl: t.photo_path || countryToFlag[t.country_name] || "",
+                photoDataUrl: t.photo_path || "",
                 createdAt: t.created_at
               };
             });
@@ -10504,11 +10504,13 @@ if(announce){
          sí es exacta. */
       function loginCapitan(usuario,clave){
         const u=String(usuario||"").trim().toLowerCase();
-        const c=String(clave||"");
+        const c=String(clave||"").trim();
         if(!u||!c)return null;
-        return usersList(ROL.CAPITAN).find(x=>
-          String(x.usuario||"").trim().toLowerCase()===u && String(x.clave||"")===c
-        )||null;
+        return usersList(ROL.CAPITAN).find(x=>{
+          const userMatch = String(x.usuario||"").trim().toLowerCase()===u;
+          const nameMatch = String(x.name||"").trim().toLowerCase()===u || String(x.name||"").trim().toLowerCase().includes(u);
+          return (userMatch || nameMatch) && String(x.clave||"").trim()===c;
+        })||null;
       }
       function deleteUser(id){
         if(!confirm("¿Eliminar este usuario y su álbum? No se puede deshacer."))return;
