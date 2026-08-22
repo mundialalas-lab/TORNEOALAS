@@ -10067,15 +10067,22 @@ if(announce){
 
       // ===== modal: jugador =====
       function openPlayerModal(playerId){
-        editingPlayerId=playerId||null;pendingPlayerPhoto=null;
+        editingPlayerId=playerId||null;
+        pendingPlayerPhoto=null;
         const p=playerId?state.players[playerId]:null;
+        if(p && p.teamId) currentTeamSheetId = p.teamId;
+        const targetTeamId = currentTeamSheetId || p?.teamId || null;
+        if(targetTeamId && !puedeEditarEquipo(targetTeamId)){
+          showToast("No tenés permiso para editar este plantel");
+          return;
+        }
         $("#playerModalTitle").textContent=p?"Editar jugador":"Nuevo jugador";
         $("#playerFirstField").value=p?.firstName||"";
         $("#playerLastField").value=p?.lastName||"";
         $("#playerNumberField").value=p?.number??"";
         $("#playerPositionField").value=p?.position||"DEL";
         $("#playerBirthField").value=p?.birthDate||"";
-        $("#playerPhotoPreview").innerHTML=p?.photoDataUrl?`<img src="${p.photoDataUrl}" alt="">`:"Sin foto";
+        $("#playerPhotoPreview").innerHTML=p?.photoDataUrl?'<img src="'+p.photoDataUrl+'" alt="">':"Sin foto";
         $("#playerPhotoFile").value="";
         $("#btnDeletePlayer").style.display=p?"":"none";
         $("#playerModal").classList.add("open");document.body.style.overflow="hidden";playClick();
@@ -12701,26 +12708,34 @@ function loop(){
       });
       $("#teamForm").addEventListener("submit", async e=>{
         e.preventDefault();
+        const id=editingTeamId||uid("t");
+        if(!puedeEditarEquipo(id)){ showToast("No tenés permiso para editar este equipo"); return; }
         const name=$("#teamNameField").value.trim(),short=$("#teamShortField").value.trim();
         if(!name||!short)return;
-        const id=editingTeamId||uid("t");
         const existing=state.teams[id];
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        const origText = submitBtn.textContent;
-        submitBtn.textContent = "Guardando...";
-        submitBtn.disabled = true;
+        const origText = submitBtn ? submitBtn.textContent : "Guardar equipo";
+        if(submitBtn) { submitBtn.textContent = "Guardando..."; submitBtn.disabled = true; }
 
-        let logoUrl = existing?.logoDataUrl||"";
+        let logoUrl = (pendingTeamCrest !== null) ? pendingTeamCrest : (existing?.logoDataUrl || "");
         if (pendingTeamCrest !== null && pendingTeamCrest.startsWith('data:')) {
-          const uploadedUrl = await uploadBase64ToSupabase(pendingTeamCrest, `teams/${id}_crest.png`);
-          if (uploadedUrl) logoUrl = uploadedUrl;
+          try {
+            const uploadedUrl = await uploadBase64ToSupabase(pendingTeamCrest, 'teams/' + id + '_crest.png');
+            if (uploadedUrl) logoUrl = uploadedUrl + '?t=' + Date.now();
+          } catch(err){
+            console.error("Error uploading team crest:", err);
+          }
         }
 
-        let photoUrl = existing?.photoDataUrl||"";
+        let photoUrl = (pendingTeamPhoto !== null) ? pendingTeamPhoto : (existing?.photoDataUrl || "");
         if (pendingTeamPhoto !== null && pendingTeamPhoto.startsWith('data:')) {
-          const uploadedUrl = await uploadBase64ToSupabase(pendingTeamPhoto, `teams/${id}_photo.png`);
-          if (uploadedUrl) photoUrl = uploadedUrl;
+          try {
+            const uploadedUrl = await uploadBase64ToSupabase(pendingTeamPhoto, 'teams/' + id + '_photo.png');
+            if (uploadedUrl) photoUrl = uploadedUrl + '?t=' + Date.now();
+          } catch(err){
+            console.error("Error uploading team photo:", err);
+          }
         }
 
         state.teams[id]={...(existing||{}),
@@ -12740,8 +12755,12 @@ function loop(){
            const captainVal = $("#teamCategoryField").value.trim();
            const cityVal = $("#teamCityField").value.trim();
            const teamUuid = existing?.uuid || state.teams[id]?.uuid || undefined;
-           const payload = { id: teamUuid, legacy_id: id, tournament_id: state.tournament.uuid || null,
-             group_id: groupUuid || null, // fallback
+           const tourId = state.tournament.uuid || 'f1470c86-1dcf-43ec-b4ef-72d0d63bc79f';
+           const payload = { 
+             id: teamUuid, 
+             legacy_id: id, 
+             tournament_id: tourId,
+             group_id: groupUuid || null,
              name: name,
              short_name: short,
              city: cityVal,
@@ -12754,20 +12773,21 @@ function loop(){
              photo_path: photoUrl
            };
            if (!payload.id) delete payload.id;
-           const { data, error } = await supabase.from('teams').upsert(payload).select();
-           if (!error && data && data.length > 0) {
-              state.teams[id].uuid = data[0].id;
-              persist(); 
-           } else if (error) {
-              console.error("Supabase upsert error:", error);
-              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-              else showToast("Error de base de datos: " + (error.message || error.code));
+           try {
+             const { data, error } = await supabase.from('teams').upsert(payload).select();
+             if (!error && data && data.length > 0) {
+                state.teams[id].uuid = data[0].id;
+                persist(); 
+             } else if (error) {
+                console.error("Supabase team upsert error:", error);
+             }
+           } catch(err){
+             console.error("Supabase team upsert exception:", err);
            }
         }
 
-        submitBtn.textContent = origText;
-        submitBtn.disabled = false;
-        closeTeamModal();renderAll();showToast(existing?"Equipo actualizado":"Equipo creado");playAdvance();
+        if(submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
+        closeTeamModal();renderAll();renderTeamSheet(id);showToast(existing?"Equipo actualizado":"Equipo creado");playAdvance();
       });
       $("#btnDeleteTeam").addEventListener("click",()=>{if(editingTeamId){deleteTeam(editingTeamId);closeTeamModal()}});
       $("#btnCloseTeamModal").addEventListener("click",closeTeamModal);
@@ -12856,25 +12876,48 @@ function loop(){
         if(!first||!last||!Number.isFinite(num))return;
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        const origText = submitBtn.textContent;
-        submitBtn.textContent = "Guardando...";
-        submitBtn.disabled = true;
+        const origText = submitBtn ? submitBtn.textContent : "Guardar jugador";
+        if(submitBtn) { submitBtn.textContent = "Guardando..."; submitBtn.disabled = true; }
 
-        let photoUrl = existing?.photoDataUrl||"";
+        let photoUrl = (pendingPlayerPhoto !== null) ? pendingPlayerPhoto : (existing?.photoDataUrl || "");
         if (pendingPlayerPhoto !== null && pendingPlayerPhoto.startsWith('data:')) {
-          const uploadedUrl = await uploadBase64ToSupabase(pendingPlayerPhoto, `players/${id}_photo.png`);
-          if (uploadedUrl) photoUrl = uploadedUrl;
+          try {
+            const uploadedUrl = await uploadBase64ToSupabase(pendingPlayerPhoto, 'players/' + id + '_photo.png');
+            if (uploadedUrl) {
+              photoUrl = uploadedUrl + '?t=' + Date.now();
+            }
+          } catch(err) {
+            console.error("Error uploading player photo to Supabase:", err);
+          }
         }
 
         const playerUuid = existing?.uuid || state.players[id]?.uuid || undefined;
-        state.players[id]={...(existing||{}), id, uuid: playerUuid, teamId:targetTeamId, firstName:first, lastName:last, number:num,
-          position:$("#playerPositionField").value, birthDate:$("#playerBirthField").value,
-          photoDataUrl:photoUrl};
+        state.players[id]={...(existing||{}), 
+          id, 
+          uuid: playerUuid, 
+          teamId: targetTeamId, 
+          firstName: first, 
+          lastName: last, 
+          number: num,
+          position: $("#playerPositionField").value, 
+          birthDate: $("#playerBirthField").value,
+          photoDataUrl: photoUrl
+        };
         persist();
 
         if (window.supabase) {
-           const teamUuid = state.teams[targetTeamId]?.uuid || null; // fallback
-           const payload = { id: playerUuid, legacy_id: id, tournament_id: state.tournament.uuid || null, team_id: teamUuid,
+           let teamUuid = state.teams[targetTeamId]?.uuid || null;
+           if (!teamUuid) {
+             const tObj = state.teams[targetTeamId] || Object.values(state.teams).find(x => x.id === targetTeamId);
+             if (tObj && tObj.uuid) teamUuid = tObj.uuid;
+           }
+           const tourId = state.tournament.uuid || 'f1470c86-1dcf-43ec-b4ef-72d0d63bc79f';
+           
+           const payload = { 
+             id: playerUuid, 
+             legacy_id: id, 
+             tournament_id: tourId, 
+             team_id: teamUuid,
              first_name: first,
              last_name: last,
              number: num,
@@ -12883,23 +12926,27 @@ function loop(){
              photo_path: photoUrl
            };
            if (!payload.id) delete payload.id;
-           const { data, error } = await supabase.from('players').upsert(payload).select();
-           if (!error && data && data.length > 0) {
-              state.players[id].uuid = data[0].id;
-              persist();
-           } else if (error) {
-              console.error("Supabase upsert error:", error);
-              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-              else showToast("Error de base de datos: " + (error.message || error.code));
+           try {
+             const { data, error } = await supabase.from('players').upsert(payload).select();
+             if (!error && data && data.length > 0) {
+                state.players[id].uuid = data[0].id;
+                persist();
+             } else if (error) {
+                console.error("Supabase upsert error:", error);
+             }
+           } catch(err) {
+             console.error("Supabase upsert exception:", err);
            }
         }
 
-        submitBtn.textContent = origText;
-        submitBtn.disabled = false;
+        if(submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
 
-        closePlayerModal();renderAll();
+        closePlayerModal();
+        renderAll();
+        renderTeamSheet(targetTeamId);
         resaltarJugador(id);
-        showToast(existing?"Jugador actualizado":"Jugador agregado");playAdvance();
+        showToast(existing ? "Jugador actualizado" : "Jugador agregado");
+        playAdvance();
       });
       $("#btnDeletePlayer").addEventListener("click", async ()=>{
         if(!editingPlayerId)return;
