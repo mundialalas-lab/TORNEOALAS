@@ -4724,21 +4724,6 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 
   html, body { scroll-behavior: smooth !important; }
 
-#btnInstallPwa:hover {
-  background: rgba(47, 127, 240, 0.25) !important;
-  border-color: rgba(47, 127, 240, 0.6) !important;
-  transform: translateY(-1px);
-}
-#btnInstallPwa:active {
-  transform: scale(0.95);
-}
-#btnInstallPwa svg {
-  width: 14px !important;
-  height: 14px !important;
-  max-width: 14px !important;
-  max-height: 14px !important;
-}
-
 </style>
 </head>
 <!-- at-hero y presentation-mode vienen puestas DESDE EL HTML, no las agrega el
@@ -6745,10 +6730,6 @@ body{background:transparent !important}
       <h1 class="splash-title"><span class="l1">Mundial</span><span class="l2">Alas 2026</span></h1>
       <div class="splash-rule" id="splashRule" aria-hidden="true"></div>
       <button class="splash-enter" id="splashEnter" type="button">Ingresar ahora</button>
-      <button id="btnInstallPwa" type="button" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; margin:10px auto 0; padding:6px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:100px; color:rgba(255,255,255,0.9); font-family:var(--font-ui,sans-serif); font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); box-shadow:0 4px 12px rgba(0,0,0,0.4); text-decoration:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; min-width:14px; min-height:14px; max-width:14px; max-height:14px; flex-shrink:0; color:#2f7ff0; display:inline-block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>📲 Instalar en inicio</span>
-      </button>
       <p class="splash-hint" id="splashHint">o presioná Enter</p>
       <p class="splash-mute-tip" id="splashMuteTip">Tocá la pantalla para escuchar la intro</p>
     </div>
