@@ -7627,6 +7627,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           teams:initialTeams,
           players:initialPlayers,
           matches:{},
+          users: clone(INITIAL_CAPTAINS),
           /* album (singular) es el álbum "de la casa": queda para los guardados
              viejos y como base cuando todavía no hay usuarios.
              users + albums es el modelo nuevo: cada persona tiene SU colección,
@@ -10387,6 +10388,17 @@ if(announce){
          responsabilidades y evitar toqueteos accidentales, no para proteger
          nada de alguien que quiera entrar a propósito.
          ==================================================================== */
+      
+      const INITIAL_CAPTAINS = {
+        "u-cap-0-raul": { id: "u-cap-0-raul", name: "Raul Caballero", role: "capitan", teamId: "t-ventas", usuario: "raul", clave: "2233", createdAt: new Date().toISOString() },
+        "u-cap-1-daniel": { id: "u-cap-1-daniel", name: "Daniel Gimenez", role: "capitan", teamId: "t-produccion", usuario: "daniel", clave: "4321", createdAt: new Date().toISOString() },
+        "u-cap-2-victor": { id: "u-cap-2-victor", name: "Victor Marecos", role: "capitan", teamId: "t-fabrica", usuario: "victor", clave: "3445", createdAt: new Date().toISOString() },
+        "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", clave: "3121", createdAt: new Date().toISOString() },
+        "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", clave: "1221", createdAt: new Date().toISOString() },
+        "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", clave: "2131", createdAt: new Date().toISOString() },
+        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() }
+      };
+
       const ROL={HINCHA:"hincha",CAPITAN:"capitan",ADMIN:"admin"};
 
       function usersList(rol){
@@ -10469,6 +10481,11 @@ if(announce){
         if(yaEsta)return yaEsta.id;
         const id=uid("u");
         state.users=state.users||{};
+        if (typeof INITIAL_CAPTAINS === 'object') {
+          Object.keys(INITIAL_CAPTAINS).forEach(k => {
+            if (!state.users[k]) state.users[k] = clone(INITIAL_CAPTAINS[k]);
+          });
+        }
         state.users[id]={
           id,name,role:rol,
           teamId:(extra&&extra.teamId)||null,
