@@ -11106,6 +11106,34 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   .admin-modal .admin-err.show{display:block;animation:shakeX .4s ease}
   @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
 
+
+/* REGLA DEFINITIVA: OCULTAR DOCK / BARRA INFERIOR EN CUALQUIER MODAL */
+body.modal-open #tabBar,
+body[style*="overflow: hidden"] #tabBar,
+body[style*="overflow:hidden"] #tabBar,
+body:has(.modal-backdrop.open) #tabBar,
+body:has(.modal-backdrop.is-open) #tabBar,
+body:has(#matchModal.open) #tabBar,
+body:has(#teamModal.open) #tabBar,
+body:has(#playerModal.open) #tabBar,
+body:has(#teamPhotoModal.open) #tabBar,
+body:has(#viewResultsModal.open) #tabBar,
+body:has(#matchDataModal.open) #tabBar,
+body:has(#resetModal.open) #tabBar,
+body:has(#pantallaPerfiles:not([hidden])) #tabBar,
+body:has(#splash) #tabBar,
+.perfiles:not([hidden]) ~ * #tabBar {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transform: translate3d(0, 100px, 0) !important;
+}
+
+.modal-backdrop, .perfiles, #pantallaPerfiles {
+  z-index: 100000 !important;
+}
+
 /* --- FIXES DEFINITIVOS AGENTE (DESKTOP) --- */
 @media (min-width: 861px) {
   .topbar {
@@ -13826,8 +13854,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("splashDone", () => {
     if (!g || REDUCED) return;
+    const isMobile = window.matchMedia("(max-width: 860px)").matches;
     const tl = g.timeline({defaults:{ease:"power3.out"}});
-    tl.from(".topbar", {y:-64, autoAlpha:0, duration:.55, clearProps:"transform"})
+    if (!isMobile) {
+      tl.from(".topbar", {y:-64, autoAlpha:0, duration:.55, clearProps:"all"});
+    }
       .from(".topbar-brand", {x:-18, autoAlpha:0, duration:.45}, "-=.3")
       .from(".topbar-actions > *", {y:-10, autoAlpha:0, duration:.35, stagger:.05}, "-=.32")
       .from("#scoreboard", {y:26, autoAlpha:0, duration:.6}, "-=.25")
@@ -14035,11 +14066,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const bar = $("#tabBar");
       if (!bar || bar.dataset.mobNavDone) return;
       bar.dataset.mobNavDone = "1";
-      /* El delay deja que termine la entrada del topbar (0,55 s): si no,
-         el transform del padre descoloca el fixed del dock durante el cruce. */
-      g.fromTo(bar,
-        { y: 80, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.7, delay: 0.55, ease: "power3.out", clearProps: "transform" });
+      if (bar) bar.style.transform = "none";
     },
 
     /* Píldora activa: scaleX 0 → 1 sobre la pestaña recién activada */
