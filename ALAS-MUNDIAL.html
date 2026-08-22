@@ -7706,16 +7706,44 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       let state=loadState();
       
-      async function uploadBase64ToSupabase(base64Data, path) {
+      function dataURItoBlob(dataURI) {
         try {
-          const res = await fetch(base64Data);
-          const blob = await res.blob();
-          const { data, error } = await supabase.storage.from('media').upload(path, blob, { upsert: true });
+          const parts = dataURI.split(',');
+          const byteString = atob(parts[1]);
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          const mimeString = mimeMatch ? mimeMatch[1] : 'image/png';
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          return new Blob([ab], {type: mimeString});
+        } catch(e) {
+          console.warn("dataURItoBlob fallback error", e);
+          return null;
+        }
+      }
+
+      async function uploadBase64ToSupabase(base64Data, path) {
+        if (!window.supabase) return null;
+        try {
+          let blob = null;
+          if (typeof base64Data === 'string' && base64Data.startsWith('data:')) {
+            blob = dataURItoBlob(base64Data);
+          }
+          if (!blob) {
+            const res = await fetch(base64Data);
+            blob = await res.blob();
+          }
+          const { data, error } = await supabase.storage.from('media').upload(path, blob, { 
+            upsert: true, 
+            contentType: blob.type || 'image/png' 
+          });
           if (error) { console.error('Upload error:', error); return null; }
           const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(path);
           return publicUrlData.publicUrl;
         } catch (e) {
-          console.error('Blob conversion error:', e);
+          console.error('Blob conversion / upload error:', e);
           return null;
         }
       }
@@ -9122,8 +9150,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#teamSheetHead").innerHTML=`
           <div class="team-sheet-crest" style="${teamKitStyle(t)}">${t.logoDataUrl?`<img src="${t.logoDataUrl}" alt="">`:esc(initials(t.name))}</div>
           <div class="team-sheet-id"><strong>${esc(t.name)}</strong><small>${esc(state.groups[t.groupId]?.name||"Sin grupo")}${t.city?" · "+esc(t.city):""}${t.category?" · "+esc(t.category):""}</small></div>
-          <button class="btn secondary small admin-only" type="button" id="btnEditTeamInline" style="margin-left:auto">${ICO.edit}Editar equipo</button>`;
-        $("#btnEditTeamInline").onclick=()=>openTeamModal(teamId);
+          ${puedeEditar ? `<button class="btn secondary small" type="button" id="btnEditTeamInline" style="margin-left:auto">${ICO.edit}Editar equipo</button>` : ""}`;
+        const btnEdit=$("#btnEditTeamInline"); if(btnEdit) btnEdit.onclick=()=>openTeamModal(teamId);
         /* El capitán de este equipo (y el admin) puede subir la foto del plantel
            sin entrar al editor completo: si no hay foto el hueco ES el botón de
            subir, y si la hay un botón "Editar foto" flota sobre la imagen. */
@@ -9898,6 +9926,7 @@ if(announce){
       function openTeamPhotoModal(teamId){
         if(!teamId||!state.teams[teamId])return;
         if(!puedeEditarEquipo(teamId)){showToast("No tenés permiso para tocar este equipo");return}
+        currentTeamSheetId=teamId;
         pendingTeamQuickPhoto=null;
         const t=state.teams[teamId];
         $("#teamPhotoModalTitle").textContent=t.name;
@@ -10418,9 +10447,37 @@ if(announce){
          no se puede resolver con una clase de CSS, porque depende de qué equipo
          se está mirando en ese momento. */
       function puedeEditarEquipo(teamId){
-        if(esAdmin())return true;
+        if(esAdmin()) return true;
         const u=currentUser();
-        return !!(u&&u.role===ROL.CAPITAN&&u.teamId&&u.teamId===teamId);
+        if(!u || u.role!==ROL.CAPITAN || !u.teamId || !teamId) return false;
+        
+        if(u.teamId === teamId) return true;
+        
+        const t = state.teams[teamId];
+        if(!t) return false;
+        if(t.uuid && u.teamId === t.uuid) return true;
+        if(t.id && u.teamId === t.id) return true;
+        
+        const cleanU = String(u.teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanT = String(teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanName = String(t.name||'').toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        if(cleanU === cleanT) return true;
+        if(cleanName && (cleanName.includes(cleanU) || cleanU.includes(cleanName))) return true;
+        
+        const aliasMap = {
+          "t1": "t-produccion", "t-produccion": "t1",
+          "t2": "t-deposito",   "t-deposito": "t2",
+          "t3": "t-picking",    "t-picking": "t3",
+          "t4": "t-distlocal",  "t-distlocal": "t4",
+          "t5": "t-ventas",     "t-ventas": "t5",
+          "t6": "t-admin",      "t-admin": "t6",
+          "t7": "t-distinterior","t-distinterior": "t7",
+          "t8": "t-fabrica",    "t-fabrica": "t8"
+        };
+        if(aliasMap[teamId] === u.teamId || aliasMap[u.teamId] === teamId) return true;
+        
+        return false;
       }
       /* Marca el rol en el <body> para que el CSS pueda esconder lo que no
          corresponde sin que cada render tenga que preguntarlo. */
@@ -12600,20 +12657,50 @@ function loop(){
         const dataUrl=await compressImage(f,900);
         $("#teamPhotoQuickPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingTeamQuickPhoto=dataUrl;
       });
-      $("#teamPhotoQuickForm").addEventListener("submit",e=>{
+      $("#teamPhotoQuickForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const id=currentTeamSheetId;
         if(!id||!state.teams[id]||!puedeEditarEquipo(id)){showToast("No tenés permiso para tocar este plantel");return}
         if(pendingTeamQuickPhoto===null){closeTeamPhotoModal();return}
-        state.teams[id]={...state.teams[id],photoDataUrl:pendingTeamQuickPhoto};
-        persist();closeTeamPhotoModal();renderAll();showToast("Foto del plantel guardada");playAdvance();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn ? submitBtn.textContent : "Guardar foto";
+        if(submitBtn) { submitBtn.textContent = "Guardando..."; submitBtn.disabled = true; }
+
+        let photoUrl = pendingTeamQuickPhoto;
+        if (pendingTeamQuickPhoto && pendingTeamQuickPhoto.startsWith('data:')) {
+          const uploadedUrl = await uploadBase64ToSupabase(pendingTeamQuickPhoto, `teams/${id}_photo.png`);
+          if (uploadedUrl) photoUrl = uploadedUrl;
+        }
+
+        state.teams[id]={...state.teams[id],photoDataUrl:photoUrl};
+        persist();
+
+        if (window.supabase && state.teams[id].uuid) {
+          try {
+            await supabase.from('teams').update({ photo_path: photoUrl }).eq('id', state.teams[id].uuid);
+          } catch(err) {
+            console.error("Error updating team photo in Supabase:", err);
+          }
+        }
+
+        if(submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
+        closeTeamPhotoModal();renderAll();renderTeamSheet(id);showToast("Foto del plantel guardada");playAdvance();
       });
-      $("#btnDeleteQuickPhoto").addEventListener("click",()=>{
+      $("#btnDeleteQuickPhoto").addEventListener("click", async ()=>{
         const id=currentTeamSheetId;
         if(!id||!state.teams[id]||!puedeEditarEquipo(id))return;
         if(!confirm("¿Quitar la foto del plantel?"))return;
         state.teams[id]={...state.teams[id],photoDataUrl:""};
-        persist();closeTeamPhotoModal();renderAll();showToast("Foto quitada");
+        persist();
+        if (window.supabase && state.teams[id].uuid) {
+          try {
+            await supabase.from('teams').update({ photo_path: "" }).eq('id', state.teams[id].uuid);
+          } catch(err) {
+            console.error("Error deleting team photo in Supabase:", err);
+          }
+        }
+        closeTeamPhotoModal();renderAll();renderTeamSheet(id);showToast("Foto quitada");
       });
       $("#btnCloseTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
       $("#btnCancelTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
@@ -12686,11 +12773,23 @@ function loop(){
         resaltarJugador(id);
         showToast(existing?"Jugador actualizado":"Jugador agregado");playAdvance();
       });
-      $("#btnDeletePlayer").addEventListener("click",()=>{
+      $("#btnDeletePlayer").addEventListener("click", async ()=>{
         if(!editingPlayerId)return;
+        const p = state.players[editingPlayerId];
+        const targetTeamId = p?.teamId || currentTeamSheetId;
+        if(!p || !puedeEditarEquipo(targetTeamId)){ showToast("No tenés permiso para eliminar este jugador"); return; }
         if(!confirm("¿Eliminar este jugador?"))return;
+        const pUuid = p.uuid;
         delete state.players[editingPlayerId];
-        persist();closePlayerModal();renderAll();showToast("Jugador eliminado");
+        persist();
+        if (window.supabase && pUuid) {
+          try {
+            await supabase.from('players').delete().eq('id', pUuid);
+          } catch(err) {
+            console.error("Error deleting player in Supabase:", err);
+          }
+        }
+        closePlayerModal();renderAll();if(targetTeamId)renderTeamSheet(targetTeamId);showToast("Jugador eliminado");
       });
       $("#btnClosePlayerModal").addEventListener("click",closePlayerModal);
       $("#btnCancelPlayerModal").addEventListener("click",closePlayerModal);
