@@ -13266,7 +13266,7 @@ function loop(){
                             ${t.logoDataUrl ? `<img src="${t.logoDataUrl}" alt="">` : esc(initials(t.name))}
                           </div>
                           <span class="pf-cap-team-name">${esc(t.name)}</span>
-                          ${cap ? `<span class="pf-cap-badge">👑 ${esc(cap.name)}</span>` : `<span class="pf-cap-badge" style="opacity:0.6; color:#9aa8bd; border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.05);">Sin asignar</span>`}
+                          ${cap ? `<span class="pf-cap-badge">${esc(cap.name)}</span>` : `<span class="pf-cap-badge" style="opacity:0.6; color:#9aa8bd; border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.05);">Sin asignar</span>`}
                         </button>
                       `;
                     }).join("")}
