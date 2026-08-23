@@ -7288,6 +7288,30 @@ body{background:transparent !important}
 }
 </style>
 <!-- SPLASH VIDEO -->
+  
+<!-- ==========================================
+     PRO LOADER ALAS 2026
+     ========================================== -->
+<div id="proLoader" style="position:fixed;inset:0;background:#05080f;z-index:9999999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.6s ease-out, visibility 0.6s ease-out;">
+  <div style="position:relative;width:90px;height:90px;margin-bottom:24px;">
+    <!-- Anillo giratorio de carga -->
+    <div style="position:absolute;inset:0;border:3px solid rgba(255,255,255,0.05);border-top-color:#4b8cff;border-radius:50%;animation:pro-spin 1s linear infinite;box-shadow:0 0 15px rgba(75,140,255,0.4);"></div>
+    <div style="position:absolute;inset:4px;border:3px solid rgba(255,255,255,0.05);border-bottom-color:#765cff;border-radius:50%;animation:pro-spin 1.5s linear infinite reverse;"></div>
+    <!-- Logo central pulsante -->
+    <img src="ALAS.png" alt="ALAS" style="position:absolute;inset:18px;width:54px;height:54px;object-fit:contain;animation:pro-pulse 1.8s ease-in-out infinite;">
+  </div>
+  <div style="font-family:'Saira Condensed', sans-serif;font-weight:800;font-size:16px;letter-spacing:0.15em;text-transform:uppercase;color:#fff;background:linear-gradient(90deg,#4b8cff,#765cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    Cargando Torneo
+  </div>
+  <div style="margin-top:6px;font-family:Inter,sans-serif;font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.05em;text-transform:uppercase;">
+    Iniciando sistema...
+  </div>
+</div>
+<style>
+  @keyframes pro-spin { to { transform: rotate(360deg); } }
+  @keyframes pro-pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.08); opacity: 1; } }
+</style>
+
   <div id="splash" class="splash" aria-label="Bienvenida" role="dialog">
     <video class="splash-video" id="splashVideo" autoplay loop muted playsinline preload="auto">
       <source src="videoplayback.mp4" type="video/mp4">
@@ -9490,6 +9514,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       function renderGroups(){
         const gids=groupIds();
+        const openGroups = new Set();
+        document.querySelectorAll("#groupsContainer .group-card").forEach(gc => {
+           if(gc.querySelector("details") && gc.querySelector("details").open) openGroups.add(gc.id);
+        });
+
         $("#groupsContainer").innerHTML=gids.length?gids.map((g,idx)=>{
           const groupDef=state.groups[g];
           const standings=getGroupStandings(g);
@@ -9507,7 +9536,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           
           const safeName = String(groupDef?.name || g).toUpperCase();
           const finalName = safeName.startsWith("GRUPO") ? safeName : "GRUPO " + safeName;
-          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th style="width:40px">#</th><th>Equipo</th><th style="width:38px">PJ</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches"><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
+          const isOpen = openGroups.has(`node-${g}`) ? "open" : "";
+          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th style="width:40px">#</th><th>Equipo</th><th style="width:38px">PJ</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches" ${isOpen}><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
         }).join(""):`<div class="empty-state">Configurá al menos un grupo desde "Configurar".</div>`;
         document.querySelectorAll("#groupsContainer .group-card").forEach((el,i)=>{
           if(!revealedOnce.has(el.id)){revealedOnce.add(el.id);el.classList.add("reveal");el.style.transitionDelay=(i*70)+"ms"}
@@ -14753,7 +14783,17 @@ function loop(){
       /* Recién acá se habilitan las transiciones. El <body> arranca con
          `booting` y con el estado visual ya correcto puesto desde el HTML, así
          que el usuario nunca ve el salto de azul a transparente. */
-      requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove("booting")));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        document.body.classList.remove("booting");
+        setTimeout(() => {
+          const loader = document.getElementById("proLoader");
+          if (loader) {
+            loader.style.opacity = "0";
+            loader.style.visibility = "hidden";
+            setTimeout(() => loader.remove(), 600);
+          }
+        }, 1500);
+      }));
       window.addEventListener("scroll",updateHeroBar,{passive:true});
       window.addEventListener("resize",()=>{measureTopbar();updateHeroBar()});
       if("ResizeObserver" in window){
@@ -15208,7 +15248,7 @@ document.addEventListener("DOMContentLoaded", () => {
       g.set(lines, {yPercent:110, autoAlpha:0});
       g.set(rule,  {scaleX:0});
 
-      g.timeline({delay:.35})
+      g.timeline({delay:1.85})
         .to(logo,  {y:0, autoAlpha:1, duration:.7, ease:"power3.out"})
         .to(kicker,{y:0, autoAlpha:1, letterSpacing:".44em", duration:.9, ease:"power3.out"}, "-=.45")
         .to(lines, {yPercent:0, autoAlpha:1, duration:.75, ease:"power4.out", stagger:.09}, "-=.55")
@@ -15234,7 +15274,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (g && !REDUCED) {
           g.timeline({
             onComplete: () => {
-              carryAudio();
+              if(video){ video.pause(); video.remove(); }
               el.remove();
               mostrarPerfiles();
             }
@@ -15242,7 +15282,7 @@ document.addEventListener("DOMContentLoaded", () => {
           .to(content, { autoAlpha: 0, scale: 0.95, duration: 0.3, ease: "power2.inOut" }, 0)
           .to(el, { autoAlpha: 0, duration: 0.4, ease: "power2.out" }, 0.05);
         } else {
-          carryAudio();
+          if(video){ video.pause(); video.remove(); }
           el.remove();
           mostrarPerfiles();
         }
