@@ -1709,6 +1709,191 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   border-color: #66c3ff;
 }
 
+
+/* ==========================================================================
+   PANINI PHOTO STUDIO & INTERACTIVE CROPPER
+   ========================================================================== */
+.panini-cropper-modal {
+  background: rgba(8, 14, 26, 0.97) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(47, 127, 240, 0.25) !important;
+  width: min(440px, 94vw) !important;
+}
+.panini-crop-stage {
+  position: relative;
+  width: min(260px, 72vw);
+  aspect-ratio: 3 / 4.15;
+  margin: 10px auto 14px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.15), 0 0 25px rgba(47, 127, 240, 0.3);
+  background: linear-gradient(180deg, #101a2c, #0a1120);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.panini-crop-stage:active {
+  cursor: grabbing;
+}
+.panini-crop-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(47, 127, 240, 0.25) 0%, transparent 70%),
+              repeating-linear-gradient(115deg, transparent 0 16px, rgba(255, 255, 255, 0.04) 16px 17px);
+  pointer-events: none;
+}
+.panini-crop-top-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28%;
+  background: linear-gradient(180deg, #2f7ff0, #0f3f96);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.panini-crop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.panini-crop-card-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.panini-crop-badge-top {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-family: 'Anton', sans-serif;
+  font-size: 20px;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.panini-crop-badge-pos {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #fff;
+  pointer-events: none;
+}
+.panini-crop-footer-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px;
+  background: linear-gradient(180deg, transparent, rgba(4, 8, 15, 0.96) 40%);
+  text-align: center;
+  pointer-events: none;
+}
+.panini-crop-pname {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.panini-crop-pteam {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: #9fb6d2;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.panini-crop-guide-hint {
+  font-size: 11.5px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.panini-crop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 12px;
+}
+.panini-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 14px;
+  border-radius: 12px;
+}
+.panini-zoom-row span {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.panini-zoom-slider {
+  flex: 1;
+  accent-color: #2f7ff0;
+  cursor: pointer;
+}
+.panini-tools-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-crop-tool {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.btn-crop-tool:hover {
+  background: rgba(47, 127, 240, 0.2);
+  border-color: rgba(47, 127, 240, 0.5);
+  color: #fff;
+}
+.btn-crop-tool.active {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
 .pf-lista{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:12px}
 .pf-sep{
   display:flex;align-items:center;gap:10px;
@@ -7652,6 +7837,66 @@ body{background:transparent !important}
 
   
   <!-- Modal: Monitor de Usuarios (Minimalista PRO) -->
+  
+  <!-- Modal: Adaptar Foto al Panini (Studio & Cropper) -->
+  <div class="modal-backdrop" id="paniniCropperModal" role="dialog" aria-modal="true" aria-labelledby="paniniCropperModalTitle">
+    <div class="modal panini-cropper-modal" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+      <header class="modal-head" style="padding: 14px 18px 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div>
+          <h2 id="paniniCropperModalTitle" style="font-family:'Saira Condensed',sans-serif; font-size: 19px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #fff; margin: 0;">
+            ✂️ Adaptar Foto al Panini
+          </h2>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: #94a3b8;">
+            Arrastrá para encuadrar y ajustá el tamaño para tu figurita.
+          </p>
+        </div>
+        <button class="close-btn" id="btnClosePaniniCropper" type="button" aria-label="Cerrar" style="width: 32px; height: 32px; font-size: 20px;">×</button>
+      </header>
+
+      <div class="modal-body" style="padding: 10px 16px 6px; display:flex; flex-direction:column; align-items:center;">
+        <!-- Canvas Stage interactivo con diseño Panini -->
+        <div class="panini-crop-stage" id="paniniCropStage">
+          <div class="panini-crop-bg-pattern"></div>
+          <div class="panini-crop-top-strip" id="paniniCropTopStrip"></div>
+          <canvas id="paniniCropCanvas" class="panini-crop-canvas" width="460" height="636"></canvas>
+          <div class="panini-crop-card-frame"></div>
+          <div class="panini-crop-badge-top" id="paniniCropNumber">10</div>
+          <div class="panini-crop-badge-pos" id="paniniCropPos">DEL</div>
+          <div class="panini-crop-footer-banner">
+            <div class="panini-crop-pname" id="paniniCropName">JUGADOR</div>
+            <div class="panini-crop-pteam" id="paniniCropTeam">EQUIPO</div>
+          </div>
+        </div>
+        <div class="panini-crop-guide-hint">
+          <span>👆 Arrastrá la foto para mover</span> · <span>🔍 Usá el zoom abajo</span>
+        </div>
+      </div>
+
+      <div class="panini-crop-controls">
+        <div class="panini-zoom-row">
+          <span>🔍 Zoom</span>
+          <input type="range" id="paniniZoomSlider" class="panini-zoom-slider" min="0.4" max="3" step="0.02" value="1">
+          <span id="paniniZoomValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">100%</span>
+        </div>
+        <div class="panini-tools-row">
+          <button type="button" class="btn-crop-tool active" id="btnToggleCropBg">
+            <span>🪄</span> <span id="lblToggleCropBg">Sin fondo (Auto)</span>
+          </button>
+          <button type="button" class="btn-crop-tool" id="btnResetCropPos">
+            <span>🔄</span> <span>Centrar</span>
+          </button>
+        </div>
+      </div>
+
+      <footer class="modal-actions" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); gap: 10px;">
+        <button class="btn secondary" id="btnCancelPaniniCropper" type="button" style="flex: 1; height: 42px; border-radius: 12px; font-weight: 700;">Cancelar</button>
+        <button class="btn" id="btnConfirmPaniniCropper" type="button" style="flex: 2; height: 42px; border-radius: 12px; font-weight: 800; background: linear-gradient(135deg, #2f7ff0, #1d4ed8); box-shadow: 0 4px 16px rgba(47,127,240,0.4);">
+          ✨ Confirmar y Aplicar
+        </button>
+      </footer>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="usersMonitorModal" role="dialog" aria-modal="true" aria-labelledby="usersMonitorModalTitle">
     <div class="modal" style="max-width: 460px; max-height: 85dvh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; background: #0c1424; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
       
@@ -10507,6 +10752,198 @@ if(announce){
         });
       });
 
+      
+      // ==========================================================================
+      // PANINI PHOTO STUDIO & INTERACTIVE CROPPER ENGINE
+      // ==========================================================================
+      let cropperState = {
+        origImg: null,
+        cutoutImg: null,
+        removeBg: true,
+        scale: 1,
+        baseScale: 1,
+        posX: 0,
+        posY: 0,
+        isDragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        initialPosX: 0,
+        initialPosY: 0,
+        targetCallback: null
+      };
+
+      function openPaniniCropper(imgSource, playerContext, onConfirmCallback) {
+        cropperState.targetCallback = onConfirmCallback;
+        cropperState.removeBg = true;
+        cropperState.scale = 1;
+        cropperState.posX = 0;
+        cropperState.posY = 0;
+
+        // Populate card context badges
+        const numEl = $("#paniniCropNumber"); if(numEl) numEl.textContent = playerContext.number || "10";
+        const posEl = $("#paniniCropPos"); if(posEl) posEl.textContent = playerContext.position || "DEL";
+        const nameEl = $("#paniniCropName"); if(nameEl) nameEl.textContent = playerContext.name || "JUGADOR";
+        const teamEl = $("#paniniCropTeam"); if(teamEl) teamEl.textContent = playerContext.teamName || "EQUIPO";
+
+        const topStrip = $("#paniniCropTopStrip");
+        if (topStrip && playerContext.color1 && playerContext.color2) {
+          topStrip.style.background = `linear-gradient(180deg, ${playerContext.color1}, ${playerContext.color2})`;
+        }
+
+        const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
+        const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
+        
+        const btnBg = $("#btnToggleCropBg");
+        if(btnBg) {
+          btnBg.classList.add("active");
+          const lbl = $("#lblToggleCropBg"); if(lbl) lbl.textContent = "Sin fondo (Auto)";
+        }
+
+        // Load image and generate transparent cutout
+        const img = new Image();
+        img.onload = () => {
+          cropperState.origImg = img;
+          
+          // Calculate initial base scale to fit stage nicely
+          const stageW = 460;
+          const stageH = 636;
+          const scaleFit = Math.max(stageW / img.width, (stageH * 0.75) / img.height) * 0.9;
+          cropperState.baseScale = scaleFit;
+          cropperState.scale = 1;
+          cropperState.posX = 0;
+          cropperState.posY = (stageH * 0.12);
+
+          // Generate cutout version
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = img.width;
+          tempCanvas.height = img.height;
+          const tempCtx = tempCanvas.getContext("2d");
+          tempCtx.drawImage(img, 0, 0);
+          removeCanvasBackground(tempCanvas);
+          
+          const cutout = new Image();
+          cutout.onload = () => {
+            cropperState.cutoutImg = cutout;
+            renderCropperCanvas();
+          };
+          cutout.src = tempCanvas.toDataURL("image/png");
+
+          renderCropperCanvas();
+          $("#paniniCropperModal").classList.add("open");
+          document.body.style.overflow = "hidden";
+        };
+        img.src = (typeof imgSource === "string") ? imgSource : URL.createObjectURL(imgSource);
+      }
+
+      function closePaniniCropper() {
+        $("#paniniCropperModal").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      function renderCropperCanvas() {
+        const canvas = $("#paniniCropCanvas");
+        if(!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const currentImg = cropperState.removeBg && cropperState.cutoutImg ? cropperState.cutoutImg : cropperState.origImg;
+        if (!currentImg) return;
+
+        const effectiveScale = cropperState.baseScale * cropperState.scale;
+        const drawW = currentImg.width * effectiveScale;
+        const drawH = currentImg.height * effectiveScale;
+
+        const centerX = w / 2 + cropperState.posX;
+        const centerY = h / 2 + cropperState.posY;
+
+        ctx.save();
+        ctx.drawImage(currentImg, centerX - drawW / 2, centerY - drawH / 2, drawW, drawH);
+        ctx.restore();
+      }
+
+      // Pointer drag interaction for Panini Cropper
+      const cropStage = $("#paniniCropStage");
+      if (cropStage) {
+        cropStage.addEventListener("pointerdown", e => {
+          cropperState.isDragging = true;
+          cropperState.dragStartX = e.clientX;
+          cropperState.dragStartY = e.clientY;
+          cropperState.initialPosX = cropperState.posX;
+          cropperState.initialPosY = cropperState.posY;
+          cropStage.setPointerCapture(e.pointerId);
+        });
+
+        cropStage.addEventListener("pointermove", e => {
+          if (!cropperState.isDragging) return;
+          const dx = e.clientX - cropperState.dragStartX;
+          const dy = e.clientY - cropperState.dragStartY;
+          // Scale drag factor for high-DPI canvas
+          const factor = 460 / cropStage.clientWidth;
+          cropperState.posX = cropperState.initialPosX + dx * factor;
+          cropperState.posY = cropperState.initialPosY + dy * factor;
+          renderCropperCanvas();
+        });
+
+        const endDrag = e => {
+          if (cropperState.isDragging) {
+            cropperState.isDragging = false;
+            try { cropStage.releasePointerCapture(e.pointerId); } catch(err){}
+          }
+        };
+        cropStage.addEventListener("pointerup", endDrag);
+        cropStage.addEventListener("pointercancel", endDrag);
+      }
+
+      // Zoom slider
+      $("#paniniZoomSlider")?.addEventListener("input", e => {
+        cropperState.scale = parseFloat(e.target.value);
+        const valEl = $("#paniniZoomValue");
+        if(valEl) valEl.textContent = Math.round(cropperState.scale * 100) + "%";
+        renderCropperCanvas();
+      });
+
+      // Toggle background cutout
+      $("#btnToggleCropBg")?.addEventListener("click", () => {
+        cropperState.removeBg = !cropperState.removeBg;
+        const btn = $("#btnToggleCropBg");
+        const lbl = $("#lblToggleCropBg");
+        if (btn) btn.classList.toggle("active", cropperState.removeBg);
+        if (lbl) lbl.textContent = cropperState.removeBg ? "Sin fondo (Auto)" : "Con fondo original";
+        playClick();
+        renderCropperCanvas();
+      });
+
+      // Reset position
+      $("#btnResetCropPos")?.addEventListener("click", () => {
+        cropperState.scale = 1;
+        cropperState.posX = 0;
+        cropperState.posY = (636 * 0.12);
+        const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
+        const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
+        playClick();
+        renderCropperCanvas();
+      });
+
+      // Confirm and Apply
+      $("#btnConfirmPaniniCropper")?.addEventListener("click", () => {
+        const canvas = $("#paniniCropCanvas");
+        if (!canvas) return;
+        const finalDataUrl = canvas.toDataURL("image/png");
+        if (typeof cropperState.targetCallback === "function") {
+          cropperState.targetCallback(finalDataUrl);
+        }
+        playAdvance();
+        showToast("¡Foto adaptada al Panini con éxito!");
+        closePaniniCropper();
+      });
+
+      $("#btnClosePaniniCropper")?.addEventListener("click", closePaniniCropper);
+      $("#btnCancelPaniniCropper")?.addEventListener("click", closePaniniCropper);
+      $("#paniniCropperModal")?.addEventListener("click", e => { if(e.target === e.currentTarget) closePaniniCropper(); });
+
       function renderUsersPanel() {
         const grid = $("#usersActiveGrid");
         const summary = $("#onlineUsersSummary");
@@ -11898,6 +12335,7 @@ body:has(#playerModal.open) #tabBar,
 body:has(#teamPhotoModal.open) #tabBar,
 body:has(#viewResultsModal.open) #tabBar,
 body:has(#usersMonitorModal.open) #tabBar,
+body:has(#paniniCropperModal.open) #tabBar,
 body:has(#matchDataModal.open) #tabBar,
 body:has(#resetModal.open) #tabBar,
 body:has(#pantallaPerfiles:not([hidden])) #tabBar,
@@ -13423,12 +13861,56 @@ function loop(){
       $("#btnCancelTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
       $("#teamPhotoModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeTeamPhotoModal()});
 
-      $("#playerPhotoFile").addEventListener("change",async e=>{
-        const f=e.target.files[0];if(!f)return;
-        // 160px alcanzaba para el listado, pero la misma foto se ve a tamaño
-        // figurita cuando se abre el sobre: se guarda a 460 y con alfa
-        const dataUrl=await compressImage(f,460,true,true);
-        $("#playerPhotoPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingPlayerPhoto=dataUrl;
+      $("#playerPhotoFile").addEventListener("change", async e => {
+        const f = e.target.files[0]; if(!f) return;
+        
+        const first = $("#playerFirstField").value.trim();
+        const last = $("#playerLastField").value.trim();
+        const num = $("#playerNumberField").value.trim();
+        const pos = $("#playerPositionField").value;
+        const targetTeamId = currentTeamSheetId || (editingPlayerId && state.players[editingPlayerId]?.teamId);
+        const team = targetTeamId && state.teams[targetTeamId];
+
+        const playerContext = {
+          name: (first || last) ? (first + " " + last).trim() : "JUGADOR",
+          number: num || "10",
+          position: pos || "DEL",
+          teamName: team ? team.name : "EQUIPO",
+          color1: team?.colorPrimary || "#2f7ff0",
+          color2: team?.colorSecondary || "#0f3f96"
+        };
+
+        openPaniniCropper(f, playerContext, finalDataUrl => {
+          $("#playerPhotoPreview").innerHTML = `<img src="${finalDataUrl}" alt="">`;
+          pendingPlayerPhoto = finalDataUrl;
+        });
+      });
+
+      // Allow tapping on player photo preview to adjust or crop again
+      $("#playerPhotoPreview")?.addEventListener("click", () => {
+        if (pendingPlayerPhoto || (editingPlayerId && state.players[editingPlayerId]?.photoDataUrl)) {
+          const src = pendingPlayerPhoto || state.players[editingPlayerId].photoDataUrl;
+          const first = $("#playerFirstField").value.trim();
+          const last = $("#playerLastField").value.trim();
+          const num = $("#playerNumberField").value.trim();
+          const pos = $("#playerPositionField").value;
+          const targetTeamId = currentTeamSheetId || (editingPlayerId && state.players[editingPlayerId]?.teamId);
+          const team = targetTeamId && state.teams[targetTeamId];
+
+          const playerContext = {
+            name: (first || last) ? (first + " " + last).trim() : "JUGADOR",
+            number: num || "10",
+            position: pos || "DEL",
+            teamName: team ? team.name : "EQUIPO",
+            color1: team?.colorPrimary || "#2f7ff0",
+            color2: team?.colorSecondary || "#0f3f96"
+          };
+
+          openPaniniCropper(src, playerContext, finalDataUrl => {
+            $("#playerPhotoPreview").innerHTML = `<img src="${finalDataUrl}" alt="">`;
+            pendingPlayerPhoto = finalDataUrl;
+          });
+        }
       });
       $("#playerForm").addEventListener("submit", async e=>{
         e.preventDefault();
