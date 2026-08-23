@@ -10254,7 +10254,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       // ===== render orchestrator =====
       function renderAll(opts={}){
-        const {announce=false}=opts;
+        const {announce=false, preserveScroll=true}=opts;
+        const savedScrollY = (preserveScroll && typeof window !== "undefined") ? window.scrollY : 0;
         const oldChampion=previousChampion,oldPlayed=lastPlayedCount;
         syncGroupsToFormat();
         regenerateAllGroupFixtures();
@@ -10270,9 +10271,14 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         requestConnectors();
         previousChampion=champ?.id||null;
         lastPlayedCount=countPlayed();
-if(announce){
+        if(announce){
           if(champ&&!oldChampion){playChampion();if(state.settings.confetti)launchConfetti();showToast(`${champ.name} es el campeón`)}
           else if(lastPlayedCount>oldPlayed){playAdvance();ballKick()}
+        }
+        if(preserveScroll && savedScrollY > 0){
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: savedScrollY, behavior: "instant" });
+          });
         }
         setTimeout(setupReveals,60);
       }
@@ -11485,7 +11491,9 @@ if(announce){
         const tied=home.id&&away.id&&ready&&h===a;
         $("#matchTieWrap").classList.toggle("visible",Boolean(tied));
       }
+      let matchModalSavedScroll = 0;
       function openMatchModal(matchId){
+        matchModalSavedScroll = (typeof window !== "undefined") ? window.scrollY : 0;
         const m=state.matches[matchId];if(!m)return;
         editingMatchId=matchId;
         const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
@@ -11534,7 +11542,17 @@ if(announce){
         gsap.fromTo("#matchModal .reg-tile",{y:14,scale:.9,autoAlpha:0},
           {y:0,scale:1,autoAlpha:1,duration:.42,stagger:.05,ease:"back.out(1.8)",delay:.26,clearProps:"all"});
       }
-      function closeMatchModal(){regSel=null;$("#matchModal").classList.remove("open");document.body.style.overflow="";editingMatchId=null}
+      function closeMatchModal(){
+        regSel=null;
+        $("#matchModal").classList.remove("open");
+        document.body.style.overflow="";
+        editingMatchId=null;
+        if(matchModalSavedScroll > 0){
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: matchModalSavedScroll, behavior: "instant" });
+          });
+        }
+      }
 
       /* ======================================================================
          USUARIOS DEL ÁLBUM
@@ -14151,7 +14169,7 @@ function loop(){
            submitBtn.disabled = false;
         }
 
-        closeMatchModal();renderAll({announce:true});playScore();showToast("Partido guardado en Supabase");notifyAlbumResultLoaded();
+        closeMatchModal();renderAll({announce:true, preserveScroll:true});playScore();showToast("Partido guardado en Supabase");notifyAlbumResultLoaded();
       });
 
       function openMatchDataModal(id){
