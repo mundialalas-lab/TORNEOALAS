@@ -1679,6 +1679,36 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .u-clean-right.green { color: #4ade80; }
 .u-clean-right.red { color: #64748b; }
 
+
+/* Smart Background Remover UI */
+.photo-preview {
+  background: radial-gradient(circle at center, rgba(47, 127, 240, 0.12) 0%, rgba(10, 16, 28, 0.9) 100%),
+              repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 16px 16px !important;
+}
+.btn-bg-remove {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(47, 127, 240, 0.15);
+  border: 1px solid rgba(47, 127, 240, 0.4);
+  color: #66c3ff;
+  font-family: 'Saira Condensed', var(--font-ui), sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-bg-remove:hover {
+  background: rgba(47, 127, 240, 0.3);
+  color: #fff;
+  border-color: #66c3ff;
+}
+
 .pf-lista{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:12px}
 .pf-sep{
   display:flex;align-items:center;gap:10px;
@@ -10119,7 +10149,138 @@ if(announce){
          sobre el fondo plano del equipo. Si se re-encodea a JPEG, el PNG sin
          fondo vuelve con un rectángulo opaco y el recorte se pierde. Por eso,
          cuando el archivo trae transparencia, sale como PNG aunque pese más. */
-      function compressImage(file,maxSize,keepAlpha){
+      
+      /* ==========================================================================
+         SMART BACKGROUND REMOVAL ENGINE (CANVAS PIXEL PROCESSING)
+         ========================================================================== */
+      function removeCanvasBackground(canvas, tolerance = 42) {
+        try {
+          const ctx = canvas.getContext("2d");
+          const width = canvas.width;
+          const height = canvas.height;
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const data = imgData.data;
+
+          const samplePoints = [
+            [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1],
+            [Math.floor(width / 2), 0], [0, Math.floor(height / 2)], [width - 1, Math.floor(height / 2)],
+            [Math.floor(width / 4), 0], [Math.floor((width * 3) / 4), 0]
+          ];
+
+          let bgR = 0, bgG = 0, bgB = 0, sampleCount = 0;
+          samplePoints.forEach(([x, y]) => {
+            const idx = (y * width + x) * 4;
+            if (data[idx + 3] > 40) {
+              bgR += data[idx];
+              bgG += data[idx + 1];
+              bgB += data[idx + 2];
+              sampleCount++;
+            }
+          });
+
+          if (sampleCount === 0) return canvas;
+          bgR = Math.round(bgR / sampleCount);
+          bgG = Math.round(bgG / sampleCount);
+          bgB = Math.round(bgB / sampleCount);
+
+          function colorDist(idx, r2, g2, b2) {
+            const dr = data[idx] - r2;
+            const dg = data[idx + 1] - g2;
+            const db = data[idx + 2] - b2;
+            return Math.sqrt(dr * dr + dg * dg + db * db);
+          }
+
+          let cornerVariance = 0;
+          samplePoints.forEach(([x, y]) => {
+            const idx = (y * width + x) * 4;
+            cornerVariance += colorDist(idx, bgR, bgG, bgB);
+          });
+          const avgVariance = cornerVariance / samplePoints.length;
+          const effectiveTol = Math.max(tolerance, Math.min(68, tolerance + Math.round(avgVariance * 0.3)));
+
+          const visited = new Uint8Array(width * height);
+          const queue = new Int32Array(width * height * 2);
+          let qHead = 0, qTail = 0;
+
+          function pushQueue(x, y) {
+            const pIdx = y * width + x;
+            if (visited[pIdx]) return;
+            visited[pIdx] = 1;
+            queue[qTail++] = x;
+            queue[qTail++] = y;
+          }
+
+          for (let x = 0; x < width; x++) {
+            const topIdx = (0 * width + x) * 4;
+            const btmIdx = ((height - 1) * width + x) * 4;
+            if (colorDist(topIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(x, 0);
+            if (colorDist(btmIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(x, height - 1);
+          }
+          for (let y = 0; y < height; y++) {
+            const lIdx = (y * width + 0) * 4;
+            const rIdx = (y * width + (width - 1)) * 4;
+            if (colorDist(lIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(0, y);
+            if (colorDist(rIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(width - 1, y);
+          }
+
+          const dx = [1, -1, 0, 0];
+          const dy = [0, 0, 1, -1];
+
+          while (qHead < qTail) {
+            const cx = queue[qHead++];
+            const cy = queue[qHead++];
+            const cIdx = (cy * width + cx) * 4;
+
+            data[cIdx + 3] = 0;
+
+            for (let i = 0; i < 4; i++) {
+              const nx = cx + dx[i];
+              const ny = cy + dy[i];
+              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                const nPos = ny * width + nx;
+                if (!visited[nPos]) {
+                  const nIdx = nPos * 4;
+                  const dist = colorDist(nIdx, bgR, bgG, bgB);
+                  if (dist <= effectiveTol || (dist <= effectiveTol + 16 && colorDist(nIdx, data[cIdx], data[cIdx + 1], data[cIdx + 2]) <= 22)) {
+                    visited[nPos] = 1;
+                    queue[qTail++] = nx;
+                    queue[qTail++] = ny;
+                  }
+                }
+              }
+            }
+          }
+
+          // Feathering & edge anti-aliasing
+          for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+              const pIdx = (y * width + x) * 4;
+              if (data[pIdx + 3] > 0) {
+                let transparentNeighbors = 0;
+                if (data[((y - 1) * width + x) * 4 + 3] === 0) transparentNeighbors++;
+                if (data[((y + 1) * width + x) * 4 + 3] === 0) transparentNeighbors++;
+                if (data[(y * width + (x - 1)) * 4 + 3] === 0) transparentNeighbors++;
+                if (data[(y * width + (x + 1)) * 4 + 3] === 0) transparentNeighbors++;
+
+                if (transparentNeighbors > 0) {
+                  const dist = colorDist(pIdx, bgR, bgG, bgB);
+                  if (dist < effectiveTol + 25) {
+                    const factor = Math.max(0, Math.min(1, (dist - (effectiveTol - 10)) / 35));
+                    data[pIdx + 3] = Math.round(255 * factor);
+                  }
+                }
+              }
+            }
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+        } catch(e) {
+          console.warn("Background removal notice:", e);
+        }
+        return canvas;
+      }
+
+      function compressImage(file,maxSize,keepAlpha,removeBg=false){
         return new Promise((resolve,reject)=>{
           const reader=new FileReader();
           reader.onerror=()=>reject(new Error("read error"));
@@ -10131,9 +10292,12 @@ if(announce){
               const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
               const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
               const ctx=canvas.getContext("2d");
-              const alpha=keepAlpha&&/png|webp|gif/i.test(file.type||"");
+              const alpha=keepAlpha || removeBg;
               if(!alpha){ctx.fillStyle="#ffffff";ctx.fillRect(0,0,w,h)}
               ctx.drawImage(img,0,0,w,h);
+              if(removeBg){
+                removeCanvasBackground(canvas);
+              }
               resolve(alpha?canvas.toDataURL("image/png"):canvas.toDataURL("image/jpeg",.82));
             };
             img.src=reader.result;
@@ -10141,6 +10305,24 @@ if(announce){
           reader.readAsDataURL(file);
         });
       }
+
+      // Helper to process a data URL and remove its background on demand
+      function removeBgFromDataUrl(dataUrl) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            removeCanvasBackground(canvas);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.src = dataUrl;
+        });
+      }
+
 
       // ===== mantenimiento: resetear torneo =====
       window.resetearPuntosTorneo = async function(){
@@ -13245,7 +13427,7 @@ function loop(){
         const f=e.target.files[0];if(!f)return;
         // 160px alcanzaba para el listado, pero la misma foto se ve a tamaño
         // figurita cuando se abre el sobre: se guarda a 460 y con alfa
-        const dataUrl=await compressImage(f,460,true);
+        const dataUrl=await compressImage(f,460,true,true);
         $("#playerPhotoPreview").innerHTML=`<img src="${dataUrl}" alt="">`;pendingPlayerPhoto=dataUrl;
       });
       $("#playerForm").addEventListener("submit", async e=>{
