@@ -6517,61 +6517,65 @@ body{background:transparent !important}
   
   #tabBar, .topbar .tab-bar, .topbar-tabs {
     position: fixed !important;
-    bottom: max(14px, env(safe-area-inset-bottom, 14px)) !important;
     left: 50% !important;
+    bottom: max(10px, env(safe-area-inset-bottom, 10px)) !important;
     transform: translateX(-50%) !important;
-    width: min(calc(100% - 24px), 440px) !important;
-    margin: 0 !important;
-    border-radius: 999px !important;
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-around !important;
-    align-items: center !important;
-    height: 54px !important;
-    padding: 0 10px !important;
-    background: rgba(8, 18, 36, 0.94) !important;
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(47, 127, 240, 0.2) !important;
+    width: min(calc(100% - 24px), 490px) !important;
+    height: 73px !important;
+    padding: 7px !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    background: #0c1119e8 !important;
+    border: 1px solid #ffffff14 !important;
+    border-radius: 24px !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
     z-index: 99999 !important;
-    overflow: hidden !important;
-    touch-action: manipulation !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    margin: 0 !important;
+    overflow: visible !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
   }
   
   .topbar .tab-btn, .tab-btn {
-    flex: 1 !important;
+    border: 0 !important;
+    background: none !important;
+    color: #687587 !important;
+    font-size: 9.5px !important;
+    font-family: Inter, system-ui, var(--font-ui), sans-serif !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
     display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
+    flex-direction: column !important;
     align-items: center !important;
-    gap: 6px !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 8px !important;
-    border-radius: 999px !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
+    justify-content: center !important;
+    gap: 4px !important;
     position: relative !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    border-radius: 18px !important;
+    transition: color 0.2s ease, transform 0.2s ease !important;
+    height: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
   
   .tab-btn .tab-icon {
-    margin: 0 !important;
+    font-size: 19px !important;
     display: flex !important;
-    justify-content: center !important;
     align-items: center !important;
-    transition: color 0.2s ease, transform 0.2s ease !important;
-    color: rgba(255,255,255,0.6) !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    color: inherit !important;
+    margin: 0 !important;
   }
   .tab-btn .tab-icon svg {
-    width: 17px !important;
-    height: 17px !important;
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 1.9 !important;
     display: block !important;
   }
   
@@ -6581,16 +6585,14 @@ body{background:transparent !important}
     width: auto !important;
     height: auto !important;
     clip-path: none !important;
-    font-family: 'Saira Condensed', var(--font-ui), sans-serif !important;
-    font-size: 13.5px !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
     margin: 0 !important;
     white-space: nowrap !important;
     overflow: visible !important;
     line-height: 1 !important;
-    color: rgba(255,255,255,0.6) !important;
+    color: inherit !important;
     transition: color 0.2s ease !important;
   }
   .tab-btn .tab-label-full { display: none !important; }
@@ -6600,24 +6602,20 @@ body{background:transparent !important}
   body:has(#splash) #tabBar { display: none !important; }
 
   .tab-btn.active {
-    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    background: transparent !important;
   }
   .tab-btn.active .tab-icon,
   .tab-btn.active .tab-label {
-    color: #fff !important;
+    color: #ffffff !important;
     font-weight: 800 !important;
   }
-  .tab-btn.active .tab-icon {
-    color: var(--azul-hi, #2f7ff0) !important;
-    transform: scale(1.1) !important;
-  }
   .tab-btn.active .tab-icon svg {
-    stroke: var(--azul-hi, #2f7ff0) !important;
+    stroke: #ffffff !important;
   }
   
   .tab-btn::before { display: none !important; }
   .tab-btn.active::after { display: none !important; }
-  .tab-btn:active { transform: scale(0.95) !important; }
 
   .tab-indicador {
     position: absolute !important;
@@ -13608,6 +13606,14 @@ function loop(){
         // Fondo por pestaña: Torneo lleva la pelota, el resto el cartel FIFA
         document.body.classList.toggle("tab-torneo",tab==="mapa");
         moverIndicador();
+        const activeBtn = document.querySelector("#tabBar .tab-btn.active");
+        document.querySelectorAll("#tabBar .indicator").forEach(i => i.remove());
+        if (activeBtn) {
+          const ind = document.createElement("i");
+          ind.className = "indicator";
+          activeBtn.appendChild(ind);
+          if (window.gsap) gsap.fromTo(activeBtn, { scale: 0.85 }, { scale: 1, duration: 0.4, ease: "back.out(2)" });
+        }
         
         // Scroll suave y automático al inicio de la página en cada cambio de pestaña
         window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -14721,6 +14727,12 @@ function loop(){
       window.addEventListener("resize",moverIndicador);
       if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moverIndicador).catch(()=>{});
       requestAnimationFrame(moverIndicador);
+      const initActive = document.querySelector("#tabBar .tab-btn.active");
+      if (initActive && !initActive.querySelector(".indicator")) {
+        const ind = document.createElement("i");
+        ind.className = "indicator";
+        initActive.appendChild(ind);
+      }
 
       // ===== hero: alto real del header y barra transparente =====
       measureTopbar();updateHeroBar();
