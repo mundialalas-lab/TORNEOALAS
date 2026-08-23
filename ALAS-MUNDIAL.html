@@ -513,13 +513,13 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .icon-btn{transition:color var(--t-fast),border-color var(--t-fast),background var(--t-fast),transform var(--t-fast)}
 
 .close-btn{
-  width:34px;height:34px;flex:none;
+  width:44px;height:44px;flex:none;
   display:grid;place-items:center;border-radius:var(--r-sm);
-  border:1px solid var(--line-strong);color:var(--text-soft);
-  font-size:20px;line-height:1;
-  transition:color var(--t-fast),border-color var(--t-fast),background var(--t-fast);
+  border:1px solid rgba(239, 68, 68, 0.4);color:#ef4444;background:rgba(239, 68, 68, 0.08);
+  font-size:26px;font-weight:300;line-height:1;
+  transition:all var(--t-fast);
 }
-.close-btn:hover{color:var(--elimina);border-color:var(--elimina);background:var(--danger-soft)}
+.close-btn:hover{color:#f87171;border-color:#ef4444;background:rgba(239, 68, 68, 0.15);transform:scale(1.05);}
 
 /* ------------------------------------------------------- mapa / llave ---- */
 .map-shell{
@@ -10740,13 +10740,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         pills.forEach(p => p.classList.toggle("active", p.dataset.filter === "all"));
         renderUsersMonitorModal();
         $("#usersMonitorModal").classList.add("open");
-        document.body.style.overflow = "hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         playClick();
       }
 
       function closeUsersMonitorModal() {
         $("#usersMonitorModal").classList.remove("open");
-        document.body.style.overflow = "";
+        document.body.style.overflow="";document.body.classList.remove("modal-open");
       }
 
       function renderUsersMonitorModal() {
@@ -10916,14 +10916,14 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
           renderCropperCanvas();
           $("#paniniCropperModal").classList.add("open");
-          document.body.style.overflow = "hidden";
+          document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         };
         img.src = (typeof imgSource === "string") ? imgSource : URL.createObjectURL(imgSource);
       }
 
       function closePaniniCropper() {
         $("#paniniCropperModal").classList.remove("open");
-        document.body.style.overflow = "";
+        document.body.style.overflow="";document.body.classList.remove("modal-open");
       }
 
       function renderCropperCanvas() {
@@ -11139,9 +11139,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#teamPhotoPreview").innerHTML=t?.photoDataUrl?`<img src="${t.photoDataUrl}" alt="">`:"Sin foto";
         $("#teamPhotoFile").value="";
         $("#btnDeleteTeam").style.display=t?"":"none";
-        $("#teamModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+        $("#teamModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
       }
-      function closeTeamModal(){$("#teamModal").classList.remove("open");document.body.style.overflow=""}
+      function closeTeamModal(){$("#teamModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
 
       // ===== modal: foto del plantel (capitán y admin) =====
       let pendingTeamQuickPhoto=null;
@@ -11155,9 +11155,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#teamPhotoQuickPreview").innerHTML=t.photoDataUrl?`<img src="${t.photoDataUrl}" alt="">`:"Sin foto";
         $("#teamPhotoQuickFile").value="";
         $("#btnDeleteQuickPhoto").style.display=t.photoDataUrl?"":"none";
-        $("#teamPhotoModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+        $("#teamPhotoModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
       }
-      function closeTeamPhotoModal(){$("#teamPhotoModal").classList.remove("open");document.body.style.overflow=""}
+      function closeTeamPhotoModal(){$("#teamPhotoModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
 
       // ===== modal: jugador =====
       function openPlayerModal(playerId){
@@ -11179,9 +11179,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#playerPhotoPreview").innerHTML=p?.photoDataUrl?'<img src="'+p.photoDataUrl+'" alt="">':"Sin foto";
         $("#playerPhotoFile").value="";
         $("#btnDeletePlayer").style.display=p?"":"none";
-        $("#playerModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+        $("#playerModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
       }
-      function closePlayerModal(){$("#playerModal").classList.remove("open");document.body.style.overflow=""}
+      function closePlayerModal(){$("#playerModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
 
       // ===== modal: ver resultados =====
       function tvHeroHtml(playerId,rotulo,valor){
@@ -11269,10 +11269,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         
         $("#viewResultsModalBody").innerHTML = html;
         $("#viewResultsModal").classList.add("open");
-        document.body.style.overflow = "hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         playClick();
       }
-      function closeMatchResultModal(){$("#viewResultsModal").classList.remove("open");document.body.style.overflow=""}
+      function closeMatchResultModal(){$("#viewResultsModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
 
       /* ======================================================================
          CONSOLA DE REGISTRO DEL PARTIDO
@@ -11610,7 +11610,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         poblarSelectFigura(home,away,m.mvpPlayerId||"");
         regSel=null;
         renderEventEditor(home,away);
-        $("#matchModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+        $("#matchModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
         animarModalPartido();
       }
       function animarModalPartido(){
@@ -11625,7 +11625,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function closeMatchModal(){
         regSel=null;
         $("#matchModal").classList.remove("open");
-        document.body.style.overflow="";
+        document.body.style.overflow="";document.body.classList.remove("modal-open");
         editingMatchId=null;
         if(matchModalSavedScroll > 0){
           requestAnimationFrame(() => {
@@ -13607,10 +13607,10 @@ function loop(){
         prev.innerHTML=pendingLegendPhoto?`<img src="${pendingLegendPhoto}" alt="">`:"Sin foto";
         $("#btnDeleteLegend").style.display=l?"":"none";
         $("#legendPhotoFile").value="";
-        $("#legendModal").classList.add("open");document.body.style.overflow="hidden";playClick();
+        $("#legendModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
       }
       function closeLegendModal(){
-        $("#legendModal").classList.remove("open");document.body.style.overflow="";
+        $("#legendModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open");
         editingLegendId=null;pendingLegendPhoto=null;
       }
       $("#btnNewLegend")?.addEventListener("click",()=>openLegendModal(null));
@@ -14281,11 +14281,11 @@ function loop(){
         $("#matchVenueField").value=m.venue||"";
         $("#matchStatusField").value=m.status;
         $("#matchDataModal").classList.add("open");
-        document.body.style.overflow="hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
       }
       function closeMatchDataModal(){
         $("#matchDataModal").classList.remove("open");
-        document.body.style.overflow="";
+        document.body.style.overflow="";document.body.classList.remove("modal-open");
       }
       
       $("#matchDataForm").addEventListener("submit", async e=>{
@@ -14358,7 +14358,7 @@ function loop(){
         const p=$("#pantallaPerfiles");
         if(!p)return;
         p.hidden=false;
-        document.body.style.overflow="hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         $("#pfPaso").hidden=true;
         $("#pfGrid").style.display="";
         const lg=$("#pfLogo");
@@ -14377,7 +14377,7 @@ function loop(){
       function ocultarPerfiles(){
         const p=$("#pantallaPerfiles");
         if(!p)return;
-        const cerrar=()=>{ p.hidden=true; document.body.style.overflow=""; };
+        const cerrar=()=>{ p.hidden=true; document.body.style.overflow="";document.body.classList.remove("modal-open"); };
         if(anim())gsap.to(p,{autoAlpha:0,duration:.35,ease:"power2.in",onComplete:cerrar});
         else cerrar();
       }
@@ -14725,7 +14725,7 @@ function loop(){
         $("#resetConfirmField").value="";
         $("#resetErr").classList.remove("show");
         $("#resetModal").classList.add("open");
-        document.body.style.overflow="hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         playClick();
         setTimeout(()=>$("#resetConfirmField").focus(),80);
         if(window.gsap&&!matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -14734,7 +14734,7 @@ function loop(){
       }
       function cerrarResetModal(){
         $("#resetModal").classList.remove("open");
-        document.body.style.overflow="";
+        document.body.style.overflow="";document.body.classList.remove("modal-open");
       }
       function ejecutarReset(){
         if($("#resetConfirmField").value.trim().toUpperCase()!=="REINICIAR"){
@@ -15086,14 +15086,14 @@ function loop(){
       (()=>{
         const intro=$("#introScreen");if(!intro)return;
         const subEl=document.getElementById("introSubtitle");if(subEl) subEl.textContent=state.tournament.subtitle;
-        document.body.style.overflow="hidden";
+        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         let dismissed=false;
         // fromGesture: sólo entonces el navegador habilita el audio, así que
         // el stinger se reserva para la salida manual (click / tecla).
         const dismiss=(fromGesture)=>{
           if(dismissed)return;dismissed=true;
           intro.classList.add("hide");
-          document.body.style.overflow="";
+          document.body.style.overflow="";document.body.classList.remove("modal-open");
           if(fromGesture)playIntroStinger();
           setTimeout(()=>intro.remove(),650);
         };
