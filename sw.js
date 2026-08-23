@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alas-mundial-v2';
+const CACHE_NAME = 'alas-mundial-v3';
 const ASSETS_TO_CACHE = [
   './',
   './ALAS-MUNDIAL.html',
@@ -32,8 +32,16 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Pass-through to network first, fallback to cache
+  // Network first with cache fallback
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).then((networkResponse) => {
+      if (networkResponse && networkResponse.status === 200 && e.request.method === 'GET') {
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(e.request, responseClone).catch(() => {});
+        });
+      }
+      return networkResponse;
+    }).catch(() => caches.match(e.request))
   );
 });
