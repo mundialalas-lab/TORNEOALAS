@@ -6520,7 +6520,7 @@ body{background:transparent !important}
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    transform: none !important;
+    transform: translateZ(0) !important;
     width: 100% !important;
     height: auto !important;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
@@ -12410,7 +12410,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     .wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom)) !important}
     .card,.btn,.sobre-stage button{touch-action:manipulation !important}
     .card:active{transform:scale(.97)}
-    .bpage{will-change:transform}
   }
   /* ===== modal clave de administrador ===== */
   .modal-backdrop .admin-modal{width:min(420px,100%)}
@@ -12427,6 +12426,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 /* REGLA DEFINITIVA: OCULTAR DOCK / BARRA INFERIOR EN CUALQUIER MODAL */
 body.modal-open #tabBar,
+body.modal-open .topbar-tabs,
+.perfiles:not([hidden]) ~ * #tabBar {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transform: translate3d(-50%, 100px, 0) !important;
+}
+
+/* Fallback para navegadores modernos que soportan :has */
 body:has(.modal-backdrop.open) #tabBar,
 body:has(.modal-backdrop.is-open) #tabBar,
 body:has(#matchModal.open) #tabBar,
@@ -12439,8 +12448,7 @@ body:has(#paniniCropperModal.open) #tabBar,
 body:has(#matchDataModal.open) #tabBar,
 body:has(#resetModal.open) #tabBar,
 body:has(#pantallaPerfiles:not([hidden])) #tabBar,
-body:has(#splash) #tabBar,
-.perfiles:not([hidden]) ~ * #tabBar {
+body:has(#splash) #tabBar {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
