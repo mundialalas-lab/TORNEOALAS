@@ -13062,7 +13062,6 @@ function loop(){
 
         closeConfig();renderAll();playAdvance();showToast("Configuración guardada en Supabase");
       });
-      if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
 
       $("#btnNewTeam").addEventListener("click",()=>openTeamModal(null));
       $("#btnBackTeams").addEventListener("click",()=>{currentTeamSheetId=null;renderAll()});

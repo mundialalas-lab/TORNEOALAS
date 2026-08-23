@@ -1,10 +1,12 @@
-const CACHE_NAME = 'alas-mundial-v1';
+const CACHE_NAME = 'alas-mundial-v2';
 const ASSETS_TO_CACHE = [
   './',
   './ALAS-MUNDIAL.html',
   './ALAS.png',
   './ALAS_blanco.png',
   './ICONO DE GOL SIN FONDO.png',
+  './PELOTA.jpg',
+  './FIFA.jpg',
   './manifest.json'
 ];
 
