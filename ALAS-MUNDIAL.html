@@ -4782,6 +4782,19 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 
 .top-action-btn:active { transform: translateY(0) scale(0.95); }
 
+
+.btn-logout-top {
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+.btn-logout-top:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.4) !important;
+}
+
 .top-action-btn.danger { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
 
 .top-action-btn.danger:hover {
@@ -7320,16 +7333,16 @@ body{background:transparent !important}
         <button class="top-action-btn" id="btnFullscreen" title="Pantalla Completa">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
         </button>
+        <!-- Botón Cerrar Sesión / Salir -->
+        <button class="top-action-btn btn-logout-top" id="btnCerrarSesion" title="Cerrar sesión / Cambiar de perfil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
         <button class="top-action-btn" id="btnAlbumTop" title="Álbum de figuritas">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="16" rx="2"/><path d="M7 3h11a2 2 0 0 1 2 2v11"/></svg>
         </button>
         <button class="top-action-btn" id="btnAdmin" title="Modo Administrador">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5 21 2"/><path d="M16 7l3 3"/></svg>
         </button>
-        <!-- vuelve a la pantalla de perfiles: es la forma de pasar de hincha a
-             capitán o a admin sin recargar -->
-        <button class="top-action-btn" id="btnCambiarPerfil" title="Cambiar de perfil">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3-3 3"/><path d="M19 8v8"/></svg>
         </button>
         <button class="top-action-btn danger admin-only" id="btnReset" title="Reiniciar torneo" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
@@ -7496,6 +7509,10 @@ body{background:transparent !important}
         <div class="panel-head" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
           <div><h2>Configuración del torneo</h2><p>Personalizá la competencia, equipos, colores y experiencia sonora.</p></div>
           <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn danger" id="btnConfigLogout" style="height:36px; padding:0 14px; font-size:12px; font-weight:800; text-transform:uppercase; border-radius:999px; display:inline-flex; align-items:center; gap:6px; letter-spacing:0.04em;" title="Cerrar sesión">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Cerrar sesión</span>
+            </button>
             <button type="button" class="btn-usuarios-pro" id="btnVerUsuariosActivos" title="Ver lista completa de usuarios">
               <span class="live-pulse-dot"></span>
               <span>USUARIOS ACTIVOS ( <strong id="activeUsersBadge">0</strong> )</span>
@@ -14508,7 +14525,9 @@ function loop(){
         mostrarPerfiles();
       }
 
-      $("#btnCambiarPerfil")?.addEventListener("click",()=>{ playClick(); cerrarSesion(); });
+      $("#btnCerrarSesion")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
+      $("#btnCambiarPerfil")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
+      $("#btnConfigLogout")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
 
       /* ====================================================================
          PANEL DE CAPITANES (sólo administrador)
