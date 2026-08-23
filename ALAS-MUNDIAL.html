@@ -6513,7 +6513,7 @@ body{background:transparent !important}
   }
   .topbar::before { display: none !important; }
   .topbar-inner { display: flex !important; justify-content: space-between !important; align-items: center !important; height: 100% !important; padding: 0 !important; }
-  .topbar-actions { position: static !important; margin: 0 !important; }
+  .topbar-actions { display: none !important; }
   
   #tabBar, .topbar .tab-bar, .topbar-tabs {
     position: fixed !important;
@@ -6775,6 +6775,7 @@ body{background:transparent !important}
   .hero-sub { display: none !important; }
   .scoreboard { max-width: 560px !important; margin-left: auto !important; margin-right: auto !important; }
   .app-shell { padding-bottom: calc(var(--tabbar-h) + 24px) !important; }
+  .topbar-actions { display: none !important; }
   #albumFrame { height: calc(100dvh - var(--tabbar-h) - 110px) !important; min-height: 300px !important; }
 }
 
@@ -6793,7 +6794,7 @@ body{background:transparent !important}
     position: relative !important;
   }
   .topbar-actions { 
-    position: absolute !important; 
+    display: none !important; 
     right: 12px !important; 
     margin: 0 !important; 
   }
