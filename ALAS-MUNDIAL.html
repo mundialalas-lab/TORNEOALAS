@@ -7979,7 +7979,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", clave: "3121", createdAt: new Date().toISOString() },
         "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", clave: "1221", createdAt: new Date().toISOString() },
         "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", clave: "2131", createdAt: new Date().toISOString() },
-        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() }
+        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() },
+        "u-cap-7-rafael": { id: "u-cap-7-rafael", name: "Rafael Ovelar", role: "capitan", teamId: "t-picking", usuario: "rafael", clave: "4455", createdAt: new Date().toISOString() }
       };
 
       function defaultState(){
@@ -8065,9 +8066,26 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             teams:saved.teams||{},
             players:saved.players||{},
             matches:saved.matches||{},
-            album:{...d.album,...(saved.album||{})},
-            users:{...clone(INITIAL_CAPTAINS), ...(saved.users||{})},
-            albums:saved.albums||{},
+            users: (() => {
+              const uMap = { ...clone(INITIAL_CAPTAINS), ...(saved.users || {}) };
+              Object.values(INITIAL_CAPTAINS).forEach(initCap => {
+                if (!uMap[initCap.id]) uMap[initCap.id] = clone(initCap);
+                else {
+                  uMap[initCap.id].clave = initCap.clave;
+                  uMap[initCap.id].role = initCap.role;
+                  uMap[initCap.id].teamId = initCap.teamId;
+                  uMap[initCap.id].usuario = initCap.usuario;
+                }
+                Object.values(uMap).forEach(u => {
+                  if (u.name && u.name.trim().toLowerCase() === initCap.name.trim().toLowerCase()) {
+                    u.clave = initCap.clave;
+                    u.role = initCap.role;
+                    u.teamId = initCap.teamId;
+                  }
+                });
+              });
+              return uMap;
+            })(),
             legends:saved.legends||{},
             settings:{...d.settings,...(saved.settings||{})},
             ui:{...d.ui,...(saved.ui||{})}
@@ -8294,6 +8312,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               try {
                 const cloudUsers = JSON.parse(userLegend.team);
                 state.users = { ...clone(INITIAL_CAPTAINS), ...state.users, ...cloudUsers };
+                Object.values(INITIAL_CAPTAINS).forEach(initCap => {
+                  if (state.users[initCap.id]) {
+                    state.users[initCap.id].clave = initCap.clave;
+                    state.users[initCap.id].role = initCap.role;
+                    state.users[initCap.id].teamId = initCap.teamId;
+                    state.users[initCap.id].usuario = initCap.usuario;
+                  }
+                  Object.values(state.users).forEach(u => {
+                    if (u.name && u.name.trim().toLowerCase() === initCap.name.trim().toLowerCase()) {
+                      u.clave = initCap.clave;
+                      u.role = initCap.role;
+                      u.teamId = initCap.teamId;
+                    }
+                  });
+                });
               } catch(e){}
             }
           }
