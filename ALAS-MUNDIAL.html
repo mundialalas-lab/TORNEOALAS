@@ -1402,6 +1402,49 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   color:#ffb4ac;font-size:12.5px;
 }
 .pf-error.show{display:block}
+
+/* ==========================================================================
+   INGRESO DE ADMINISTRADOR
+   El email no se pide: el administrador es siempre la misma cuenta, así que
+   pedirlo era hacerle tipear un dato que la app ya sabe. Queda la clave, y
+   un escudo que deja claro a qué puerta está entrando.
+   ========================================================================== */
+.pf-admin-hero{display:flex;flex-direction:column;align-items:center;gap:9px;margin-bottom:6px}
+.pf-admin-avatar{
+  position:relative;width:98px;height:98px;border-radius:50%;
+  display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 32% 26%,rgba(255,255,255,.34),transparent 58%),
+    linear-gradient(145deg,#2f6bff,#0b2f7d 62%,#071b4a);
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.55),
+    0 0 0 1.5px rgba(255,255,255,.16) inset,
+    0 0 30px rgba(47,107,255,.42);
+}
+/* El anillo dorado gira lento: da sensación de "en vivo" sin distraer, y en
+   reduced-motion se queda quieto pero se sigue viendo igual de sólido. */
+.pf-admin-avatar::before{
+  content:"";position:absolute;inset:-5px;border-radius:50%;
+  background:conic-gradient(from 0deg,#f5c451,#fff3cf,#c8912a,#f5c451);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));
+  animation:pfAdminGiro 7s linear infinite;
+}
+@keyframes pfAdminGiro{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pf-admin-avatar::before{animation:none}}
+.pf-admin-avatar svg{width:46px;height:46px;position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
+.pf-admin-titulo{
+  font-family:'Anton','Saira Condensed',var(--font-ui),sans-serif;
+  font-size:25px;letter-spacing:.05em;text-transform:uppercase;
+  color:#fff;line-height:1;margin:0;
+}
+.pf-admin-sub{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:999px;
+  border:1px solid rgba(245,196,81,.42);background:rgba(245,196,81,.12);
+  color:#f5c451;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.09em;
+}
 /* lista de hinchas ya registrados */
 
 /* ==========================================================================
@@ -7876,7 +7919,6 @@ body{background:transparent !important}
       </header>
       <div class="modal-body">
         <div class="admin-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg></div>
-        <div class="field" style="margin-bottom: 12px;"><label for="adminEmailField">Correo electrónico</label><input type="email" id="adminEmailField" autocomplete="email" placeholder="Ingresa tu email…" /></div>
         <div class="field"><label for="adminKeyField">Contraseña</label><input type="password" id="adminKeyField" maxlength="32" autocomplete="off" placeholder="Ingresá la clave…" /></div>
         <div class="admin-err" id="adminErr" role="alert">Credenciales incorrectas. Revisalas y probá de nuevo.</div>
       </div>
@@ -11823,6 +11865,14 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         return r;
       }
 
+      /* El administrador es siempre la misma cuenta, así que la app ya sabe
+         cuál es: no tiene sentido hacerle tipear el email en cada ingreso.
+         Sólo pide la clave. */
+      const ADMIN_USUARIO="admin";
+      async function ingresarComoAdmin(pin){
+        return ingresarConSupabase(ADMIN_USUARIO, pin);
+      }
+
       async function cerrarSesionNube(){
         perfilNube=null;
         if(!window.supabase) return;
@@ -14795,10 +14845,17 @@ function loop(){
         else{
           cont.innerHTML=`
             <form class="pf-form" id="pfFormAdmin">
-              <h3>Entrar como administrador</h3>
-              <p class="ayuda">Control total del torneo.</p>
-              <input type="email" id="pfAdminEmail" maxlength="80" placeholder="Email" autocomplete="username" required>
-              <input type="password" id="pfAdminClave" maxlength="64" placeholder="Clave" autocomplete="current-password" required>
+              <div class="pf-admin-hero">
+                <div class="pf-admin-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#ffe9ae" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2.6 4.5 5.6v6.1c0 5.4 7.5 9.7 7.5 9.7s7.5-4.3 7.5-9.7V5.6z" fill="rgba(255,233,174,.12)"/>
+                    <path d="m12 8.1 1.35 2.74 3.02.44-2.18 2.13.51 3.01L12 15 9.3 16.42l.51-3.01-2.18-2.13 3.02-.44z" fill="#ffe9ae" stroke="none"/>
+                  </svg>
+                </div>
+                <h3 class="pf-admin-titulo">Administrador</h3>
+                <span class="pf-admin-sub">Control total del torneo</span>
+              </div>
+              <input type="password" id="pfAdminClave" maxlength="64" placeholder="Ingresá tu clave…" autocomplete="current-password" required autofocus>
               <div class="pf-error" id="pfErr">Clave incorrecta.</div>
               <button class="btn" type="submit">Entrar</button>
             </form>`;
@@ -14812,7 +14869,7 @@ function loop(){
             const btn=e.target.querySelector('button[type="submit"]');
             const txt=btn?btn.textContent:"";
             if(btn){btn.textContent="Entrando…";btn.disabled=true;}
-            const r=await ingresarConEmail($("#pfAdminEmail").value,$("#pfAdminClave").value);
+            const r=await ingresarComoAdmin($("#pfAdminClave").value);
             if(btn){btn.textContent=txt;btn.disabled=false;}
             if(!r.ok || r.perfil.role!==ROL.ADMIN){
               if(!r.ok && r.motivo==="sin-conexion") { if(err)err.textContent="No hay conexión con el servidor."; }
@@ -15149,16 +15206,13 @@ function loop(){
         setTimeout(()=>{if(adminKeyField)adminKeyField.focus()},60);
       });
       const adminModalEl=$("#adminModal");
-      const adminEmailFieldEl=$("#adminEmailField");
       const adminKeyFieldEl=$("#adminKeyField");
       const adminErrEl=$("#adminErr");
       const closeAdminModal=()=>{ if(adminModalEl)adminModalEl.classList.remove("open"); };
       
       const tryAdminKey=async ()=>{
-        const email=adminEmailFieldEl?adminEmailFieldEl.value.trim():"";
         const password=adminKeyFieldEl?adminKeyFieldEl.value.trim():"";
-        
-        if(!email || !password) return;
+        if(!password) return;
 
         const mostrarErr=txt=>{
           if(adminErrEl){adminErrEl.textContent=txt;adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
@@ -15166,7 +15220,7 @@ function loop(){
 
         // Misma rutina que usa el resto de la app: deja perfilNube armado,
         // que es de donde salen el rol y el equipo en todas las pantallas.
-        const r=await ingresarConEmail(email,password);
+        const r=await ingresarComoAdmin(password);
 
         if(!r.ok){
           mostrarErr(r.motivo==="sin-conexion"?"No hay conexión con el servidor.":"Credenciales incorrectas.");
