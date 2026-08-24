@@ -3730,15 +3730,7 @@ body.album-fs .footer-strip{display:none}
 }
 
 /* tarjeta para dar de alta a alguien que no estaba en la lista */
-.mr-nuevo{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
-  min-height:150px;border-radius:14px;cursor:pointer;
-  border:1.5px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.03);
-  color:#9ec8ff;font-family:var(--font-ui);font-weight:800;font-size:12px;
-  text-transform:uppercase;letter-spacing:.04em;
-}
-.mr-nuevo span{font-size:26px;line-height:1}
-.mr-nuevo:hover{border-color:rgba(90,162,255,.6);background:rgba(90,162,255,.08)}
+/* La tarjeta .mr-nuevo se fue con el modo ficha: ahora es .mr-fila-nuevo. */
 
 /* ---- hoja del evento ---- */
 .mr-ev{
@@ -3814,10 +3806,7 @@ body.album-fs .footer-strip{display:none}
 
 /* Lo ya cargado, encima de la ficha. Al pasar veinte jugadores es lo unico
    que evita cargarle el mismo gol dos veces al mismo tipo. */
-.mr-marcas{
-  position:absolute;top:6px;left:6px;z-index:4;
-  display:flex;flex-direction:column;gap:4px;align-items:flex-start;
-}
+.mr-marcas{display:flex;gap:4px;align-items:center}
 .mr-marca{
   display:inline-flex;align-items:center;gap:3px;
   padding:3px 7px 3px 4px;border-radius:999px;
@@ -3826,6 +3815,47 @@ body.album-fs .footer-strip{display:none}
 }
 .mr-marca img,.mr-marca div{width:14px!important;height:14px!important;font-size:10px!important}
 .mr-marca i{font-style:normal;line-height:1}
+
+/* Filas del plantel. Se busca a una persona entre veinte: importan la
+   densidad y el dorsal, no la ficha. */
+.mr-lista{display:flex;flex-direction:column;gap:6px}
+.mr-fila{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:9px 12px;border-radius:12px;cursor:pointer;text-align:left;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);
+  color:#fff;font-family:var(--font-ui);
+  transition:background .16s ease,border-color .16s ease,transform .14s var(--ease-out);
+}
+.mr-fila:hover{background:rgba(90,162,255,.1);border-color:rgba(90,162,255,.4)}
+.mr-fila:active{transform:scale(.985)}
+.mr-fila.tiene{border-color:rgba(0,209,122,.4);background:rgba(0,209,122,.07)}
+.mr-fila-num{
+  flex:0 0 auto;min-width:32px;text-align:center;
+  font-family:'Anton',var(--font-ui),sans-serif;font-size:19px;color:#5aa2ff;
+}
+.mr-fila .tv-face{flex:0 0 auto;width:40px;height:40px}
+.mr-fila-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.mr-fila-id strong{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.02em;
+  line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mr-fila-id small{font-size:11px;color:#8fa0b8;font-weight:600}
+.mr-fila-marcas{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.mr-fila-chev{flex:0 0 auto;font-size:21px;color:#5b6b84;line-height:1}
+.mr-fila-nuevo{
+  border-style:dashed;border-color:rgba(255,255,255,.2);
+  background:transparent;margin-top:4px;
+}
+.mr-fila-nuevo .mr-fila-num{color:#9ec8ff;font-size:22px}
+.mr-fila-nuevo strong{color:#9ec8ff}
+.mr-fila-nuevo:hover{border-color:rgba(90,162,255,.6);background:rgba(90,162,255,.07)}
+
+/* La hoja usa todo el ancho: cada píxel de margen es medio nombre menos. */
+.mr-hoja-body{padding:12px 10px 18px}
+@media (min-width:620px){
+  .mr-hoja-body{padding:16px calc(50% - 300px) 22px}
+}
 
 /* --------------------------------------------------------- revelaciones -- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
@@ -11992,24 +12022,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function mrHojaHtml(){
         const jug=playersInTeam(mrTeamId);
         const mvpId=$("#matchMvpField")?.value||"";
-        const todas=buildCards();
         const puedeAlta=puedeEditarEquipo(mrTeamId);
 
         if(!jug.length && !puedeAlta){
           return `<p class="mr-sin-jug">${esc(state.teams[mrTeamId]?.name||"Este equipo")} todavía no tiene jugadores cargados.</p>`;
         }
 
-        const fichas=jug.map(p=>{
-          const c=todas.find(x=>!x.isLegend && x.playerId===p.id) || {
-            id:p.id, name:`${p.firstName} ${p.lastName}`, ovr:85,
-            pos:p.position||"DEL", number:p.number,
-            teamName:state.teams[p.teamId]?.name||"",
-            photo:p.photoDataUrl||"", flag:state.teams[p.teamId]?.logoDataUrl||"",
-            c1:state.teams[p.teamId]?.colorPrimary||"#1668ff",
-            c2:state.teams[p.teamId]?.colorSecondary||"#0b1730", rar:"gold"
-          };
-          /* Lo ya cargado se ve sobre la ficha: al pasar veinte jugadores es
-             lo único que evita cargarle el gol dos veces al mismo. */
+        /* En lista y no en fichas. La ficha Panini es linda pero entraban dos
+           jugadores por pantalla, y acá se viene a encontrar rápido a alguien
+           entre veinte. En fila entran ocho o nueve de una. */
+        const filas=jug.map(p=>{
           const marcas=REG_TIPOS.map(d=>{
             const n=d.t==="mvp"?(mvpId===p.id?1:0)
                    :pendingEvents.filter(e=>e.type===d.t&&e.playerId===p.id).length;
@@ -12017,17 +12039,28 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             return `<span class="mr-marca" style="background:${d.acc}">${REG_ICO[d.t]}${d.t==="mvp"?"":`<i>${n}</i>`}</span>`;
           }).join("");
 
-          return `<div class="roster-card reg-panini-card${marcas?" is-selected-event":""}" data-mr-player="${esc(p.id)}">
-            ${cardFaceHtml(c)}
-            ${marcas?`<div class="mr-marcas">${marcas}</div>`:""}
-          </div>`;
+          const dorsal=(p.number!=null&&p.number!=="")?esc(p.number):"–";
+          return `<button type="button" class="mr-fila${marcas?" tiene":""}" data-mr-player="${esc(p.id)}">
+            <span class="mr-fila-num">${dorsal}</span>
+            ${tvFaceHtml(p)}
+            <span class="mr-fila-id">
+              <strong>${esc(nombreJugador(p))}</strong>
+              <small>${esc(POS_LABEL[p.position]||p.position||"")}</small>
+            </span>
+            <span class="mr-fila-marcas">${marcas}</span>
+            <span class="mr-fila-chev" aria-hidden="true">›</span>
+          </button>`;
         }).join("");
 
         const alta=puedeAlta
-          ? `<button type="button" class="mr-nuevo" data-mr-nuevo><span>＋</span>Agregar jugador</button>`
+          ? `<button type="button" class="mr-fila mr-fila-nuevo" data-mr-nuevo>
+               <span class="mr-fila-num">＋</span>
+               <span class="mr-fila-id"><strong>Agregar jugador</strong>
+                 <small>No está en la lista</small></span>
+             </button>`
           : "";
 
-        return `<div class="reg-squad">${fichas}${alta}</div>`;
+        return `<div class="mr-lista">${filas}${alta}</div>`;
       }
 
       function renderHojaJugadores(){
