@@ -3818,10 +3818,10 @@ body.album-fs .footer-strip{display:none}
 
 /* Filas del plantel. Se busca a una persona entre veinte: importan la
    densidad y el dorsal, no la ficha. */
-.mr-lista{display:flex;flex-direction:column;gap:6px}
+.mr-lista{display:flex;flex-direction:column;gap:7px}
 .mr-fila{
-  display:flex;align-items:center;gap:11px;width:100%;
-  padding:9px 12px;border-radius:12px;cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:13px;width:100%;
+  padding:13px 14px;border-radius:14px;cursor:pointer;text-align:left;
   border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);
   color:#fff;font-family:var(--font-ui);
   transition:background .16s ease,border-color .16s ease,transform .14s var(--ease-out);
@@ -3830,19 +3830,19 @@ body.album-fs .footer-strip{display:none}
 .mr-fila:active{transform:scale(.985)}
 .mr-fila.tiene{border-color:rgba(0,209,122,.4);background:rgba(0,209,122,.07)}
 .mr-fila-num{
-  flex:0 0 auto;min-width:32px;text-align:center;
-  font-family:'Anton',var(--font-ui),sans-serif;font-size:19px;color:#5aa2ff;
+  flex:0 0 auto;min-width:38px;text-align:center;
+  font-family:'Anton',var(--font-ui),sans-serif;font-size:23px;color:#5aa2ff;
 }
-.mr-fila .tv-face{flex:0 0 auto;width:40px;height:40px}
+.mr-fila .tv-face{flex:0 0 auto;width:46px;height:46px}
 .mr-fila-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .mr-fila-id strong{
   font-family:'Saira Condensed',var(--font-ui),sans-serif;
-  font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.02em;
+  font-weight:800;font-size:16.5px;text-transform:uppercase;letter-spacing:.02em;
   line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.mr-fila-id small{font-size:11px;color:#8fa0b8;font-weight:600}
+.mr-fila-id small{font-size:12px;color:#8fa0b8;font-weight:600}
 .mr-fila-marcas{display:flex;align-items:center;gap:4px;flex:0 0 auto}
-.mr-fila-chev{flex:0 0 auto;font-size:21px;color:#5b6b84;line-height:1}
+.mr-fila-chev{flex:0 0 auto;font-size:24px;color:#5b6b84;line-height:1}
 .mr-fila-nuevo{
   border-style:dashed;border-color:rgba(255,255,255,.2);
   background:transparent;margin-top:4px;
@@ -3856,6 +3856,31 @@ body.album-fs .footer-strip{display:none}
 @media (min-width:620px){
   .mr-hoja-body{padding:16px calc(50% - 300px) 22px}
 }
+
+/* Buscador del plantel. Pegado arriba: con veinte jugadores la lista se va de
+   pantalla y el buscador tiene que seguir a mano despues de bajar. */
+.mr-hoja-buscar{
+  position:relative;display:flex;align-items:center;
+  padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.07);
+  background:rgba(0,0,0,.2);
+}
+.mr-buscar-lupa{position:absolute;left:24px;font-size:14px;opacity:.65;pointer-events:none}
+.mr-hoja-buscar input{
+  width:100%;height:46px;padding:0 40px 0 40px;
+  border-radius:12px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);color:#fff;
+  font-family:var(--font-ui);font-size:15px;
+  -webkit-appearance:none;appearance:none;
+}
+.mr-hoja-buscar input::-webkit-search-cancel-button{display:none}
+.mr-hoja-buscar input::placeholder{color:#7d8ba1}
+.mr-hoja-buscar input:focus{outline:none;border-color:#5aa2ff;background:rgba(90,162,255,.12)}
+.mr-buscar-x{
+  position:absolute;right:22px;width:28px;height:28px;border-radius:50%;
+  border:0;cursor:pointer;background:rgba(255,255,255,.12);color:#cfe0f5;
+  font-size:17px;line-height:1;
+}
+.mr-buscar-x:hover{background:rgba(255,255,255,.22)}
 
 /* --------------------------------------------------------- revelaciones -- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
@@ -8171,6 +8196,15 @@ body{background:transparent !important}
       </div>
       <button class="close-btn" id="btnCloseMrSheet" type="button" aria-label="Cerrar" style="position:static; transform:none;">×</button>
     </header>
+    <!-- El buscador va FUERA del cuerpo a proposito: el cuerpo se vuelve a
+         dibujar en cada tecla, y si el input viviera adentro se destruiria y
+         perderia el foco a la primera letra. -->
+    <div class="mr-hoja-buscar">
+      <span class="mr-buscar-lupa" aria-hidden="true">🔍</span>
+      <input type="search" id="mrBuscar" placeholder="Buscar por nombre o dorsal…"
+             autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Buscar jugador">
+      <button type="button" id="btnMrBuscarClear" class="mr-buscar-x" aria-label="Limpiar búsqueda" hidden>×</button>
+    </div>
     <div class="mr-hoja-body" id="mrSheetBody"></div>
     <footer class="mr-hoja-foot">
       <button class="btn" type="button" id="btnMrRegistrar">Registrar datos</button>
@@ -11944,7 +11978,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       };
 
       /* Qué equipo se está cargando, y qué jugador se tocó. */
-      let mrTeamId=null, mrPlayerId=null, mrTipo=null, mrCant=1;
+      let mrTeamId=null, mrPlayerId=null, mrTipo=null, mrCant=1, mrFiltro="";
 
       function mrLadoDe(teamId){
         const m=state.matches[editingMatchId]; if(!m||!teamId) return null;
@@ -12020,10 +12054,27 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       /* ---- hoja con el plantel ---- */
       function mrHojaHtml(){
-        const jug=playersInTeam(mrTeamId);
+        const todos=playersInTeam(mrTeamId);
+        /* Busca por nombre y por dorsal: al costado de la cancha muchas veces
+           se sabe el número y no el apellido.
+
+           Los acentos se sacan de los dos lados, así que da igual cómo esté
+           cargado el jugador y cómo se escriba la búsqueda: tipeando "perez"
+           aparece Pérez, y tipeando "pérez" aparece Perez. La ñ entra en la
+           misma bolsa, y por eso "ibanez" encuentra a Ibáñez. */
+        const q=mrFiltro.trim().toLowerCase();
+        const jug=!q?todos:todos.filter(p=>{
+          const nom=nombreJugador(p).toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          const busca=q.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          return nom.includes(busca) || String(p.number??"")===q;
+        });
         const mvpId=$("#matchMvpField")?.value||"";
         const puedeAlta=puedeEditarEquipo(mrTeamId);
 
+        if(!jug.length && q){
+          return `<p class="mr-sin-jug">Ningún jugador coincide con «${esc(mrFiltro)}».</p>`;
+        }
         if(!jug.length && !puedeAlta){
           return `<p class="mr-sin-jug">${esc(state.teams[mrTeamId]?.name||"Este equipo")} todavía no tiene jugadores cargados.</p>`;
         }
@@ -12071,6 +12122,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const n=pendingEvents.filter(e=>e.teamId===mrTeamId).length;
         const sub=$("#mrSheetSub");
         if(sub) sub.textContent=n?`${n} ${n===1?"incidencia cargada":"incidencias cargadas"}`:"Tocá al jugador que participó.";
+        const bx=$("#btnMrBuscarClear"); if(bx) bx.hidden=!mrFiltro;
         cuerpo.innerHTML=mrHojaHtml();
       }
 
@@ -12079,6 +12131,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const slot=resolveSlot(lado==="home"?m.homeSlot:m.awaySlot);
         if(!slot.id){ showToast("Este cruce todavía no tiene definido ese equipo"); return; }
         mrTeamId=slot.id;
+        mrFiltro="";
+        const bus=$("#mrBuscar"); if(bus) bus.value="";
+        const bx=$("#btnMrBuscarClear"); if(bx) bx.hidden=true;
         renderHojaJugadores();
         $("#mrPlayerSheet")?.classList.add("open");
         playClick();
@@ -14956,6 +15011,26 @@ function loop(){
         const bt=e.target.closest("[data-mr-add]");
         if(!bt||!editingMatchId)return;
         abrirHojaJugadores(bt.dataset.mrAdd);
+      });
+
+      $("#mrBuscar")?.addEventListener("input",e=>{
+        mrFiltro=e.target.value||"";
+        const bx=$("#btnMrBuscarClear"); if(bx) bx.hidden=!mrFiltro;
+        renderHojaJugadores();
+      });
+      $("#btnMrBuscarClear")?.addEventListener("click",()=>{
+        mrFiltro="";
+        const bus=$("#mrBuscar"); if(bus){bus.value="";bus.focus();}
+        const bx=$("#btnMrBuscarClear"); if(bx) bx.hidden=true;
+        renderHojaJugadores();
+      });
+      // Enter con un solo resultado abre ese jugador: se busca y se carga sin
+      // levantar la mano del teclado
+      $("#mrBuscar")?.addEventListener("keydown",e=>{
+        if(e.key!=="Enter")return;
+        e.preventDefault();
+        const filas=document.querySelectorAll("#mrSheetBody [data-mr-player]");
+        if(filas.length===1) abrirHojaEvento(filas[0].dataset.mrPlayer);
       });
 
       $("#btnCloseMrSheet")?.addEventListener("click",()=>{cerrarHojaJugadores();playClick()});
