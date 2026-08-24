@@ -3618,7 +3618,9 @@ body.album-fs .footer-strip{display:none}
 
 /* ---------------------------------------------------------------- toast -- */
 .toast{
-  position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 22px);z-index:5000;
+  /* Por encima de todo, hojas de carga incluidas: el aviso de "gol cargado"
+     aparece justo mientras esas hojas estan abiertas, y tapado no sirve. */
+  position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 22px);z-index:100030;
   transform:translate(-50%,20px);
   padding:12px 20px;max-width:calc(100vw - 32px);
   border-radius:var(--r-sm);
@@ -3639,6 +3641,191 @@ body.album-fs .footer-strip{display:none}
   color:var(--danger-ink);
   border-color:rgba(212,32,39,.45);
 }
+
+/* ==========================================================================
+   CARGA DE RESULTADOS · cabecera y hojas
+   ========================================================================== */
+.mr-cab-ttl{margin-bottom:10px}
+.mr-equipos{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;
+  padding:6px 0 2px;
+}
+.mr-lado{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
+.mr-vs{
+  font-family:'Anton','Saira Condensed',var(--font-ui),sans-serif;
+  font-size:24px;color:#5b6b84;padding-bottom:14px;
+}
+.mr-add{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 12px;border-radius:999px;
+  border:1px solid rgba(90,162,255,.45);
+  background:rgba(90,162,255,.14);color:#9ec8ff;
+  font-family:var(--font-ui);font-weight:800;font-size:11px;
+  text-transform:uppercase;letter-spacing:.05em;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s ease,border-color .18s ease,transform .18s var(--ease-out);
+}
+.mr-add:hover{background:rgba(90,162,255,.24);border-color:rgba(90,162,255,.75)}
+.mr-add:active{transform:scale(.95)}
+.mr-add span{font-size:14px;line-height:1}
+.mr-escudo{
+  width:74px;height:74px;border-radius:16px;overflow:hidden;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+}
+.mr-escudo img,.mr-escudo .crest,.mr-escudo svg{width:100%;height:100%;object-fit:contain}
+.mr-nombre{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;
+  color:#dbe4f0;text-align:center;line-height:1.15;
+  max-width:100%;overflow-wrap:anywhere;
+}
+.mr-score{
+  width:100%;max-width:104px;height:64px;
+  border-radius:14px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);color:#fff;
+  font-family:'Anton',var(--font-ui),sans-serif;font-size:34px;
+  text-align:center;
+  -moz-appearance:textfield;
+}
+.mr-score::-webkit-outer-spin-button,.mr-score::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.mr-score:focus{outline:none;border-color:#5aa2ff;background:rgba(90,162,255,.14)}
+.mr-equipos-leg2 .mr-score{height:48px;font-size:25px}
+
+/* ---- hoja de jugadores ---- */
+.mr-hoja{
+  /* Sobre el modal del partido, que una regla mas abajo empuja a 100000. */
+  position:fixed;inset:0;z-index:100010;
+  display:none;flex-direction:column;
+  background:radial-gradient(ellipse at 50% 0%,#12224a,#060b14 62%);
+}
+.mr-hoja.open{display:flex}
+.mr-hoja-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.25);
+}
+.mr-hoja-id{display:flex;align-items:center;gap:11px;min-width:0}
+.mr-hoja-crest{
+  width:44px;height:44px;border-radius:11px;overflow:hidden;flex:0 0 auto;
+  display:grid;place-items:center;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+}
+.mr-hoja-crest img,.mr-hoja-crest .crest,.mr-hoja-crest svg{width:100%;height:100%;object-fit:contain}
+.mr-hoja-head h2{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+  margin:0;color:#fff;
+}
+.mr-hoja-head p{margin:1px 0 0;font-size:11.5px;color:#94a3b8}
+.mr-hoja-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px 20px}
+.mr-hoja-foot{
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);
+}
+.mr-hoja-foot .btn{width:100%}
+.mr-sin-jug{
+  text-align:center;color:#8fa0b8;font-size:13px;padding:26px 12px;line-height:1.5;
+}
+
+/* tarjeta para dar de alta a alguien que no estaba en la lista */
+.mr-nuevo{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-height:150px;border-radius:14px;cursor:pointer;
+  border:1.5px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.03);
+  color:#9ec8ff;font-family:var(--font-ui);font-weight:800;font-size:12px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.mr-nuevo span{font-size:26px;line-height:1}
+.mr-nuevo:hover{border-color:rgba(90,162,255,.6);background:rgba(90,162,255,.08)}
+
+/* ---- hoja del evento ---- */
+.mr-ev{
+  position:fixed;inset:0;z-index:100020;display:none;
+  align-items:flex-end;justify-content:center;
+  background:rgba(4,8,16,.62);backdrop-filter:blur(3px);
+}
+.mr-ev.open{display:flex}
+.mr-ev-panel{
+  width:min(460px,100%);
+  padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  border-radius:20px 20px 0 0;
+  background:linear-gradient(180deg,#132445,#0a1122);
+  border:1px solid rgba(255,255,255,.12);border-bottom:0;
+  box-shadow:0 -18px 50px rgba(0,0,0,.6);
+  animation:mrEvSube .26s cubic-bezier(.22,1,.36,1);
+}
+@keyframes mrEvSube{from{transform:translateY(26px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.mr-ev-panel{animation:none}}
+.mr-ev-agarre{
+  width:38px;height:4px;border-radius:999px;margin:0 auto 12px;
+  background:rgba(255,255,255,.22);
+}
+.mr-ev-jugador{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.mr-ev-cara{
+  width:50px;height:50px;border-radius:12px;overflow:hidden;flex:0 0 auto;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  display:grid;place-items:center;
+}
+.mr-ev-cara img{width:100%;height:100%;object-fit:cover}
+.mr-ev-id strong{
+  display:block;font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:17px;font-weight:800;color:#fff;line-height:1.15;
+}
+.mr-ev-id small{display:block;font-size:11.5px;color:#94a3b8;margin-top:1px}
+.mr-ev-tipos{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.mr-ev-tipo{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-height:82px;padding:12px 8px;border-radius:14px;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  color:#fff;font-family:var(--font-ui);font-weight:800;font-size:12px;
+  text-transform:uppercase;letter-spacing:.05em;
+  transition:border-color .18s ease,background .18s ease,transform .16s var(--ease-out);
+}
+.mr-ev-tipo:active{transform:scale(.96)}
+.mr-ev-tipo.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,transparent)}
+.mr-ev-tipo .mr-ev-ic{height:34px;display:grid;place-items:center}
+.mr-ev-ya{
+  margin-left:5px;padding:1px 7px;border-radius:999px;
+  background:rgba(0,0,0,.45);font-size:10px;color:var(--acc);
+}
+.mr-ev-cant{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:13px;padding:11px 14px;border-radius:13px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  font-family:var(--font-ui);font-weight:800;font-size:12px;
+  text-transform:uppercase;letter-spacing:.05em;color:#c8d4e4;
+}
+.mr-ev-stepper{display:flex;align-items:center;gap:14px}
+.mr-ev-stepper button{
+  width:38px;height:38px;border-radius:11px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);
+  color:#fff;font-size:21px;line-height:1;
+}
+.mr-ev-stepper button:active{transform:scale(.93)}
+.mr-ev-stepper b{
+  min-width:30px;text-align:center;
+  font-family:'Anton',var(--font-ui),sans-serif;font-size:25px;color:#fff;
+}
+.mr-ev-acciones{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:15px}
+.mr-ev-acciones .btn{width:100%}
+.mr-ev-acciones .btn[disabled]{opacity:.4;pointer-events:none}
+
+/* Lo ya cargado, encima de la ficha. Al pasar veinte jugadores es lo unico
+   que evita cargarle el mismo gol dos veces al mismo tipo. */
+.mr-marcas{
+  position:absolute;top:6px;left:6px;z-index:4;
+  display:flex;flex-direction:column;gap:4px;align-items:flex-start;
+}
+.mr-marca{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 7px 3px 4px;border-radius:999px;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+  font-family:var(--font-ui);font-weight:900;font-size:10px;color:#fff;
+}
+.mr-marca img,.mr-marca div{width:14px!important;height:14px!important;font-size:10px!important}
+.mr-marca i{font-style:normal;line-height:1}
 
 /* --------------------------------------------------------- revelaciones -- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
@@ -7867,38 +8054,62 @@ body{background:transparent !important}
       </header>
       <form id="matchForm">
         <div class="modal-body">
-          <section class="form-section">
-            <h3 id="matchScoreHeading">Resultado</h3>
-            <div class="form-grid">
-              <div class="field"><label id="matchHomeLabel" for="matchHomeScoreField">Local</label><input type="number" id="matchHomeScoreField" min="0" max="99" /></div>
-              <div class="field"><label id="matchAwayLabel" for="matchAwayScoreField">Visitante</label><input type="number" id="matchAwayScoreField" min="0" max="99" /></div>
+          <!-- Cabecera del partido: los dos escudos, el marcador al lado, y
+               nada más. Fecha, sede y estado viven en el modal "Datos", que
+               es otra tarea y no tiene por qué competir por la atención
+               mientras se cargan los goles. -->
+          <section class="form-section mr-cab">
+            <h3 id="matchScoreHeading" class="mr-cab-ttl">Resultado</h3>
+            <div class="mr-equipos">
+              <div class="mr-lado">
+                <button type="button" class="mr-add admin-only" data-mr-add="home">
+                  <span>＋</span> Agregar datos
+                </button>
+                <div class="mr-escudo" id="mrCrestHome"></div>
+                <span class="mr-nombre" id="matchHomeLabel">Local</span>
+                <input type="number" id="matchHomeScoreField" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del local" />
+              </div>
+              <span class="mr-vs" aria-hidden="true">—</span>
+              <div class="mr-lado">
+                <button type="button" class="mr-add admin-only" data-mr-add="away">
+                  <span>＋</span> Agregar datos
+                </button>
+                <div class="mr-escudo" id="mrCrestAway"></div>
+                <span class="mr-nombre" id="matchAwayLabel">Visitante</span>
+                <input type="number" id="matchAwayScoreField" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del visitante" />
+              </div>
             </div>
+
+            <!-- Serie de ida y vuelta. Sigue acá porque sin esto la llave no
+                 se puede cargar, pero queda apagada salvo que el cruce sea a
+                 dos partidos. -->
             <div class="leg2-wrap" id="matchLeg2Wrap">
               <h3 id="matchLeg2Heading">Vuelta</h3>
               <p class="leg2-hint">Cargá los goles de cada equipo en el partido de vuelta. El global define quién pasa.</p>
-              <div class="form-grid">
-                <div class="field"><label id="matchHomeLabel2" for="matchHomeScoreField2">Local</label><input type="number" id="matchHomeScoreField2" min="0" max="99" /></div>
-                <div class="field"><label id="matchAwayLabel2" for="matchAwayScoreField2">Visitante</label><input type="number" id="matchAwayScoreField2" min="0" max="99" /></div>
+              <div class="mr-equipos mr-equipos-leg2">
+                <div class="mr-lado">
+                  <span class="mr-nombre" id="matchHomeLabel2">Local</span>
+                  <input type="number" id="matchHomeScoreField2" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del local en la vuelta" />
+                </div>
+                <span class="mr-vs" aria-hidden="true">—</span>
+                <div class="mr-lado">
+                  <span class="mr-nombre" id="matchAwayLabel2">Visitante</span>
+                  <input type="number" id="matchAwayScoreField2" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del visitante en la vuelta" />
+                </div>
               </div>
               <div class="agg-readout" id="matchAggReadout"></div>
             </div>
             <div class="tie-break" id="matchTieWrap"><label for="matchTieField">Ganador por penales / desempate</label><select id="matchTieField"><option value="">Seleccionar ganador…</option></select></div>
           </section>
-          <!-- Consola de registro: se elige QUÉ pasó, después DE QUÉ EQUIPO y
-               recién ahí aparece el plantel para tocar al jugador. Es el orden
-               en que se anota en la cancha, y evita el combo largo de antes. -->
+
+          <!-- Incidencias: el historial de lo que se fue cargando. Se llena
+               desde la hoja de jugadores, no acá. -->
           <section class="form-section reg-sec">
-            <h3>Registro del encuentro</h3>
+            <h3>Incidencias del partido</h3>
             <p class="section-hint" id="eventSummary">Sin eventos cargados.</p>
-            <div class="reg-tiles" id="regTiles"></div>
-            <div class="reg-picker" id="regPicker" hidden></div>
             <div class="event-editor reg-list" id="eventEditor"></div>
-            <!-- El viejo "+ Agregar evento" salió del marcado. No alcanzaba con
-                 el atributo hidden: .btn define un display propio y las reglas
-                 de autor le ganan al display:none del navegador, así que el
-                 botón seguía apareciendo. -->
-            <!-- El destacado ya se elige con el mosaico de la estrella; el select
-                 sigue existiendo porque es lo que se guarda al enviar el form. -->
+            <!-- El destacado se elige tocando al jugador; el select sigue
+                 existiendo porque es lo que se guarda al enviar el form. -->
             <div class="reg-oculto"><label for="matchMvpField">Figura del partido</label>
               <select id="matchMvpField"><option value="">Sin designar</option></select></div>
           </section>
@@ -7908,6 +8119,60 @@ body{background:transparent !important}
           <button class="btn" type="submit">Guardar partido</button>
         </footer>
       </form>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       HOJA DE CARGA
+       Dos capas, no tres. La lista de jugadores ocupa la pantalla y la
+       elección del evento sube desde abajo por encima de ella: apilar un
+       tercer modal con su propio fondo se siente pesado en el teléfono, y
+       acá lo que importa es cargar rápido.
+       ===================================================================== -->
+  <div class="mr-hoja" id="mrPlayerSheet" role="dialog" aria-modal="true" aria-labelledby="mrSheetTitle">
+    <header class="mr-hoja-head">
+      <div class="mr-hoja-id">
+        <div class="mr-hoja-crest" id="mrSheetCrest"></div>
+        <div>
+          <h2 id="mrSheetTitle">Equipo</h2>
+          <p id="mrSheetSub">Tocá al jugador que participó.</p>
+        </div>
+      </div>
+      <button class="close-btn" id="btnCloseMrSheet" type="button" aria-label="Cerrar" style="position:static; transform:none;">×</button>
+    </header>
+    <div class="mr-hoja-body" id="mrSheetBody"></div>
+    <footer class="mr-hoja-foot">
+      <button class="btn" type="button" id="btnMrRegistrar">Registrar datos</button>
+    </footer>
+  </div>
+
+  <!-- Elección del evento para UN jugador. -->
+  <div class="mr-ev" id="mrEventSheet" role="dialog" aria-modal="true" aria-labelledby="mrEvTitle">
+    <div class="mr-ev-panel">
+      <div class="mr-ev-agarre" aria-hidden="true"></div>
+      <div class="mr-ev-jugador">
+        <div class="mr-ev-cara" id="mrEvCara"></div>
+        <div class="mr-ev-id">
+          <strong id="mrEvTitle">Jugador</strong>
+          <small id="mrEvSub">Equipo</small>
+        </div>
+      </div>
+      <div class="mr-ev-tipos" id="mrEvTipos"></div>
+      <!-- La cantidad sólo tiene sentido con el gol: nadie mete dos amarillas
+           iguales, y la figura es una sola por partido. -->
+      <div class="mr-ev-cant" id="mrEvCant" hidden>
+        <span>Cantidad</span>
+        <div class="mr-ev-stepper">
+          <button type="button" id="mrEvMenos" aria-label="Uno menos">−</button>
+          <b id="mrEvNum">1</b>
+          <button type="button" id="mrEvMas" aria-label="Uno más">+</button>
+        </div>
+      </div>
+      <div class="mr-ev-acciones">
+        <button class="btn secondary" type="button" id="btnMrEvCancelar">Cancelar</button>
+        <button class="btn" type="button" id="btnMrEvCargar" disabled>Cargar</button>
+      </div>
     </div>
   </div>
 
@@ -11618,6 +11883,23 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          la cancha y quedaba siempre en cero. Los eventos "assist" que ya
          estuvieran cargados se siguen contando y mostrando, sólo no se puede
          crear ninguno nuevo. */
+      /* ====================================================================
+         CARGA DE INCIDENCIAS
+
+         El orden cambió, y no es cosmético. Antes era
+             QUÉ pasó → DE QUÉ equipo → QUIÉN
+         que sirve para anotar en vivo: pasó un gol, lo cargo.
+
+         Ahora es
+             EQUIPO → QUIÉN → QUÉ y CUÁNTOS
+         que es como se carga un partido ya terminado: se abre el plantel de
+         un equipo y se va tocando jugador por jugador sin volver atrás.
+
+         Y con cantidad: si el mismo tipo hizo cuatro goles se cargan los
+         cuatro de una vez. Igual se guardan como cuatro eventos separados,
+         no como uno con un contador — de eso dependen la tabla de
+         goleadores y el valor de la figurita, y no hay que tocarlas.
+         ==================================================================== */
       const REG_TIPOS=[
         {t:"goal",   lbl:"Gol",       acc:"#00d17a"},
         {t:"mvp",    lbl:"Figura",    acc:"#e8b93b"},
@@ -11625,17 +11907,33 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         {t:"red",    lbl:"Roja",      acc:"#e0342c"}
       ];
       const REG_ICO={
-        goal:`<img src="ICONO DE GOL SIN FONDO.png" style="width:36px; height:36px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,209,122,0.6));" alt="Gol">`,
-        assist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5c3.4-7.4 8.6-10 15.3-9.6"/><path d="M15.4 3.6l4.2 3.3-3.3 4.2"/></svg>`,
-        yellow:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #fff382 0%, #f5c518 50%, #c48b00 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:2px 4px 10px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.4); position:relative;"><div style="position:absolute; top:2px; left:2px; right:2px; height:8px; background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%); border-radius:2px 2px 0 0;"></div></div>`,
-        red:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #ff6b6b 0%, #e0342c 50%, #8b0000 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:2px 4px 10px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.7), inset 0 -1px 2px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.4); position:relative;"><div style="position:absolute; top:2px; left:2px; right:2px; height:8px; background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%); border-radius:2px 2px 0 0;"></div></div>`,
-        mvp:`<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #ffe066 0%, #e8b93b 50%, #b8860b 100%); display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.8); font-size:16px;">⭐</div>`
+        goal:`<img src="ICONO DE GOL SIN FONDO.png" style="width:32px; height:32px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,209,122,0.6));" alt="Gol">`,
+        yellow:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #fff382 0%, #f5c518 50%, #c48b00 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+        red:`<div style="width:20px; height:28px; background:linear-gradient(135deg, #ff6b6b 0%, #e0342c 50%, #8b0000 100%); border-radius:4px; transform:rotate(-6deg); box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+        mvp:`<div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #ffe066 0%, #e8b93b 50%, #b8860b 100%); display:flex; align-items:center; justify-content:center; font-size:17px;">★</div>`
       };
-      let regSel=null;
 
-      function regCuenta(t){
-        if(t==="mvp")return $("#matchMvpField")?.value?1:0;
-        return pendingEvents.filter(e=>e.type===t&&e.playerId).length;
+      /* Qué equipo se está cargando, y qué jugador se tocó. */
+      let mrTeamId=null, mrPlayerId=null, mrTipo=null, mrCant=1;
+
+      function mrLadoDe(teamId){
+        const m=state.matches[editingMatchId]; if(!m||!teamId) return null;
+        const home=resolveSlot(m.homeSlot), away=resolveSlot(m.awaySlot);
+        if(home.id===teamId) return "home";
+        if(away.id===teamId) return "away";
+        return null;
+      }
+
+      /* Los goles cargados mueven el marcador. Se puede seguir editando a
+         mano: hay goles sin autor en la lista —uno en contra, alguien que no
+         está cargado— y el aviso de descuadre avisa si no cierran. */
+      function mrAjustarMarcador(teamId,delta){
+        const lado=mrLadoDe(teamId); if(!lado||!delta) return;
+        const campo=$(lado==="home"?"#matchHomeScoreField":"#matchAwayScoreField");
+        if(!campo) return;
+        const actual=campo.value===""||campo.value==null?0:Number(campo.value);
+        campo.value=Math.max(0,actual+delta);
+        updateTieVisibility();
       }
 
       function regGolesPendientes(home,away){
@@ -11648,114 +11946,35 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           {slot:away,marc:marc("#matchAwayScoreField","#matchAwayScoreField2"),car:away.id?car(away.id):0}
         ];
       }
-      function regSincronizarMarcador(home,away){
-        regGolesPendientes(home,away).forEach((r,i)=>{
-          if(!r.slot.id||r.car<=r.marc)return;
-          const campo=$(i===0?"#matchHomeScoreField":"#matchAwayScoreField");
-          campo.value=Number(campo.value||0)+(r.car-r.marc);
-        });
-        updateTieVisibility();
+
+      /* ---- cabecera: escudos y marcador ---- */
+      function renderMatchHeader(){
+        const m=state.matches[editingMatchId]; if(!m) return;
+        const home=resolveSlot(m.homeSlot), away=resolveSlot(m.awaySlot);
+        const pintar=(lado,slot)=>{
+          const caja=$(lado==="home"?"#mrCrestHome":"#mrCrestAway");
+          const t=slot.id?state.teams[slot.id]:null;
+          if(caja) caja.innerHTML=t?teamCrest(t,"crest-lg"):"";
+          const nom=$(lado==="home"?"#matchHomeLabel":"#matchAwayLabel");
+          if(nom) nom.textContent=slot.name||"";
+          // sin equipo definido todavía no hay a quién cargarle nada
+          const bt=document.querySelector(`[data-mr-add="${lado}"]`);
+          if(bt) bt.disabled=!slot.id;
+        };
+        pintar("home",home); pintar("away",away);
       }
 
-      function regTilesHtml(){
-        return REG_TIPOS.map(d=>{
-          const n=regCuenta(d.t);
-          const on=regSel&&regSel.t===d.t;
-          return `<button type="button" class="reg-tile reg-t-${d.t}${on?" is-open":""}${n?" has-n":""}"
-            data-reg="${d.t}" style="--acc:${d.acc} !important; border-color:${on?d.acc:'rgba(255,255,255,0.08)'} !important;" aria-pressed="${on?"true":"false"}">
-            <span class="reg-ico" style="color:${d.acc} !important;">${REG_ICO[d.t]}</span>
-            <span class="reg-lbl">${d.lbl}</span>
-            <b class="reg-n" style="background:${on?d.acc:'rgba(0,0,0,0.5)'} !important; color:${on?'#fff':d.acc} !important;">${n}</b>
-          </button>`;
-        }).join("");
-      }
-
-      function regPickerHtml(home,away){
-        const def=REG_TIPOS.find(x=>x.t===regSel.t);
-        const lados=[home,away].filter(s=>s.id);
-        let cuerpo="",aviso="";
-
-        if(regSel.t==="goal"){
-          const pend=regGolesPendientes(home,away).filter(r=>r.slot.id);
-          aviso=`<div class="reg-pend">${pend.map(r=>{
-            const falta=r.marc-r.car;
-            const cls=falta>0?"falta":(falta<0?"sobra":"ok");
-            const txt=falta>0?`faltan ${falta}`:(falta<0?`${-falta} de más`:"completo");
-            return `<span class="reg-pend-i ${cls}"><b>${esc(r.slot.name)}</b> ${r.car}/${r.marc} · ${txt}</span>`;
-          }).join("")}</div>`;
-        }
-
-        if(!regSel.teamId){
-          cuerpo=lados.length
-            ? `<div class="reg-teams" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px 6px;">${lados.map(s=>{
-                const t=state.teams[s.id],n=playersInTeam(s.id).length;
-                return `<button type="button" class="reg-team" data-reg-team="${esc(s.id)}"
-                  style="--c1:${esc(t?.colorPrimary||"#1668ff")};--c2:${esc(t?.colorSecondary||"#0b1730")}; min-height:80px; padding:14px 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
-                  <div style="width:42px; height:28px;">${teamCrest(t,"crest-sm")}</div>
-                  <span class="reg-team-nm" style="font-size:14px; font-weight:800;">${esc(s.name)}</span>
-                  <span class="reg-team-n" style="font-size:11px; opacity:0.8;">${n} ${n===1?"jugador":"jugadores"}</span>
-                </button>`;
-              }).join("")}</div>`
-            : `<div class="reg-vacio">Este cruce todavía no tiene los dos equipos definidos.</div>`;
-        }else{
-          const jug=playersInTeam(regSel.teamId);
-          const mvpId=$("#matchMvpField")?.value||"";
-          const todas=buildCards();
-
-          const fichas=jug.map(p=>{
-            const c=todas.find(x=>!x.isLegend && x.playerId===p.id) || {
-              id: p.id,
-              name: `${p.firstName} ${p.lastName}`,
-              ovr: 85,
-              pos: p.position || "DEL",
-              number: p.number,
-              teamName: state.teams[p.teamId]?.name || "",
-              photo: p.photoDataUrl || "",
-              flag: state.teams[p.teamId]?.logoDataUrl || "",
-              c1: state.teams[p.teamId]?.colorPrimary || "#1668ff",
-              c2: state.teams[p.teamId]?.colorSecondary || "#0b1730",
-              rar: "gold"
-            };
-
-            const veces=regSel.t==="mvp"
-              ? (mvpId===p.id?1:0)
-              : pendingEvents.filter(e=>e.type===regSel.t&&e.playerId===p.id).length;
-
-            const badgeHtml = veces ? `
-              <div class="reg-event-badge-panini" style="background:${def.acc}; color:#fff;">
-                ${REG_ICO[regSel.t]} <span>${regSel.t==="mvp"?"FIGURA":"x"+veces}</span>
-              </div>` : "";
-
-            return `<div class="roster-card reg-panini-card${veces?" is-selected-event":""}" data-reg-player="${esc(p.id)}">
-              ${cardFaceHtml(c)}
-              ${badgeHtml}
-            </div>`;
-          }).join("");
-
-          const aviso=!jug.length
-            ? `<div class="reg-vacio">${esc(state.teams[regSel.teamId]?.name||"El equipo")} todavía no tiene jugadores cargados.</div>`
-            : "";
-
-          cuerpo=aviso+(fichas?`<div class="reg-squad">${fichas}</div>`:"");
-        }
-
-        return `<div class="reg-pk-head" style="--acc:${def.acc}">
-            ${regSel.teamId?`<button type="button" class="reg-back" data-reg-back aria-label="Volver a elegir equipo">←</button>`:""}
-            <span class="reg-pk-ico">${REG_ICO[regSel.t]}</span>
-            <span class="reg-pk-ttl"><small>${regSel.t==="mvp"?"Jugador destacado del encuentro":esc(def.lbl)}</small>
-              <strong>${regSel.teamId?esc(state.teams[regSel.teamId]?.name||""):"Elegí el equipo"}</strong></span>
-            <button type="button" class="reg-done" data-reg-done>Listo</button>
-          </div>${aviso}${cuerpo}`;
-      }
-
+      /* ---- lista de incidencias ---- */
+      /* El minuto salió del flujo. Estaba en el modelo y en la base, pero en
+         71 eventos cargados no se usó ni una vez: pedirlo sólo agregaba un
+         toque por evento. El campo sigue en la base por si algún día vuelve. */
       function regListaHtml(){
         if(!pendingEvents.length)
-          return '<p class="reg-vacio-min">Nada registrado todavía. Usá los mosaicos de arriba.</p>';
+          return '<p class="reg-vacio-min">Nada cargado todavía. Usá «Agregar datos» arriba de cada equipo.</p>';
         return pendingEvents.map((ev,i)=>{
           const p=state.players[ev.playerId],t=ev.teamId&&state.teams[ev.teamId];
           return `<div class="event-row reg-item reg-i-${esc(ev.type)}" data-idx="${i}">
             <span class="reg-it-ico">${REG_ICO[ev.type]||""}</span>
-            <input type="number" min="0" max="130" class="ev-minute" id="ev-min-${i}" value="${ev.minute??""}" placeholder="min" aria-label="Minuto">
             ${tvFaceHtml(p)}
             <span class="reg-it-nm"><strong>${esc(nombreJugador(p))}</strong>
               <small>${esc(t?.name||"")} · ${esc(EVENT_LABEL[ev.type]||ev.type)}</small></span>
@@ -11769,56 +11988,158 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         return p?`<div class="reg-mvp-chip">${REG_ICO.mvp}<span>Figura del encuentro</span><strong>${esc(nombreJugador(p))}</strong></div>`:"";
       }
 
-      function registrarEvento(playerId,home,away){
-        const p=state.players[playerId];
-        if(!p||!regSel)return;
-        if(regSel.t==="mvp"){
-          const sel=$("#matchMvpField");
-          const yaEra=sel.value===playerId;
-          sel.value=yaEra?"":playerId;   // volver a tocarlo lo saca
-          showToast(yaEra?"Figura sin designar":`Figura del encuentro: ${nombreJugador(p)}`);
-        }else{
-          pendingEvents.push({id:uid("ev"),minute:null,type:regSel.t,teamId:p.teamId,playerId});
-          if(regSel.t==="goal")regSincronizarMarcador(home,away);
-          showToast(`${EVENT_LABEL[regSel.t]} · ${nombreJugador(p)}`);
+      /* ---- hoja con el plantel ---- */
+      function mrHojaHtml(){
+        const jug=playersInTeam(mrTeamId);
+        const mvpId=$("#matchMvpField")?.value||"";
+        const todas=buildCards();
+        const puedeAlta=puedeEditarEquipo(mrTeamId);
+
+        if(!jug.length && !puedeAlta){
+          return `<p class="mr-sin-jug">${esc(state.teams[mrTeamId]?.name||"Este equipo")} todavía no tiene jugadores cargados.</p>`;
         }
-        renderEventEditor(home,away);
-        regPulso(playerId);
-        if(regSel.t!=="mvp") {
-          const minInput = document.getElementById(`ev-min-${pendingEvents.length - 1}`);
-          if(minInput) {
-            minInput.focus();
-            // Para asegurar que el teclado numérico aparezca y la vista scrollee
-            minInput.scrollIntoView({behavior: "smooth", block: "center"});
-          }
-        }
-        playClick();
+
+        const fichas=jug.map(p=>{
+          const c=todas.find(x=>!x.isLegend && x.playerId===p.id) || {
+            id:p.id, name:`${p.firstName} ${p.lastName}`, ovr:85,
+            pos:p.position||"DEL", number:p.number,
+            teamName:state.teams[p.teamId]?.name||"",
+            photo:p.photoDataUrl||"", flag:state.teams[p.teamId]?.logoDataUrl||"",
+            c1:state.teams[p.teamId]?.colorPrimary||"#1668ff",
+            c2:state.teams[p.teamId]?.colorSecondary||"#0b1730", rar:"gold"
+          };
+          /* Lo ya cargado se ve sobre la ficha: al pasar veinte jugadores es
+             lo único que evita cargarle el gol dos veces al mismo. */
+          const marcas=REG_TIPOS.map(d=>{
+            const n=d.t==="mvp"?(mvpId===p.id?1:0)
+                   :pendingEvents.filter(e=>e.type===d.t&&e.playerId===p.id).length;
+            if(!n) return "";
+            return `<span class="mr-marca" style="background:${d.acc}">${REG_ICO[d.t]}${d.t==="mvp"?"":`<i>${n}</i>`}</span>`;
+          }).join("");
+
+          return `<div class="roster-card reg-panini-card${marcas?" is-selected-event":""}" data-mr-player="${esc(p.id)}">
+            ${cardFaceHtml(c)}
+            ${marcas?`<div class="mr-marcas">${marcas}</div>`:""}
+          </div>`;
+        }).join("");
+
+        const alta=puedeAlta
+          ? `<button type="button" class="mr-nuevo" data-mr-nuevo><span>＋</span>Agregar jugador</button>`
+          : "";
+
+        return `<div class="reg-squad">${fichas}${alta}</div>`;
       }
 
-      /* Alta rápida desde el modal del partido: crea el jugador en el equipo que
-         está seleccionado y lo deja registrado en el mismo movimiento. Devuelve
-         el id, o null si faltan datos. */
-      function regAltaJugador(home,away){
-        if(!regSel||!regSel.teamId)return null;
-        if(!puedeEditarEquipo(regSel.teamId)){showToast("No tenés permiso para tocar este plantel");return null}
-        const nombre=$("#regAltaNombre")?.value.trim()||"";
-        const apellido=$("#regAltaApellido")?.value.trim()||"";
-        const numeroTxt=$("#regAltaNumero")?.value;
-        if(!nombre||!apellido){regSacudir($(".reg-alta"));return null}
-        // el dorsal puede quedar vacío: en la cancha muchas veces se anota
-        // primero el nombre y el número aparece después
+      function renderHojaJugadores(){
+        const cuerpo=$("#mrSheetBody"); if(!cuerpo||!mrTeamId) return;
+        const t=state.teams[mrTeamId];
+        const crest=$("#mrSheetCrest"); if(crest) crest.innerHTML=t?teamCrest(t,"crest-sm"):"";
+        const ttl=$("#mrSheetTitle"); if(ttl) ttl.textContent=t?.name||"Equipo";
+        const n=pendingEvents.filter(e=>e.teamId===mrTeamId).length;
+        const sub=$("#mrSheetSub");
+        if(sub) sub.textContent=n?`${n} ${n===1?"incidencia cargada":"incidencias cargadas"}`:"Tocá al jugador que participó.";
+        cuerpo.innerHTML=mrHojaHtml();
+      }
+
+      function abrirHojaJugadores(lado){
+        const m=state.matches[editingMatchId]; if(!m) return;
+        const slot=resolveSlot(lado==="home"?m.homeSlot:m.awaySlot);
+        if(!slot.id){ showToast("Este cruce todavía no tiene definido ese equipo"); return; }
+        mrTeamId=slot.id;
+        renderHojaJugadores();
+        $("#mrPlayerSheet")?.classList.add("open");
+        playClick();
+      }
+      function cerrarHojaJugadores(){
+        $("#mrPlayerSheet")?.classList.remove("open");
+        mrTeamId=null;
+      }
+
+      /* ---- hoja del evento, para un jugador ---- */
+      function mrTiposHtml(){
+        const mvpId=$("#matchMvpField")?.value||"";
+        return REG_TIPOS.map(d=>{
+          const n=d.t==="mvp"?(mvpId===mrPlayerId?1:0)
+                 :pendingEvents.filter(e=>e.type===d.t&&e.playerId===mrPlayerId).length;
+          const on=mrTipo===d.t;
+          return `<button type="button" class="mr-ev-tipo${on?" on":""}" data-mr-tipo="${d.t}" style="--acc:${d.acc}">
+            <span class="mr-ev-ic">${REG_ICO[d.t]}</span>
+            <span>${d.lbl}${n?`<b class="mr-ev-ya">${d.t==="mvp"?"✓":"x"+n}</b>`:""}</span>
+          </button>`;
+        }).join("");
+      }
+      function renderHojaEvento(){
+        const cont=$("#mrEvTipos"); if(cont) cont.innerHTML=mrTiposHtml();
+        // la cantidad sólo tiene sentido con el gol
+        const cant=$("#mrEvCant"); if(cant) cant.hidden=(mrTipo!=="goal");
+        const num=$("#mrEvNum"); if(num) num.textContent=String(mrCant);
+        const ok=$("#btnMrEvCargar"); if(ok) ok.disabled=!mrTipo;
+      }
+      function abrirHojaEvento(playerId){
+        const p=state.players[playerId]; if(!p) return;
+        mrPlayerId=playerId; mrTipo=null; mrCant=1;
+        const cara=$("#mrEvCara"); if(cara) cara.innerHTML=tvFaceHtml(p);
+        const ttl=$("#mrEvTitle");
+        if(ttl) ttl.textContent=nombreJugador(p)+(p.number!=null&&p.number!==""?` · #${p.number}`:"");
+        const sub=$("#mrEvSub");
+        if(sub) sub.textContent=[state.teams[p.teamId]?.name,POS_LABEL?.[p.position]||p.position].filter(Boolean).join(" · ");
+        renderHojaEvento();
+        $("#mrEventSheet")?.classList.add("open");
+        playClick();
+      }
+      function cerrarHojaEvento(){
+        $("#mrEventSheet")?.classList.remove("open");
+        mrPlayerId=null; mrTipo=null; mrCant=1;
+      }
+
+      /* ---- cargar ---- */
+      function cargarEventos(){
+        const p=state.players[mrPlayerId]; if(!p||!mrTipo) return;
+        const m=state.matches[editingMatchId]; if(!m) return;
+        const home=resolveSlot(m.homeSlot), away=resolveSlot(m.awaySlot);
+
+        if(mrTipo==="mvp"){
+          // la figura es una sola por partido: volver a tocarla la saca
+          const sel=$("#matchMvpField");
+          const yaEra=sel.value===mrPlayerId;
+          sel.value=yaEra?"":mrPlayerId;
+          showToast(yaEra?"Figura sin designar":`Figura del encuentro: ${nombreJugador(p)}`);
+        }else{
+          const cuantos=mrTipo==="goal"?Math.max(1,Math.min(20,mrCant)):1;
+          for(let i=0;i<cuantos;i++){
+            pendingEvents.push({id:uid("ev"),minute:null,type:mrTipo,teamId:p.teamId,playerId:mrPlayerId});
+          }
+          if(mrTipo==="goal") mrAjustarMarcador(p.teamId,cuantos);
+          showToast(cuantos>1
+            ? `${cuantos} goles · ${nombreJugador(p)}`
+            : `${EVENT_LABEL[mrTipo]||mrTipo} · ${nombreJugador(p)}`);
+        }
+
+        cerrarHojaEvento();
+        renderEventEditor(home,away);
+        renderHojaJugadores();   // la ficha queda marcada al volver
+        playAdvance();
+      }
+
+      /* Alta rápida desde la hoja: crea al jugador en el equipo que se está
+         cargando. Es lo que salva cuando aparece alguien que no estaba en la
+         lista y el partido ya se jugó. */
+      function mrAltaJugador(nombre,apellido,numeroTxt){
+        if(!mrTeamId) return null;
+        if(!puedeEditarEquipo(mrTeamId)){showToast("No tenés permiso para tocar este plantel");return null}
+        if(!nombre||!apellido) return null;
         const numero=numeroTxt===""||numeroTxt==null?null:Number(numeroTxt);
         const id=uid("p");
-        state.players[id]={id,teamId:regSel.teamId,firstName:nombre,lastName:apellido,
-          number:numero,position:$("#regAltaPos")?.value||"DEL",birthDate:"",photoDataUrl:""};
+        state.players[id]={id,teamId:mrTeamId,firstName:nombre,lastName:apellido,
+          number:Number.isFinite(numero)?numero:null,position:"DEL",birthDate:"",photoDataUrl:""};
         persist();
-        // el select de figura se armó al abrir el modal: si no se rearma, este
-        // jugador recién creado no existe como opción y designarlo no guarda nada
-        poblarSelectFigura(home,away,$("#matchMvpField")?.value||"");
-        regSel.alta=false;
+        renderHojaJugadores();
+        showToast(`${nombre} ${apellido} agregado al plantel`);
         return id;
       }
 
+      /* El select de la figura es lo que se guarda al enviar el form, asi
+         que tiene que estar poblado aunque el usuario nunca lo vea. */
       function poblarSelectFigura(home,away,seleccionado){
         const sel=$("#matchMvpField");if(!sel)return;
         sel.innerHTML=`<option value="">Sin designar</option>`+
@@ -11831,35 +12152,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           }).join("");
         sel.value=seleccionado||"";
       }
-      // temblor de error. Nombre propio a propósito: la pantalla de perfiles ya
-      // tiene su sacudir(), que además prende una clase que acá no corresponde.
+
       function regSacudir(el){
         if(!el)return;
-        if(!window.gsap||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-        gsap.fromTo(el,{x:-7},{x:0,duration:.5,ease:"elastic.out(1,.32)"});
+        if(window.gsap&&!matchMedia("(prefers-reduced-motion: reduce)").matches)
+          gsap.fromTo(el,{x:-7},{x:0,duration:.5,ease:"elastic.out(1,.45)"});
       }
 
-      function regPulso(playerId){
-        const b=document.querySelector(`#regPicker [data-reg-player="${CSS.escape(playerId)}"]`);
-        if(!b||!window.gsap||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-        gsap.fromTo(b,{scale:.9},{scale:1,duration:.42,ease:"back.out(2.4)",clearProps:"all"});
-      }
-      function animarPicker(){
-        if(!window.gsap||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-        const box=$("#regPicker");
-        if(!box||box.hidden)return;
-        gsap.fromTo(box,{y:-8,autoAlpha:0},{y:0,autoAlpha:1,duration:.3,ease:"power2.out",clearProps:"all"});
-        const items=box.querySelectorAll(".reg-team,.reg-player");
-        if(items.length)gsap.fromTo(items,{y:12,scale:.94,autoAlpha:0},
-          {y:0,scale:1,autoAlpha:1,duration:.34,stagger:.028,ease:"back.out(1.5)",delay:.06,clearProps:"all"});
-      }
-
-      // ===== modal: partido (grupos + eliminatoria) =====
       function renderEventEditor(home,away){
-        $("#regTiles").innerHTML=regTilesHtml();
-        const pk=$("#regPicker");
-        if(regSel){pk.hidden=false;pk.innerHTML=regPickerHtml(home,away)}
-        else{pk.hidden=true;pk.innerHTML=""}
+        renderMatchHeader();
         $("#eventEditor").innerHTML=regMvpChip()+regListaHtml();
 
         /* Aviso de coherencia: los goles cargados tienen que dar el marcador.
@@ -11885,6 +12186,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           : "");
         res.classList.toggle("is-warn",descuadre);
       }
+
       function updateTieVisibility(){
         const m=state.matches[editingMatchId];if(!m)return;
         const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
@@ -11937,10 +12239,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#matchTieField").innerHTML=`<option value="">Seleccionar ganador…</option><option value="home" ${m.tieBreakWinner==="home"?"selected":""}>${esc(home.name)}</option><option value="away" ${m.tieBreakWinner==="away"?"selected":""}>${esc(away.name)}</option>`;
         updateTieVisibility();
         pendingEvents=clone(m.events||[]);
-        // figura del partido: se llena ANTES de dibujar la consola, porque el
-        // mosaico de la estrella lee su valor para marcarse
+        // figura del partido: se llena ANTES de dibujar las incidencias,
+        // porque el chip de la figura lee su valor
         poblarSelectFigura(home,away,m.mvpPlayerId||"");
-        regSel=null;
+        mrTeamId=null; mrPlayerId=null; mrTipo=null; mrCant=1;
         renderEventEditor(home,away);
         $("#matchModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
         animarModalPartido();
@@ -11951,11 +12253,12 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           {y:0,scale:1,autoAlpha:1,duration:.44,ease:"power3.out",clearProps:"all"});
         gsap.fromTo("#matchModal .form-section",{y:16,autoAlpha:0},
           {y:0,autoAlpha:1,duration:.4,stagger:.07,ease:"power2.out",delay:.1,clearProps:"all"});
-        gsap.fromTo("#matchModal .reg-tile",{y:14,scale:.9,autoAlpha:0},
-          {y:0,scale:1,autoAlpha:1,duration:.42,stagger:.05,ease:"back.out(1.8)",delay:.26,clearProps:"all"});
+        gsap.fromTo("#matchModal .mr-lado",{y:14,scale:.92,autoAlpha:0},
+          {y:0,scale:1,autoAlpha:1,duration:.42,stagger:.08,ease:"back.out(1.7)",delay:.2,clearProps:"all"});
       }
       function closeMatchModal(){
-        regSel=null;
+        cerrarHojaEvento();
+        cerrarHojaJugadores();
         $("#matchModal").classList.remove("open");
         document.body.style.overflow="";document.body.classList.remove("modal-open");
         editingMatchId=null;
@@ -12892,6 +13195,7 @@ body:has(#paniniCropperModal.open) #tabBar,
 body:has(#matchDataModal.open) #tabBar,
 body:has(#resetModal.open) #tabBar,
 body:has(#pantallaPerfiles:not([hidden])) #tabBar,
+body:has(#mrPlayerSheet.open) #tabBar,
 body:has(#splash) #tabBar {
   display: none !important;
   opacity: 0 !important;
@@ -14606,59 +14910,74 @@ function loop(){
         const del=e.target.closest("[data-del-event]");if(!del)return;
         const m=state.matches[editingMatchId];if(!m)return;
         const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        pendingEvents.splice(Number(del.dataset.delEvent),1);
+        const [quitado]=pendingEvents.splice(Number(del.dataset.delEvent),1);
+        // sacar un gol también lo saca del marcador, o quedaría un descuadre
+        // que nadie pidió
+        if(quitado&&quitado.type==="goal")mrAjustarMarcador(quitado.teamId,-1);
         renderEventEditor(home,away);
+        if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
       });
 
-      /* --- consola de registro: mosaico → equipo → jugador --- */
-      $("#regTiles").addEventListener("click",e=>{
-        const b=e.target.closest("[data-reg]");if(!b)return;
-        const m=state.matches[editingMatchId];if(!m)return;
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        const t=b.dataset.reg;
-        // volver a tocar el mismo mosaico cierra el panel
-        regSel=(regSel&&regSel.t===t)?null:{t,teamId:null};
-        // si sólo hay un equipo con plantel, el paso del equipo no aporta nada
-        if(regSel){
-          const con=[home,away].filter(s=>s.id&&playersInTeam(s.id).length);
-          if(con.length===1)regSel.teamId=con[0].id;
-        }
-        renderEventEditor(home,away);
-        animarPicker();playClick();
+      /* --- carga: equipo → jugador → qué y cuántos --- */
+      document.addEventListener("click",e=>{
+        const bt=e.target.closest("[data-mr-add]");
+        if(!bt||!editingMatchId)return;
+        abrirHojaJugadores(bt.dataset.mrAdd);
       });
-      $("#regPicker").addEventListener("click",e=>{
-        const m=state.matches[editingMatchId];if(!m||!regSel)return;
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        if(e.target.closest("[data-reg-done]")){regSel=null;renderEventEditor(home,away);playClick();return}
-        if(e.target.closest("[data-reg-back]")){regSel.teamId=null;regSel.alta=false;renderEventEditor(home,away);animarPicker();return}
-        const bt=e.target.closest("[data-reg-team]");
-        if(bt){regSel.teamId=bt.dataset.regTeam;renderEventEditor(home,away);animarPicker();playClick();return}
-        if(e.target.closest("[data-reg-nuevo]")){
-          regSel.alta=true;renderEventEditor(home,away);
-          $("#regAltaNombre")?.focus();playClick();return;
-        }
-        if(e.target.closest("[data-reg-alta-no]")){regSel.alta=false;renderEventEditor(home,away);return}
-        if(e.target.closest("[data-reg-alta-ok]")){
-          const id=regAltaJugador(home,away);
-          if(id)registrarEvento(id,home,away); else renderEventEditor(home,away);
+
+      $("#btnCloseMrSheet")?.addEventListener("click",()=>{cerrarHojaJugadores();playClick()});
+      $("#btnMrRegistrar")?.addEventListener("click",()=>{
+        cerrarHojaJugadores();
+        showToast("Datos registrados. Falta guardar el partido.");
+        playAdvance();
+      });
+
+      $("#mrSheetBody")?.addEventListener("click",e=>{
+        if(e.target.closest("[data-mr-nuevo]")){
+          /* Alta rápida. Se pide en dos pasos por prompt a propósito: es la
+             excepción —alguien que no estaba en la lista— y no justifica un
+             formulario más encima de dos hojas abiertas. */
+          const nombre=(prompt("Nombre del jugador")||"").trim();
+          if(!nombre)return;
+          const apellido=(prompt("Apellido")||"").trim();
+          if(!apellido)return;
+          const numero=(prompt("Número (opcional)")||"").trim();
+          const id=mrAltaJugador(nombre,apellido,numero);
+          if(id)abrirHojaEvento(id);
           return;
         }
-        const bp=e.target.closest("[data-reg-player]");
-        if(bp)registrarEvento(bp.dataset.regPlayer,home,away);
+        const bp=e.target.closest("[data-mr-player]");
+        if(bp)abrirHojaEvento(bp.dataset.mrPlayer);
       });
-      // Enter dentro del alta rápida da de alta, no envía el partido entero
-      $("#regPicker").addEventListener("keydown",e=>{
-        if(e.key!=="Enter"||!e.target.closest(".reg-alta"))return;
-        e.preventDefault();
-        const m=state.matches[editingMatchId];if(!m||!regSel)return;
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        const id=regAltaJugador(home,away);
-        if(id)registrarEvento(id,home,away);
+
+      $("#mrEvTipos")?.addEventListener("click",e=>{
+        const b=e.target.closest("[data-mr-tipo]");if(!b)return;
+        mrTipo=b.dataset.mrTipo;
+        if(mrTipo!=="goal")mrCant=1;
+        renderHojaEvento();
+        playClick();
       });
+      $("#mrEvMenos")?.addEventListener("click",()=>{
+        mrCant=Math.max(1,mrCant-1);renderHojaEvento();playClick();
+      });
+      $("#mrEvMas")?.addEventListener("click",()=>{
+        mrCant=Math.min(20,mrCant+1);renderHojaEvento();playClick();
+      });
+      $("#btnMrEvCargar")?.addEventListener("click",cargarEventos);
+      $("#btnMrEvCancelar")?.addEventListener("click",()=>{cerrarHojaEvento();playClick()});
+      $("#mrEventSheet")?.addEventListener("click",e=>{
+        if(e.target===e.currentTarget)cerrarHojaEvento();
+      });
+      // Escape cierra primero la hoja de arriba, no las dos de una
+      document.addEventListener("keydown",e=>{
+        if(e.key!=="Escape")return;
+        if($("#mrEventSheet")?.classList.contains("open")){cerrarHojaEvento();return}
+        if($("#mrPlayerSheet")?.classList.contains("open"))cerrarHojaJugadores();
+      });
+
       $("#eventEditor").addEventListener("change",e=>{
         const row=e.target.closest(".event-row");if(!row)return;
         const ev=pendingEvents[Number(row.dataset.idx)];if(!ev)return;
-        if(e.target.matches(".ev-minute"))ev.minute=e.target.value===""?null:Number(e.target.value);
         if(e.target.matches(".ev-type"))ev.type=e.target.value;
         if(e.target.matches(".ev-player")){ev.playerId=e.target.value;const p=state.players[ev.playerId];if(p)ev.teamId=p.teamId}
       });
