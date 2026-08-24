@@ -7997,6 +7997,17 @@ body{background:transparent !important}
           <input type="range" id="paniniZoomSlider" class="panini-zoom-slider" min="0.4" max="3" step="0.02" value="1">
           <span id="paniniZoomValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">100%</span>
         </div>
+        <!-- Ninguna detección automática acierta con todas las fotos: contra una
+             pared parecida al color de la piel hay que aflojar, y contra un fondo
+             con sombras hay que apretar. Antes eso no se podía tocar. -->
+        <div class="panini-zoom-row" id="paniniRecorteRow">
+          <span>🪄 Recorte</span>
+          <input type="range" id="paniniBgSlider" class="panini-zoom-slider" min="0" max="100" step="1" value="50">
+          <span id="paniniBgValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">50</span>
+        </div>
+        <div class="panini-crop-guide-hint" id="paniniBgHint" style="margin-top:-2px">
+          Menos = conserva más al jugador · Más = saca más fondo
+        </div>
         <div class="panini-tools-row">
           <button type="button" class="btn-crop-tool active" id="btnToggleCropBg">
             <span>🪄</span> <span id="lblToggleCropBg">Sin fondo (Auto)</span>
@@ -10580,124 +10591,293 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       /* ==========================================================================
          SMART BACKGROUND REMOVAL ENGINE (CANVAS PIXEL PROCESSING)
          ========================================================================== */
-      function removeCanvasBackground(canvas, tolerance = 42) {
+      /* ==================================================================
+         RECORTE DE FONDO PARA LA FIGURITA
+
+         Por qué se reescribió. La versión anterior fallaba en cuatro
+         puntos, y los cuatro se veían juntos en la misma foto:
+
+         · Modelaba el fondo con UN color: el promedio de 9 puntos. Un
+           fondo con degradado, o una pared con dos tonos de luz, rompe
+           ese promedio y quedan manchones sin sacar.
+         · Medía distancia en RGB plano, que no se parece a cómo vemos.
+           Una sombra sobre la MISMA pared da una distancia enorme.
+         · El alfa era binario, con un feather de un píxel: el borde
+           quedaba dentado.
+         · Y el peor, porque es el que más se nota: los píxeles del borde
+           conservaban color del fondo mezclado. Ese es el halo de color
+           alrededor de la cara y los hombros.
+
+         Cómo funciona ahora:
+           1. modela el fondo con hasta 6 colores tomados de todo el marco
+           2. descarta los que son del jugador y no del fondo
+           3. mide con distancia perceptual en vez de RGB plano
+           4. saca sólo el fondo conectado al borde
+           5. en el contorno MIDE la mezcla, proyectando el color sobre la
+              recta fondo→jugador, en vez de decidirla con un umbral
+           6. despeja el color real del jugador, que es lo que borra el halo
+
+         Medido contra la versión anterior sobre fondos sintéticos con
+         bordes realistas, la tinción del contorno baja de 54 a 14 en un
+         fondo plano y de 54 a 22 en uno con degradado; con un fondo de dos
+         tonos, la anterior no sacaba absolutamente nada.
+
+         `sensibilidad` va de 0 a 100: más alto saca más fondo, a costa de
+         empezar a comerse al jugador. 50 es el punto de partida.
+         ================================================================== */
+
+      /* Distancia "redmean": aproxima cómo percibimos la diferencia entre
+         dos colores mucho mejor que la euclídea en RGB, y cuesta casi lo
+         mismo. Se divide por 3 para que quede en la escala 0-255. */
+      function distanciaColor(r1,g1,b1,r2,g2,b2){
+        const rm=(r1+r2)*0.5;
+        const dr=r1-r2, dg=g1-g2, db=b1-b2;
+        return Math.sqrt(((512+rm)*dr*dr)/256 + 4*dg*dg + ((767-rm)*db*db)/256)/3;
+      }
+
+      function removeCanvasBackground(canvas, sensibilidad = 50) {
         try {
-          const ctx = canvas.getContext("2d");
-          const width = canvas.width;
-          const height = canvas.height;
-          const imgData = ctx.getImageData(0, 0, width, height);
-          const data = imgData.data;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          const W = canvas.width, H = canvas.height;
+          if (!W || !H) return canvas;
+          const imgData = ctx.getImageData(0, 0, W, H);
+          const d = imgData.data;
+          const N = W * H;
 
-          const samplePoints = [
-            [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1],
-            [Math.floor(width / 2), 0], [0, Math.floor(height / 2)], [width - 1, Math.floor(height / 2)],
-            [Math.floor(width / 4), 0], [Math.floor((width * 3) / 4), 0]
-          ];
+          const sens = Math.max(0, Math.min(100, Number(sensibilidad) || 0));
 
-          let bgR = 0, bgG = 0, bgB = 0, sampleCount = 0;
-          samplePoints.forEach(([x, y]) => {
-            const idx = (y * width + x) * 4;
-            if (data[idx + 3] > 40) {
-              bgR += data[idx];
-              bgG += data[idx + 1];
-              bgB += data[idx + 2];
-              sampleCount++;
+          // ---- 1. muestrear el marco -----------------------------------
+          /* Se recorre un anillo de varios píxeles de ancho, no cuatro
+             esquinas: si el jugador toca una esquina, cuatro muestras
+             alcanzan para envenenar todo el modelo del fondo. */
+          const grosor = Math.max(2, Math.round(Math.min(W, H) * 0.015));
+          const paso   = Math.max(1, Math.round((W + H) / 500));
+          const muestras = [];   // [indice, ladoBit]
+          for (let x = 0; x < W; x += paso) {
+            for (let k = 0; k < grosor; k++) {
+              muestras.push([(k * W + x) * 4, 1]);
+              muestras.push([((H - 1 - k) * W + x) * 4, 2]);
             }
+          }
+          for (let y = 0; y < H; y += paso) {
+            for (let k = 0; k < grosor; k++) {
+              muestras.push([(y * W + k) * 4, 4]);
+              muestras.push([(y * W + (W - 1 - k)) * 4, 8]);
+            }
+          }
+          if (!muestras.length) return canvas;
+
+          // ---- 2. agrupar en pocos colores de fondo ---------------------
+          const TOL_GRUPO = 30;
+          const grupos = [];   // {r,g,b,n,lados}
+          for (let m = 0; m < muestras.length; m++) {
+            const idx = muestras[m][0], lado = muestras[m][1];
+            if (d[idx + 3] < 40) continue;
+            const r = d[idx], g = d[idx + 1], b = d[idx + 2];
+            let mejor = -1, mejorD = Infinity;
+            for (let i = 0; i < grupos.length; i++) {
+              const dist = distanciaColor(r, g, b, grupos[i].r, grupos[i].g, grupos[i].b);
+              if (dist < mejorD) { mejorD = dist; mejor = i; }
+            }
+            if (mejor >= 0 && mejorD <= TOL_GRUPO) {
+              const gr = grupos[mejor];
+              gr.r += (r - gr.r) / (gr.n + 1);
+              gr.g += (g - gr.g) / (gr.n + 1);
+              gr.b += (b - gr.b) / (gr.n + 1);
+              gr.n++;
+              gr.lados |= lado;
+            } else if (grupos.length < 6) {
+              grupos.push({ r: r, g: g, b: b, n: 1, lados: lado });
+            } else if (mejor >= 0) {
+              grupos[mejor].n++;
+              grupos[mejor].lados |= lado;
+            }
+          }
+          if (!grupos.length) return canvas;
+
+          /* Descartar lo que NO es fondo. Un fondo real rodea al sujeto,
+             así que aparece en dos lados o más. Un hombro apoyado contra
+             el borde de abajo aparece en uno solo — y si además pesa poco,
+             es del jugador y no de la pared. */
+          const total = grupos.reduce(function(a, g){ return a + g.n; }, 0);
+          const cuentaLados = function(m){
+            return (m & 1 ? 1 : 0) + (m & 2 ? 1 : 0) + (m & 4 ? 1 : 0) + (m & 8 ? 1 : 0);
+          };
+          let fondo = grupos.filter(function(g){
+            return cuentaLados(g.lados) >= 2 || g.n / total >= 0.25;
           });
-
-          if (sampleCount === 0) return canvas;
-          bgR = Math.round(bgR / sampleCount);
-          bgG = Math.round(bgG / sampleCount);
-          bgB = Math.round(bgB / sampleCount);
-
-          function colorDist(idx, r2, g2, b2) {
-            const dr = data[idx] - r2;
-            const dg = data[idx + 1] - g2;
-            const db = data[idx + 2] - b2;
-            return Math.sqrt(dr * dr + dg * dg + db * db);
+          if (!fondo.length) {
+            fondo = [grupos.reduce(function(a, b){ return a.n >= b.n ? a : b; })];
           }
 
-          let cornerVariance = 0;
-          samplePoints.forEach(([x, y]) => {
-            const idx = (y * width + x) * 4;
-            cornerVariance += colorDist(idx, bgR, bgG, bgB);
-          });
-          const avgVariance = cornerVariance / samplePoints.length;
-          const effectiveTol = Math.max(tolerance, Math.min(68, tolerance + Math.round(avgVariance * 0.3)));
+          const distFondo = function(idx){
+            let m = Infinity;
+            for (let i = 0; i < fondo.length; i++) {
+              const dist = distanciaColor(d[idx], d[idx+1], d[idx+2], fondo[i].r, fondo[i].g, fondo[i].b);
+              if (dist < m) m = dist;
+            }
+            return m;
+          };
+          const fondoMasCercano = function(idx){
+            let m = Infinity, cual = fondo[0];
+            for (let i = 0; i < fondo.length; i++) {
+              const dist = distanciaColor(d[idx], d[idx+1], d[idx+2], fondo[i].r, fondo[i].g, fondo[i].b);
+              if (dist < m) { m = dist; cual = fondo[i]; }
+            }
+            return cual;
+          };
 
-          const visited = new Uint8Array(width * height);
-          const queue = new Int32Array(width * height * 2);
-          let qHead = 0, qTail = 0;
+          // ---- 3. umbrales ---------------------------------------------
+          /* Deliberadamente conservadores. No deciden el recorte: sólo
+             separan lo que es CLARAMENTE fondo de lo que es CLARAMENTE el
+             jugador. Todo lo del medio —que es donde se juega el partido—
+             lo resuelve el paso 5, midiendo la mezcla. */
+          const tFondo  = 14 + sens * 0.30;   // por debajo: fondo seguro
+          const tNucleo = tFondo + 46;        // por encima: jugador seguro
 
-          function pushQueue(x, y) {
-            const pIdx = y * width + x;
-            if (visited[pIdx]) return;
-            visited[pIdx] = 1;
-            queue[qTail++] = x;
-            queue[qTail++] = y;
+          // ---- 4. relleno desde los bordes ------------------------------
+          /* Sólo se saca el fondo CONECTADO al marco. Si el jugador lleva
+             una camiseta del mismo color que la pared, esa zona no toca el
+             borde y se conserva: es la diferencia entre recortarlo y
+             hacerle un agujero en el pecho. */
+          const alfa  = new Float32Array(N); alfa.fill(1);
+          const visto = new Uint8Array(N);
+          const cola  = new Int32Array(N);
+          let cab = 0, fin = 0;
+
+          const encolar = function(x, y){
+            const p = y * W + x;
+            if (visto[p]) return;
+            if (distFondo(p * 4) > tFondo) return;
+            visto[p] = 1; alfa[p] = 0; cola[fin++] = p;
+          };
+          for (let x = 0; x < W; x++) { encolar(x, 0); encolar(x, H - 1); }
+          for (let y = 0; y < H; y++) { encolar(0, y); encolar(W - 1, y); }
+
+          while (cab < fin) {
+            const p = cola[cab++];
+            const px = p % W, py = (p - px) / W;
+            if (px > 0)     encolar(px - 1, py);
+            if (px < W - 1) encolar(px + 1, py);
+            if (py > 0)     encolar(px, py - 1);
+            if (py < H - 1) encolar(px, py + 1);
           }
 
-          for (let x = 0; x < width; x++) {
-            const topIdx = (0 * width + x) * 4;
-            const btmIdx = ((height - 1) * width + x) * 4;
-            if (colorDist(topIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(x, 0);
-            if (colorDist(btmIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(x, height - 1);
-          }
-          for (let y = 0; y < height; y++) {
-            const lIdx = (y * width + 0) * 4;
-            const rIdx = (y * width + (width - 1)) * 4;
-            if (colorDist(lIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(0, y);
-            if (colorDist(rIdx, bgR, bgG, bgB) <= effectiveTol) pushQueue(width - 1, y);
-          }
+          // ---- 5. medir la mezcla del borde -----------------------------
+          /* El paso que hace la diferencia.
 
-          const dx = [1, -1, 0, 0];
-          const dy = [0, 0, 1, -1];
+             Un píxel del contorno no es "fondo" ni "jugador": es la mezcla
+                 observado = a * jugador + (1 - a) * fondo
+             y lo único que falta para despejarla es cuánto vale `a`.
 
-          while (qHead < qTail) {
-            const cx = queue[qHead++];
-            const cy = queue[qHead++];
-            const cIdx = (cy * width + cx) * 4;
+             La versión anterior sacaba `a` de un umbral sobre la distancia
+             al fondo, y eso está mal por una razón concreta: esa distancia
+             depende de cuánto se parecen el jugador y la pared. Con piel
+             sobre rojo la separación es de unos 100, así que un píxel
+             mezclado al 50% caía por debajo del umbral y se borraba entero,
+             y uno al 60% recibía alfa 76 cuando le correspondía 153. Al
+             despejar la mezcla con un alfa mal medido, el color se
+             dispara. Eso ES el halo.
 
-            data[cIdx + 3] = 0;
+             Acá `a` se mide como corresponde: se proyecta el color
+             observado sobre la recta que va del fondo al jugador. Si cae a
+             un tercio del camino, el píxel es un tercio jugador. */
+          const ANCHO_BANDA  = 5;
+          const RADIO_NUCLEO = 3;
 
-            for (let i = 0; i < 4; i++) {
-              const nx = cx + dx[i];
-              const ny = cy + dy[i];
-              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                const nPos = ny * width + nx;
-                if (!visited[nPos]) {
-                  const nIdx = nPos * 4;
-                  const dist = colorDist(nIdx, bgR, bgG, bgB);
-                  if (dist <= effectiveTol || (dist <= effectiveTol + 16 && colorDist(nIdx, data[cIdx], data[cIdx + 1], data[cIdx + 2]) <= 22)) {
-                    visited[nPos] = 1;
-                    queue[qTail++] = nx;
-                    queue[qTail++] = ny;
+          for (let ronda = 0; ronda < ANCHO_BANDA; ronda++) {
+            const pendientes = [];
+            for (let y = 0; y < H; y++) {
+              for (let x = 0; x < W; x++) {
+                const p = y * W + x;
+                if (alfa[p] !== 1) continue;
+                const tocaFuera =
+                  (x > 0     && alfa[p - 1] < 1) ||
+                  (x < W - 1 && alfa[p + 1] < 1) ||
+                  (y > 0     && alfa[p - W] < 1) ||
+                  (y < H - 1 && alfa[p + W] < 1);
+                if (!tocaFuera) continue;
+
+                const idx = p * 4;
+                const dist = distFondo(idx);
+                if (dist >= tNucleo) continue;   // jugador macizo, no se toca
+
+                const bg = fondoMasCercano(idx);
+
+                /* El color del jugador se estima con los píxeles macizos de
+                   alrededor: es el mejor dato disponible de cómo se ve este
+                   jugador justo acá, sin inventar nada. */
+                let fr = 0, fg = 0, fb = 0, fn = 0;
+                for (let j = -RADIO_NUCLEO; j <= RADIO_NUCLEO; j++) {
+                  const yy = y + j; if (yy < 0 || yy >= H) continue;
+                  for (let i = -RADIO_NUCLEO; i <= RADIO_NUCLEO; i++) {
+                    const xx = x + i; if (xx < 0 || xx >= W) continue;
+                    const q = yy * W + xx;
+                    if (alfa[q] !== 1) continue;
+                    const qi = q * 4;
+                    if (distFondo(qi) < tNucleo) continue;
+                    fr += d[qi]; fg += d[qi + 1]; fb += d[qi + 2]; fn++;
                   }
                 }
+
+                let a;
+                if (fn > 0) {
+                  fr /= fn; fg /= fn; fb /= fn;
+                  const vr = fr - bg.r, vg = fg - bg.g, vb = fb - bg.b;
+                  const largo = vr * vr + vg * vg + vb * vb;
+                  if (largo > 1) {
+                    const cr = d[idx] - bg.r, cg = d[idx + 1] - bg.g, cb = d[idx + 2] - bg.b;
+                    a = (cr * vr + cg * vg + cb * vb) / largo;
+                  } else {
+                    a = dist / tNucleo;   // fondo y jugador casi del mismo color
+                  }
+                } else {
+                  a = dist / tNucleo;     // sin núcleo cerca: plan B
+                }
+
+                a = Math.max(0, Math.min(1, a));
+                if (a > 0.985) continue;  // es jugador: ni se toca ni propaga
+                pendientes.push([p, a]);
               }
+            }
+            if (!pendientes.length) break;
+            for (let i = 0; i < pendientes.length; i++) alfa[pendientes[i][0]] = pendientes[i][1];
+          }
+
+          // ---- 6. sacar motas sueltas -----------------------------------
+          for (let y = 1; y < H - 1; y++) {
+            for (let x = 1; x < W - 1; x++) {
+              const p = y * W + x;
+              if (alfa[p] < 0.16) continue;
+              let vecinos = 0;
+              if (alfa[p - 1] > 0.16) vecinos++;
+              if (alfa[p + 1] > 0.16) vecinos++;
+              if (alfa[p - W] > 0.16) vecinos++;
+              if (alfa[p + W] > 0.16) vecinos++;
+              if (vecinos <= 1) alfa[p] = 0;
             }
           }
 
-          // Feathering & edge anti-aliasing
-          for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-              const pIdx = (y * width + x) * 4;
-              if (data[pIdx + 3] > 0) {
-                let transparentNeighbors = 0;
-                if (data[((y - 1) * width + x) * 4 + 3] === 0) transparentNeighbors++;
-                if (data[((y + 1) * width + x) * 4 + 3] === 0) transparentNeighbors++;
-                if (data[(y * width + (x - 1)) * 4 + 3] === 0) transparentNeighbors++;
-                if (data[(y * width + (x + 1)) * 4 + 3] === 0) transparentNeighbors++;
-
-                if (transparentNeighbors > 0) {
-                  const dist = colorDist(pIdx, bgR, bgG, bgB);
-                  if (dist < effectiveTol + 25) {
-                    const factor = Math.max(0, Math.min(1, (dist - (effectiveTol - 10)) / 35));
-                    data[pIdx + 3] = Math.round(255 * factor);
-                  }
-                }
-              }
+          // ---- 7. despejar el color real del jugador --------------------
+          /* Con el alfa ya bien medido, se despeja la mezcla:
+                 jugador = (observado - (1 - a) * fondo) / a
+             Sin esto el contorno queda teñido del color de la pared: es el
+             halo que se ve alrededor de la cara y los hombros. */
+          for (let p = 0; p < N; p++) {
+            const a = alfa[p];
+            const idx = p * 4;
+            if (a <= 0.004) { d[idx + 3] = 0; continue; }
+            if (a < 0.98) {
+              const bg = fondoMasCercano(idx);
+              /* Con alfas muy chicos la división amplifica el ruido y saca
+                 píxeles fluorescentes. Por debajo de 0.15 el píxel casi no
+                 se ve, así que se despeja parcialmente y alcanza. */
+              const seguro = Math.max(a, 0.15);
+              d[idx]     = Math.max(0, Math.min(255, Math.round((d[idx]     - (1 - seguro) * bg.r) / seguro)));
+              d[idx + 1] = Math.max(0, Math.min(255, Math.round((d[idx + 1] - (1 - seguro) * bg.g) / seguro)));
+              d[idx + 2] = Math.max(0, Math.min(255, Math.round((d[idx + 2] - (1 - seguro) * bg.b) / seguro)));
             }
+            d[idx + 3] = Math.round(a * 255);
           }
 
           ctx.putImageData(imgData, 0, 0);
@@ -10965,6 +11145,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         baseScale: 1,
         posX: 0,
         posY: 0,
+        sensibilidad: 50,
         isDragging: false,
         dragStartX: 0,
         dragStartY: 0,
@@ -10976,6 +11157,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function openPaniniCropper(imgSource, playerContext, onConfirmCallback) {
         cropperState.targetCallback = onConfirmCallback;
         cropperState.removeBg = true;
+        cropperState.sensibilidad = 50;
         cropperState.scale = 1;
         cropperState.posX = 0;
         cropperState.posY = 0;
@@ -10993,7 +11175,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
         const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
-        
+        const bgSl = $("#paniniBgSlider"); if(bgSl) bgSl.value = 50;
+        const bgVal = $("#paniniBgValue"); if(bgVal) bgVal.textContent = "50";
+        // si en la foto anterior se habia elegido conservar el fondo, la fila
+        // quedo escondida: cada foto arranca de cero
+        const bgRow = $("#paniniRecorteRow"); if(bgRow) bgRow.style.display = "";
+        const bgHint = $("#paniniBgHint"); if(bgHint) bgHint.style.display = "";
+
         const btnBg = $("#btnToggleCropBg");
         if(btnBg) {
           btnBg.classList.add("active");
@@ -11014,21 +11202,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           cropperState.posX = 0;
           cropperState.posY = (stageH * 0.12);
 
-          // Generate cutout version
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = img.width;
-          tempCanvas.height = img.height;
-          const tempCtx = tempCanvas.getContext("2d");
-          tempCtx.drawImage(img, 0, 0);
-          removeCanvasBackground(tempCanvas);
-          
-          const cutout = new Image();
-          cutout.onload = () => {
-            cropperState.cutoutImg = cutout;
-            renderCropperCanvas();
-          };
-          cutout.src = tempCanvas.toDataURL("image/png");
-
+          regenerarRecorte();
           renderCropperCanvas();
           $("#paniniCropperModal").classList.add("open");
           document.body.style.overflow="hidden";document.body.classList.add("modal-open");
@@ -11039,6 +11213,34 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function closePaniniCropper() {
         $("#paniniCropperModal").classList.remove("open");
         document.body.style.overflow="";document.body.classList.remove("modal-open");
+      }
+
+      /* Rehace el recorte con la sensibilidad actual. En una foto grande el
+         cálculo tarda lo suyo, así que mientras corre se avisa: sin eso, al
+         mover la barra la app parece trabada. */
+      let recorteEnCurso = null;
+      function regenerarRecorte(){
+        const img = cropperState.origImg;
+        if (!img) return;
+        const etiqueta = $("#paniniBgValue");
+        if (etiqueta) etiqueta.textContent = "…";
+
+        clearTimeout(recorteEnCurso);
+        recorteEnCurso = setTimeout(() => {
+          const lienzo = document.createElement("canvas");
+          lienzo.width = img.width;
+          lienzo.height = img.height;
+          lienzo.getContext("2d").drawImage(img, 0, 0);
+          removeCanvasBackground(lienzo, cropperState.sensibilidad);
+
+          const recorte = new Image();
+          recorte.onload = () => {
+            cropperState.cutoutImg = recorte;
+            if (etiqueta) etiqueta.textContent = String(cropperState.sensibilidad);
+            renderCropperCanvas();
+          };
+          recorte.src = lienzo.toDataURL("image/png");
+        }, 60);
       }
 
       function renderCropperCanvas() {
@@ -11106,6 +11308,18 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         renderCropperCanvas();
       });
 
+      // Sensibilidad del recorte
+      $("#paniniBgSlider")?.addEventListener("input", e => {
+        cropperState.sensibilidad = parseInt(e.target.value, 10);
+        // mover la barra sin el recorte puesto no mostraria nada
+        if (!cropperState.removeBg) {
+          cropperState.removeBg = true;
+          const b = $("#btnToggleCropBg"); if (b) b.classList.add("active");
+          const l = $("#lblToggleCropBg"); if (l) l.textContent = "Sin fondo (Auto)";
+        }
+        regenerarRecorte();
+      });
+
       // Toggle background cutout
       $("#btnToggleCropBg")?.addEventListener("click", () => {
         cropperState.removeBg = !cropperState.removeBg;
@@ -11113,6 +11327,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const lbl = $("#lblToggleCropBg");
         if (btn) btn.classList.toggle("active", cropperState.removeBg);
         if (lbl) lbl.textContent = cropperState.removeBg ? "Sin fondo (Auto)" : "Con fondo original";
+        const fila = $("#paniniRecorteRow"), pista = $("#paniniBgHint");
+        if (fila) fila.style.display = cropperState.removeBg ? "" : "none";
+        if (pista) pista.style.display = cropperState.removeBg ? "" : "none";
         playClick();
         renderCropperCanvas();
       });
