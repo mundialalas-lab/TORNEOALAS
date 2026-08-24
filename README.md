@@ -57,20 +57,38 @@ correr sin duplicar nada, y no pisa los resultados ya cargados.
 Trae el sorteo y el fixture oficiales: dos grupos, ocho equipos con su país y su
 capitán, y los doce partidos con fecha y sede.
 
-## Sobre la clave de administrador
+## Sobre las claves
 
-En el código **no está la clave**: está su huella SHA-256.
+En el código **no hay ninguna clave**, ni en texto plano ni como huella.
 
-Que quede clara la medida de esto: una huella de un PIN de seis dígitos se
-revierte probando el millón de combinaciones, y eso a una computadora le lleva un
-segundo. **Esto no convierte la clave en secreta.** Sirve para que no aparezca al
-leer el archivo ni en las búsquedas de GitHub, nada más.
+Antes sí las había: las ocho contraseñas de los capitanes estaban escritas en
+el HTML, y este README afirmaba que del administrador sólo quedaba un hash
+SHA-256 —lo cual tampoco era cierto, porque seguía viva una constante
+`ADMIN_KEY` con la clave adentro. Todo eso se fue.
 
-Mientras la app funcione sola contra el navegador, cualquier control de acceso
-que viva en ella es una separación de responsabilidades —que nadie toque el
-fixture por accidente— y no una protección real. La clave de verdad tiene que
-vivir en Supabase (`auth.users`), que es lo único que puede validarla sin
-entregarla; las políticas de RLS de la migración ya están escritas para eso.
+Hoy las claves viven en `auth.users` de Supabase, que es lo único que puede
+validarlas sin entregarlas, y el rol de cada persona sale de la tabla
+`profiles`. Un capitán ya no "entra" comparando texto contra el archivo: abre
+una sesión de verdad, y el servidor es el que decide qué puede tocar.
+
+Cómo entra cada uno:
+
+| Rol | Entra con | Dónde se valida |
+|---|---|---|
+| Hincha | Nombre y apellido | En el navegador. No escribe nada en la base. |
+| Capitán | Su usuario y su PIN de siempre | `auth.users` — la app traduce el usuario a `<usuario>@mundialalas.app` y expande el PIN antes de mandarlo |
+| Administrador | Email y clave | `auth.users`, y además `profiles.role` tiene que decir `admin` |
+
+Que quede clara la medida de esto: **el PIN del capitán sigue siendo de cuatro
+dígitos**, y la fórmula que lo expande está a la vista en el HTML. No se ganó
+fuerza de clave. Lo que se ganó es otra cosa, y es la que importaba: la
+autorización dejó de vivir en el navegador. Antes, un control de acceso escrito
+en la app era una separación de responsabilidades —que nadie toque el fixture
+por accidente— y cualquiera podía saltearlo desde la consola. Ahora lo hace
+valer Postgres con RLS, del lado del servidor, donde no se puede discutir.
+
+Si querés claves de verdad, el cambio es chico y no toca el código: poné PINs
+de seis dígitos o más al crear las cuentas, y listo.
 
 ## Qué hay en la carpeta
 

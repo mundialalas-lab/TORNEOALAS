@@ -3588,6 +3588,14 @@ body.album-fs .footer-strip{display:none}
   transition:opacity var(--t) var(--ease-out),transform var(--t) var(--ease-out);
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
+/* Un guardado que falla NO puede verse igual que uno que salió bien: es la
+   diferencia entre "el resultado quedó cargado" y "el resultado se pierde en
+   la próxima recarga". Rojo, y queda más tiempo en pantalla. */
+.toast.is-error{
+  background:var(--danger-soft);
+  color:var(--danger-ink);
+  border-color:rgba(212,32,39,.45);
+}
 
 /* --------------------------------------------------------- revelaciones -- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
@@ -8316,15 +8324,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         "be": getFlag('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#000"/><rect x="20" width="20" height="40" fill="#fdda24"/><rect x="40" width="20" height="40" fill="#ef3340"/></svg>')
       };
 
+      /* Acá NO hay claves, y no es un olvido.
+         Las ocho contraseñas estaban escritas en texto plano en estas
+         líneas, en un repositorio público. Ahora viven en auth.users de
+         Supabase, que es lo único que puede validarlas sin entregarlas.
+         Lo que queda es la ficha: quién es cada uno y qué equipo dirige,
+         que no es secreto — está en el afiche del sorteo. */
       const INITIAL_CAPTAINS = {
-        "u-cap-0-raul": { id: "u-cap-0-raul", name: "Raul Caballero", role: "capitan", teamId: "t-ventas", usuario: "raul", clave: "2233", createdAt: new Date().toISOString() },
-        "u-cap-1-daniel": { id: "u-cap-1-daniel", name: "Daniel Gimenez", role: "capitan", teamId: "t-produccion", usuario: "daniel", clave: "4321", createdAt: new Date().toISOString() },
-        "u-cap-2-victor": { id: "u-cap-2-victor", name: "Victor Marecos", role: "capitan", teamId: "t-fabrica", usuario: "victor", clave: "3445", createdAt: new Date().toISOString() },
-        "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", clave: "3121", createdAt: new Date().toISOString() },
-        "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", clave: "1221", createdAt: new Date().toISOString() },
-        "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", clave: "2131", createdAt: new Date().toISOString() },
-        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", clave: "121221", createdAt: new Date().toISOString() },
-        "u-cap-7-rafael": { id: "u-cap-7-rafael", name: "Rafael Ovelar", role: "capitan", teamId: "t-picking", usuario: "rafael", clave: "4455", createdAt: new Date().toISOString() }
+        "u-cap-0-raul": { id: "u-cap-0-raul", name: "Raul Caballero", role: "capitan", teamId: "t-ventas", usuario: "raul", createdAt: new Date().toISOString() },
+        "u-cap-1-daniel": { id: "u-cap-1-daniel", name: "Daniel Gimenez", role: "capitan", teamId: "t-produccion", usuario: "daniel", createdAt: new Date().toISOString() },
+        "u-cap-2-victor": { id: "u-cap-2-victor", name: "Victor Marecos", role: "capitan", teamId: "t-fabrica", usuario: "victor", createdAt: new Date().toISOString() },
+        "u-cap-3-juan": { id: "u-cap-3-juan", name: "Juan Marcos", role: "capitan", teamId: "t-distlocal", usuario: "juan", createdAt: new Date().toISOString() },
+        "u-cap-4-enrique": { id: "u-cap-4-enrique", name: "Enrique Arza", role: "capitan", teamId: "t-distinterior", usuario: "enrique", createdAt: new Date().toISOString() },
+        "u-cap-5-carlos": { id: "u-cap-5-carlos", name: "Carlos Versa", role: "capitan", teamId: "t-deposito", usuario: "carlos", createdAt: new Date().toISOString() },
+        "u-cap-6-adrian": { id: "u-cap-6-adrian", name: "Adrian Gomez", role: "capitan", teamId: "t-admin", usuario: "adrian", createdAt: new Date().toISOString() },
+        "u-cap-7-rafael": { id: "u-cap-7-rafael", name: "Rafael Ovelar", role: "capitan", teamId: "t-picking", usuario: "rafael", createdAt: new Date().toISOString() }
       };
 
       function defaultState(){
@@ -8411,22 +8425,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             players:saved.players||{},
             matches:saved.matches||{},
             users: (() => {
+              /* Antes, cada arranque volvía a imponer clave, rol y equipo
+                 desde INITIAL_CAPTAINS — y encima por coincidencia de
+                 nombre, sobre todos los usuarios. Consecuencia: el admin no
+                 podía cambiarle la clave a un capitán ni reasignarle el
+                 equipo, porque se revertía solo en la recarga siguiente.
+                 Ahora las credenciales viven en Supabase y esto sólo
+                 asegura que las ocho fichas existan. */
               const uMap = { ...clone(INITIAL_CAPTAINS), ...(saved.users || {}) };
               Object.values(INITIAL_CAPTAINS).forEach(initCap => {
                 if (!uMap[initCap.id]) uMap[initCap.id] = clone(initCap);
-                else {
-                  uMap[initCap.id].clave = initCap.clave;
-                  uMap[initCap.id].role = initCap.role;
-                  uMap[initCap.id].teamId = initCap.teamId;
-                  uMap[initCap.id].usuario = initCap.usuario;
-                }
-                Object.values(uMap).forEach(u => {
-                  if (u.name && u.name.trim().toLowerCase() === initCap.name.trim().toLowerCase()) {
-                    u.clave = initCap.clave;
-                    u.role = initCap.role;
-                    u.teamId = initCap.teamId;
-                  }
-                });
               });
               return uMap;
             })(),
@@ -8462,6 +8470,47 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         }
       }
 
+      /* ==================================================================
+         TODA escritura a Supabase pasa por acá.
+
+         El problema que resuelve: supabase-js NO lanza excepciones cuando el
+         servidor rechaza una escritura — devuelve { error }. Por eso los
+         try/catch que envolvían estas llamadas no atrapaban nada, y como el
+         toast de éxito se mostraba igual, un rechazo de RLS terminaba así:
+         "Jugador agregado" en pantalla, el cambio vivo sólo en localStorage,
+         y la recarga siguiente pisándolo con lo que hay en la base. El dato
+         desaparecía sin que nadie se enterara.
+
+         Devuelve {ok, data, error} y, cuando falla, lo dice en pantalla. El
+         que llama SÓLO debe cantar éxito si ok es true.
+         ================================================================== */
+      const NUBE_ERR = {
+        "42501":    "no tenés permiso (entrá de nuevo como administrador)",
+        "PGRST301": "tu sesión caducó, volvé a entrar",
+        "23505":    "ya existe un registro con esos datos",
+        "23503":    "falta un dato relacionado (equipo o partido)"
+      };
+      async function guardarEnNube(que, ejecutar){
+        if(!window.supabase){
+          return { ok:false, sinNube:true, data:null, error:null };
+        }
+        let res;
+        try{
+          res = await ejecutar();
+        }catch(e){
+          // caída de red, CORS, o el cliente tirando de verdad
+          res = { data:null, error:e };
+        }
+        const error = res && res.error;
+        if(error){
+          console.error(`Supabase · ${que}:`, error);
+          const detalle = NUBE_ERR[error.code] || error.message || error.code || "error desconocido";
+          showToastError(`No se guardó ${que}: ${detalle}`);
+          return { ok:false, sinNube:false, data:null, error };
+        }
+        return { ok:true, sinNube:false, data:(res?res.data:null), error:null };
+      }
+
       async function uploadBase64ToSupabase(base64Data, path) {
         if (!window.supabase) return null;
         try {
@@ -8477,11 +8526,18 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             upsert: true, 
             contentType: blob.type || 'image/png' 
           });
-          if (error) { console.error('Upload error:', error); return null; }
+          if (error) {
+            console.error('Upload error:', error);
+            // El que llama sigue con el data URI, así que la imagen se ve en
+            // ESTE dispositivo y en ningún otro. Hay que decirlo.
+            showToastError("La imagen no se subió: " + (NUBE_ERR[error.code] || error.message || "error desconocido") + ". Queda sólo en este dispositivo.");
+            return null;
+          }
           const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(path);
           return publicUrlData.publicUrl;
         } catch (e) {
           console.error('Blob conversion / upload error:', e);
+          showToastError("La imagen no se pudo subir: " + (e.message || "error de red") + ". Queda sólo en este dispositivo.");
           return null;
         }
       }
@@ -8656,20 +8712,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               try {
                 const cloudUsers = JSON.parse(userLegend.team);
                 state.users = { ...clone(INITIAL_CAPTAINS), ...state.users, ...cloudUsers };
+                // Igual que en loadState: sólo se garantiza que las fichas
+                // existan. Rol y equipo de quien esté autenticado los dicta
+                // profiles, no este JSON.
                 Object.values(INITIAL_CAPTAINS).forEach(initCap => {
-                  if (state.users[initCap.id]) {
-                    state.users[initCap.id].clave = initCap.clave;
-                    state.users[initCap.id].role = initCap.role;
-                    state.users[initCap.id].teamId = initCap.teamId;
-                    state.users[initCap.id].usuario = initCap.usuario;
-                  }
-                  Object.values(state.users).forEach(u => {
-                    if (u.name && u.name.trim().toLowerCase() === initCap.name.trim().toLowerCase()) {
-                      u.clave = initCap.clave;
-                      u.role = initCap.role;
-                      u.teamId = initCap.teamId;
-                    }
-                  });
+                  if (!state.users[initCap.id]) state.users[initCap.id] = clone(initCap);
                 });
               } catch(e){}
             }
@@ -9434,13 +9481,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               mvp_player_id: mvpUuid,
               status: m.status
             };
-            const { error } = await supabase.from('matches').update(payload).eq('legacy_id', matchId);
-            if (error) {
-              console.error("Match score quick update error:", error);
-              showToast("Error al guardar en base de datos: " + (error.message || error.code));
-            } else {
-              showToast("Resultado guardado en Supabase");
-            }
+            const r = await guardarEnNube("el resultado", () =>
+              supabase.from('matches').update(payload).eq('legacy_id', matchId));
+            if (r.ok) showToast("Resultado guardado");
           }
         }
       });
@@ -10475,7 +10518,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const pieces=Array.from({length:180},()=>({x:innerWidth/2+(Math.random()-.5)*220,y:innerHeight*.18,vx:(Math.random()-.5)*10,vy:Math.random()*-9-5,g:.19+Math.random()*.09,r:3+Math.random()*5,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*.26,c:colors[Math.floor(Math.random()*colors.length)],life:190+Math.random()*50}));
         let frame=0;function tick(){ctx.clearRect(0,0,innerWidth,innerHeight);pieces.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.rot+=p.vr;p.vx*=.995;p.life--;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.r,-p.r*.45,p.r*2,p.r*.9);ctx.restore()});frame++;if(frame<245&&pieces.some(p=>p.life>0&&p.y<innerHeight+30))requestAnimationFrame(tick);else ctx.clearRect(0,0,innerWidth,innerHeight)}tick();
       }
-      function showToast(message){const t=$("#toast");t.textContent=message;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600)}
+      function showToast(message,tipo){
+        const t=$("#toast");if(!t)return;
+        const esError=tipo==="error";
+        t.textContent=message;
+        t.classList.toggle("is-error",esError);
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer=setTimeout(()=>t.classList.remove("show"),esError?5200:2600);
+      }
+      function showToastError(message){showToast(message,"error")}
 
       // ===== compresión de imágenes (canvas) =====
       /* keepAlpha: la figurita estilo Panini lleva la foto RECORTADA, apoyada
@@ -10686,14 +10738,29 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         document.querySelectorAll(".group-score-manual").forEach(inp => { inp.value = ""; });
         document.querySelectorAll(".tie-penal-quick").forEach(sel => { sel.value = ""; });
 
+        /* El reset es la operación donde un fallo silencioso engaña más: la
+           pantalla queda en cero, el admin se va tranquilo, y la próxima
+           recarga trae de vuelta todos los resultados desde la nube. */
+        let resetNube = { ok:true, sinNube:true };
         if (window.supabase && state.tournament.uuid) {
+          const tid = state.tournament.uuid;
+          let tourMatches = null, errLectura = null;
           try {
-            const tid = state.tournament.uuid;
-            const { data: tourMatches } = await supabase.from('matches').select('id').eq('tournament_id', tid);
-            if (tourMatches && tourMatches.length) {
-              const matchIds = tourMatches.map(m => m.id);
-              await supabase.from('match_events').delete().in('match_id', matchIds);
-              await supabase.from('matches').update({
+            const res = await supabase.from('matches').select('id').eq('tournament_id', tid);
+            tourMatches = res.data; errLectura = res.error;
+          } catch(e){ errLectura = e; }
+          if (errLectura) {
+            console.error("Supabase · lectura de partidos para el reset:", errLectura);
+            resetNube = { ok:false, sinNube:false };
+          } else {
+            resetNube = { ok:true, sinNube:false };
+          }
+          if (!errLectura && tourMatches && tourMatches.length) {
+            const matchIds = tourMatches.map(m => m.id);
+            const borrado = await guardarEnNube("el borrado de los eventos", () =>
+              supabase.from('match_events').delete().in('match_id', matchIds));
+            const limpieza = await guardarEnNube("el reseteo de los marcadores", () =>
+              supabase.from('matches').update({
                 score_home: null,
                 score_away: null,
                 score_home_leg2: null,
@@ -10701,14 +10768,18 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                 tie_break_winner: null,
                 mvp_player_id: null,
                 status: 'scheduled'
-              }).eq('tournament_id', tid);
-            }
-          } catch(err) {
-            console.error("Error al resetear en Supabase:", err);
+              }).eq('tournament_id', tid));
+            resetNube = { ok: borrado.ok && limpieza.ok, sinNube:false };
           }
         }
-        
-        showToast("🏆 Torneo reseteado: todos los puntos y resultados quedaron en cero.");
+
+        if (resetNube.ok) {
+          showToast(resetNube.sinNube
+            ? "🏆 Torneo reseteado en este dispositivo."
+            : "🏆 Torneo reseteado: todos los puntos y resultados quedaron en cero.");
+        } else {
+          showToastError("El torneo se reseteó en pantalla pero NO en la nube: al recargar vuelven los resultados.");
+        }
         if (typeof playAdvance === 'function') playAdvance();
       };
 
@@ -11674,6 +11745,105 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       
       const ROL={HINCHA:"hincha",CAPITAN:"capitan",ADMIN:"admin"};
 
+      /* ==================================================================
+         IDENTIDAD CONTRA EL SERVIDOR
+
+         Un capitán tiene que ser alguien que Postgres pueda reconocer, o
+         RLS le rechaza cada escritura — que es exactamente lo que pasaba:
+         la app decía "Jugador agregado" y el dato no salía de este
+         navegador. Comparar la clave contra un texto guardado en el HTML
+         no autentica a nadie: cualquiera lo lee, y el servidor ni se
+         entera de que esa persona existe.
+
+         Así que capitanes y administrador entran por supabase.auth, y el
+         rol y el equipo salen de la tabla profiles —del servidor— y no de
+         nada que viva en este dispositivo.
+
+         Los hinchas siguen siendo locales: no escriben nada en la base y
+         su álbum es de este navegador, así que pedirles una cuenta sería
+         pedirles un trámite a cambio de nada.
+         ================================================================== */
+      const AUTH_DOMINIO="mundialalas.app";
+      const emailDeUsuario=u=>`${String(u||"").trim().toLowerCase()}@${AUTH_DOMINIO}`;
+      /* El capitán sigue tipeando el PIN de siempre. Supabase no acepta
+         claves de menos de 6 caracteres, así que el PIN se expande a una
+         forma fija antes de mandarlo. Se eligió legible y no un hash a
+         propósito: si alguien se olvida la clave, el admin la repone desde
+         el dashboard tipeando esta misma cadena, sin correr ningún script.
+
+         Que quede dicho, porque es fácil confundirse: esto NO le agrega
+         fuerza a la clave — sigue siendo un PIN de 4 dígitos y la fórmula
+         está a la vista acá. Lo que cambia es otra cosa, y es la que
+         importa: ahora hay un servidor decidiendo quién sos y qué podés
+         tocar, en vez de una clase de CSS. */
+      const claveDeUsuario=(u,pin)=>`alas26-${String(u||"").trim().toLowerCase()}-${String(pin||"").trim()}`;
+
+      /* El perfil que devolvió el servidor. Es la ÚNICA fuente de verdad
+         del rol y del equipo. null = no hay nadie autenticado. */
+      let perfilNube=null;
+
+      async function traerPerfil(userId){
+        try{
+          const { data, error } = await supabase.from('profiles')
+            .select('role, team_id, display_name').eq('user_id', userId).single();
+          if(error||!data) return null;
+          return data;
+        }catch(e){ return null; }
+      }
+
+      /* Devuelve {ok, perfil, motivo}. Nunca deja una sesión a medias: si
+         la cuenta entra pero no tiene perfil, se la cierra en el acto —
+         una sesión sin rol es peor que ninguna, porque parece un login
+         exitoso y no habilita nada. */
+      async function ingresarConEmail(email, password){
+        if(!window.supabase) return { ok:false, motivo:"sin-conexion" };
+        let auth=null;
+        try{
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email:String(email||"").trim().toLowerCase(),
+            password:String(password||"")
+          });
+          if(error||!data||!data.user) return { ok:false, motivo:"credenciales" };
+          auth=data;
+        }catch(e){ return { ok:false, motivo:"sin-conexion" }; }
+        const perfil=await traerPerfil(auth.user.id);
+        if(!perfil){
+          await supabase.auth.signOut();
+          return { ok:false, motivo:"sin-perfil" };
+        }
+        perfilNube={ ...perfil, userId:auth.user.id };
+        return { ok:true, perfil:perfilNube };
+      }
+
+      /* Lo que usa el capitán: tipea usuario y PIN, acá se traducen. */
+      async function ingresarConSupabase(usuario, pin){
+        const u=String(usuario||"").trim().toLowerCase();
+        const r=await ingresarConEmail(emailDeUsuario(u), claveDeUsuario(u, pin));
+        if(r.ok) perfilNube.usuario=u;
+        return r;
+      }
+
+      async function cerrarSesionNube(){
+        perfilNube=null;
+        if(!window.supabase) return;
+        try{ await supabase.auth.signOut(); }catch(e){}
+      }
+
+      /* profiles guarda el uuid del equipo; el estado local lo indexa por
+         legacy_id. Este es el puente — y reemplaza al match por substring
+         del nombre que había antes, que podía dar verdadero de casualidad. */
+      function equipoDelCapitan(){
+        if(!perfilNube||perfilNube.role!==ROL.CAPITAN||!perfilNube.team_id) return null;
+        const t=Object.values(state.teams||{}).find(x=>x.uuid===perfilNube.team_id);
+        return t?t.id:null;
+      }
+
+      function motivoDeFallo(motivo){
+        if(motivo==="sin-conexion") return "No hay conexión con el servidor. Probá de nuevo.";
+        if(motivo==="sin-perfil")   return "Tu cuenta existe pero todavía no tiene equipo asignado. Avisale al administrador.";
+        return "Usuario o clave incorrectos.";
+      }
+
       function usersList(rol){
         return Object.values(state.users||{})
           .filter(u=>!rol||(u.role||ROL.HINCHA)===rol)
@@ -11681,6 +11851,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       }
       function currentUser(){ return currentUserId?(state.users||{})[currentUserId]:null; }
       function rolActual(){
+        // El perfil del servidor manda por encima de todo lo local.
+        if(perfilNube) return perfilNube.role;
         if(document.body.classList.contains("admin-mode"))return ROL.ADMIN;
         const u=currentUser();
         return u?(u.role||ROL.HINCHA):null;
@@ -11689,38 +11861,23 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       /* Un capitán manda SÓLO en su equipo. Es la única regla de permisos que
          no se puede resolver con una clase de CSS, porque depende de qué equipo
          se está mirando en ese momento. */
+      /* Antes esto probaba siete formas distintas de "parecerse": ids
+         normalizados sin acentos, el nombre del equipo como substring en
+         las dos direcciones, y un mapa de alias t1↔t-produccion escrito a
+         mano. Eso podía dar verdadero de casualidad, y además no protegía
+         nada: vivía en el navegador.
+
+         Ahora la pregunta tiene una sola respuesta posible, y es la misma
+         que va a hacer valer RLS del otro lado: el uuid del equipo que el
+         servidor puso en tu perfil. */
       function puedeEditarEquipo(teamId){
         if(esAdmin()) return true;
-        const u=currentUser();
-        if(!u || u.role!==ROL.CAPITAN || !u.teamId || !teamId) return false;
-        
-        if(u.teamId === teamId) return true;
-        
+        if(!teamId || !perfilNube || perfilNube.role!==ROL.CAPITAN || !perfilNube.team_id) return false;
         const t = state.teams[teamId];
-        if(!t) return false;
-        if(t.uuid && u.teamId === t.uuid) return true;
-        if(t.id && u.teamId === t.id) return true;
-        
-        const cleanU = String(u.teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanT = String(teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanName = String(t.name||'').toLowerCase().replace(/[^a-z0-9]/g, '');
-        
-        if(cleanU === cleanT) return true;
-        if(cleanName && (cleanName.includes(cleanU) || cleanU.includes(cleanName))) return true;
-        
-        const aliasMap = {
-          "t1": "t-produccion", "t-produccion": "t1",
-          "t2": "t-deposito",   "t-deposito": "t2",
-          "t3": "t-picking",    "t-picking": "t3",
-          "t4": "t-distlocal",  "t-distlocal": "t4",
-          "t5": "t-ventas",     "t-ventas": "t5",
-          "t6": "t-admin",      "t-admin": "t6",
-          "t7": "t-distinterior","t-distinterior": "t7",
-          "t8": "t-fabrica",    "t-fabrica": "t8"
-        };
-        if(aliasMap[teamId] === u.teamId || aliasMap[u.teamId] === teamId) return true;
-        
-        return false;
+        if(t && t.uuid) return t.uuid === perfilNube.team_id;
+        // Todavía no sincronizó: el equipo local no tiene uuid con qué
+        // comparar. Se compara contra el legacy_id que resolvió el perfil.
+        return equipoDelCapitan() === teamId;
       }
       /* Marca el rol en el <body> para que el CSS pueda esconder lo que no
          corresponde sin que cada render tenga que preguntarlo. */
@@ -11756,20 +11913,22 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       }
       
       async function syncUsersToSupabase() {
-        if (!window.supabase || !state.tournament.uuid) return;
-        try {
-          const tid = state.tournament.uuid;
-          const payload = {
-            tournament_id: tid,
-            name: '__SYSTEM_USERS__',
-            team: JSON.stringify(state.users || {}),
-            country: 'SYS',
-            legacy_id: 'sys-users'
-          };
-          await supabase.from('legends').upsert(payload, { onConflict: 'tournament_id, legacy_id' });
-        } catch(e) {
-          console.error("Error saving users to Supabase:", e);
-        }
+        if (!window.supabase || !state.tournament.uuid) return { ok:false, sinNube:true };
+        /* Sólo el admin puede escribir en legends. Un hincha que se anota
+           para el álbum también pasa por acá, y no tiene por qué ver un
+           error rojo de permisos por algo que no pidió: su álbum es local
+           y no depende de esta sincronización. */
+        if (rolActual() !== ROL.ADMIN) return { ok:false, sinNube:true };
+        const tid = state.tournament.uuid;
+        const payload = {
+          tournament_id: tid,
+          name: '__SYSTEM_USERS__',
+          team: JSON.stringify(state.users || {}),
+          country: 'SYS',
+          legacy_id: 'sys-users'
+        };
+        return guardarEnNube("la lista de usuarios", () =>
+          supabase.from('legends').upsert(payload, { onConflict: 'tournament_id, legacy_id' }));
       }
 
       function createUser(nombre,extra){
@@ -11791,25 +11950,43 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           id,name,role:rol,
           teamId:(extra&&extra.teamId)||null,
           usuario:(extra&&extra.usuario)||null,
-          clave:(extra&&extra.clave)||null,
           createdAt:new Date().toISOString(),lastSeen:new Date().toISOString()
         };
         persist();
         return id;
       }
 
-      /* Login de capitán: usuario + clave. Se compara sin distinguir mayúsculas
-         en el usuario (nadie recuerda si lo cargó con mayúscula) pero la clave
-         sí es exacta. */
-      function loginCapitan(usuario,clave){
+      /* Devuelve el usuario LOCAL del capitán ya autenticado, o null.
+         El usuario local sigue existiendo porque de él cuelgan el álbum y
+         el saludo; lo que ya no hace es decidir permisos. */
+      async function loginCapitan(usuario,clave){
         const u=String(usuario||"").trim().toLowerCase();
         const c=String(clave||"").trim();
         if(!u||!c)return null;
-        return usersList(ROL.CAPITAN).find(x=>{
-          const userMatch = String(x.usuario||"").trim().toLowerCase()===u;
-          const nameMatch = String(x.name||"").trim().toLowerCase()===u || String(x.name||"").trim().toLowerCase().includes(u);
-          return (userMatch || nameMatch) && String(x.clave||"").trim()===c;
-        })||null;
+
+        const r=await ingresarConSupabase(u,c);
+        if(!r.ok){ loginCapitan.ultimoMotivo=r.motivo; return null; }
+        loginCapitan.ultimoMotivo=null;
+
+        const nombreServidor=String(r.perfil.display_name||"").trim();
+        let local=Object.values(state.users||{}).find(x=>
+          String(x.usuario||"").trim().toLowerCase()===u ||
+          (nombreServidor && String(x.name||"").trim().toLowerCase()===nombreServidor.toLowerCase()));
+
+        if(!local){
+          const id="u-cap-"+u;
+          state.users=state.users||{};
+          state.users[id]={id,name:nombreServidor||usuario,role:ROL.CAPITAN,usuario:u,createdAt:new Date().toISOString()};
+          local=state.users[id];
+        }
+        // El rol y el equipo se copian del perfil del servidor, no al revés.
+        local.role=ROL.CAPITAN;
+        local.usuario=u;
+        if(nombreServidor) local.name=nombreServidor;
+        const equipo=equipoDelCapitan();
+        if(equipo) local.teamId=equipo;
+        persist();
+        return local;
       }
       function deleteUser(id){
         if(!confirm("¿Eliminar este usuario y su álbum? No se puede deshacer."))return;
@@ -13783,6 +13960,7 @@ function loop(){
         state.settings.volume=Number($("#volumeField").value)/100;
         persist();
 
+        let guardado = { ok:false, sinNube:true };
         if (window.supabase) {
            const payload = {
              id: state.tournament.uuid || undefined,
@@ -13801,14 +13979,15 @@ function loop(){
              volume: state.settings.volume
            };
            if (!payload.id) delete payload.id;
-           const { error } = await supabase.from('tournaments').upsert(payload);
-           if (error) {
-              console.error('Config save error:', error);
-              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-           }
+           guardado = await guardarEnNube("la configuración", () =>
+             supabase.from('tournaments').upsert(payload));
         }
 
-        closeConfig();renderAll();playAdvance();showToast("Configuración guardada en Supabase");
+        closeConfig();renderAll();
+        if (guardado.ok || guardado.sinNube) {
+          playAdvance();
+          showToast(guardado.sinNube ? "Configuración guardada en este dispositivo" : "Configuración guardada");
+        }
       });
 
       $("#btnNewTeam").addEventListener("click",()=>openTeamModal(null));
@@ -13882,6 +14061,7 @@ function loop(){
           
         persist();
 
+        let guardadoEquipo = { ok:false, sinNube:true };
         if (window.supabase) {
            let groupUuid = null;
            const g = state.groups[$("#teamGroupField").value];
@@ -13908,21 +14088,20 @@ function loop(){
              photo_path: photoUrl
            };
            if (!payload.id) delete payload.id;
-           try {
-             const { data, error } = await supabase.from('teams').upsert(payload).select();
-             if (!error && data && data.length > 0) {
-                state.teams[id].uuid = data[0].id;
-                persist(); 
-             } else if (error) {
-                console.error("Supabase team upsert error:", error);
-             }
-           } catch(err){
-             console.error("Supabase team upsert exception:", err);
+           guardadoEquipo = await guardarEnNube(existing ? "el equipo" : "el equipo nuevo", () =>
+             supabase.from('teams').upsert(payload).select());
+           if (guardadoEquipo.ok && guardadoEquipo.data && guardadoEquipo.data.length > 0) {
+              state.teams[id].uuid = guardadoEquipo.data[0].id;
+              persist();
            }
         }
 
         if(submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
-        closeTeamModal();renderAll();renderTeamSheet(id);showToast(existing?"Equipo actualizado":"Equipo creado");playAdvance();
+        closeTeamModal();renderAll();renderTeamSheet(id);
+        if (guardadoEquipo.ok || guardadoEquipo.sinNube) {
+          showToast(existing?"Equipo actualizado":"Equipo creado");
+          playAdvance();
+        }
       });
       $("#btnDeleteTeam").addEventListener("click",()=>{if(editingTeamId){deleteTeam(editingTeamId);closeTeamModal()}});
       $("#btnCloseTeamModal").addEventListener("click",closeTeamModal);
@@ -13959,16 +14138,18 @@ function loop(){
         state.teams[id]={...state.teams[id],photoDataUrl:photoUrl};
         persist();
 
+        let guardadoFoto = { ok:false, sinNube:true };
         if (window.supabase && state.teams[id].uuid) {
-          try {
-            await supabase.from('teams').update({ photo_path: photoUrl }).eq('id', state.teams[id].uuid);
-          } catch(err) {
-            console.error("Error updating team photo in Supabase:", err);
-          }
+          guardadoFoto = await guardarEnNube("la foto del plantel", () =>
+            supabase.from('teams').update({ photo_path: photoUrl }).eq('id', state.teams[id].uuid));
         }
 
         if(submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
-        closeTeamPhotoModal();renderAll();renderTeamSheet(id);showToast("Foto del plantel guardada");playAdvance();
+        closeTeamPhotoModal();renderAll();renderTeamSheet(id);
+        if (guardadoFoto.ok || guardadoFoto.sinNube) {
+          showToast("Foto del plantel guardada");
+          playAdvance();
+        }
       });
       $("#btnDeleteQuickPhoto").addEventListener("click", async ()=>{
         const id=currentTeamSheetId;
@@ -13976,14 +14157,13 @@ function loop(){
         if(!confirm("¿Quitar la foto del plantel?"))return;
         state.teams[id]={...state.teams[id],photoDataUrl:""};
         persist();
+        let borradoFoto = { ok:false, sinNube:true };
         if (window.supabase && state.teams[id].uuid) {
-          try {
-            await supabase.from('teams').update({ photo_path: "" }).eq('id', state.teams[id].uuid);
-          } catch(err) {
-            console.error("Error deleting team photo in Supabase:", err);
-          }
+          borradoFoto = await guardarEnNube("el borrado de la foto", () =>
+            supabase.from('teams').update({ photo_path: "" }).eq('id', state.teams[id].uuid));
         }
-        closeTeamPhotoModal();renderAll();renderTeamSheet(id);showToast("Foto quitada");
+        closeTeamPhotoModal();renderAll();renderTeamSheet(id);
+        if (borradoFoto.ok || borradoFoto.sinNube) showToast("Foto quitada");
       });
       $("#btnCloseTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
       $("#btnCancelTeamPhotoModal").addEventListener("click",closeTeamPhotoModal);
@@ -14084,6 +14264,7 @@ function loop(){
         };
         persist();
 
+        let guardadoJugador = { ok:false, sinNube:true };
         if (window.supabase) {
            let teamUuid = state.teams[targetTeamId]?.uuid || null;
            if (!teamUuid) {
@@ -14105,16 +14286,11 @@ function loop(){
              photo_path: photoUrl
            };
            if (!payload.id) delete payload.id;
-           try {
-             const { data, error } = await supabase.from('players').upsert(payload).select();
-             if (!error && data && data.length > 0) {
-                state.players[id].uuid = data[0].id;
-                persist();
-             } else if (error) {
-                console.error("Supabase upsert error:", error);
-             }
-           } catch(err) {
-             console.error("Supabase upsert exception:", err);
+           guardadoJugador = await guardarEnNube(existing ? "el jugador" : "el jugador nuevo", () =>
+             supabase.from('players').upsert(payload).select());
+           if (guardadoJugador.ok && guardadoJugador.data && guardadoJugador.data.length > 0) {
+              state.players[id].uuid = guardadoJugador.data[0].id;
+              persist();
            }
         }
 
@@ -14124,8 +14300,10 @@ function loop(){
         renderAll();
         renderTeamSheet(targetTeamId);
         resaltarJugador(id);
-        showToast(existing ? "Jugador actualizado" : "Jugador agregado");
-        playAdvance();
+        if (guardadoJugador.ok || guardadoJugador.sinNube) {
+          showToast(existing ? "Jugador actualizado" : "Jugador agregado");
+          playAdvance();
+        }
       });
       $("#btnDeletePlayer").addEventListener("click", async ()=>{
         if(!editingPlayerId)return;
@@ -14134,16 +14312,21 @@ function loop(){
         if(!p || !puedeEditarEquipo(targetTeamId)){ showToast("No tenés permiso para eliminar este jugador"); return; }
         if(!confirm("¿Eliminar este jugador?"))return;
         const pUuid = p.uuid;
-        delete state.players[editingPlayerId];
+        const respaldo = clone(p);
+        const idBorrado = editingPlayerId;
+        delete state.players[idBorrado];
         persist();
+        let borrado = { ok:false, sinNube:true };
         if (window.supabase && pUuid) {
-          try {
-            await supabase.from('players').delete().eq('id', pUuid);
-          } catch(err) {
-            console.error("Error deleting player in Supabase:", err);
-          }
+          borrado = await guardarEnNube("el borrado del jugador", () =>
+            supabase.from('players').delete().eq('id', pUuid));
+          /* Si la base lo rechazó, el jugador SIGUE existiendo allá. Dejarlo
+             borrado sólo acá haría que reapareciera en la próxima recarga sin
+             explicación, así que se repone en el acto. */
+          if (!borrado.ok) { state.players[idBorrado] = respaldo; persist(); }
         }
-        closePlayerModal();renderAll();if(targetTeamId)renderTeamSheet(targetTeamId);showToast("Jugador eliminado");
+        closePlayerModal();renderAll();if(targetTeamId)renderTeamSheet(targetTeamId);
+        if (borrado.ok || borrado.sinNube) showToast("Jugador eliminado");
       });
       $("#btnClosePlayerModal").addEventListener("click",closePlayerModal);
       $("#btnCancelPlayerModal").addEventListener("click",closePlayerModal);
@@ -14238,6 +14421,7 @@ function loop(){
         m.mvpPlayerId=$("#matchMvpField").value||null;
         persist();
 
+        let guardadoPartido = { ok:false, sinNube:true };
         if (window.supabase && m.uuid) {
            const submitBtn = e.target.querySelector('button[type="submit"]');
            const origText = submitBtn.textContent;
@@ -14254,11 +14438,18 @@ function loop(){
              mvp_player_id: mvpUuid,
              status: m.status
            };
-           const { error: err1 } = await supabase.from('matches').update(payload).eq('legacy_id', editingMatchId);
-           
-           if (!err1) {
-             await supabase.from('match_events').delete().eq('match_id', m.uuid);
-             if (m.events && m.events.length > 0) {
+           const rMarcador = await guardarEnNube("el partido", () =>
+             supabase.from('matches').update(payload).eq('legacy_id', editingMatchId));
+
+           if (rMarcador.ok) {
+             /* Los eventos se reescriben enteros: primero se borran los que
+                había y después se insertan los actuales. Si el borrado sale
+                bien y la inserción falla, los goles y las tarjetas quedan
+                PERDIDOS en la base, así que ese caso se avisa aparte. */
+             const rBorrado = await guardarEnNube("los eventos del partido", () =>
+               supabase.from('match_events').delete().eq('match_id', m.uuid));
+             let rEventos = { ok:rBorrado.ok };
+             if (rBorrado.ok && m.events && m.events.length > 0) {
                 const eventPayloads = m.events.map(ev => ({
                   match_id: m.uuid,
                   team_id: state.teams[ev.teamId]?.uuid || null,
@@ -14268,18 +14459,24 @@ function loop(){
                   leg: ev.leg || 1,
                   legacy_id: ev.id
                 }));
-                await supabase.from('match_events').insert(eventPayloads);
+                rEventos = await guardarEnNube("los goles y tarjetas", () =>
+                  supabase.from('match_events').insert(eventPayloads));
              }
+             guardadoPartido = { ok: rEventos.ok, sinNube:false };
            } else {
-             console.error("Match update error:", err1);
-             if(err1.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
+             guardadoPartido = { ok:false, sinNube:false };
            }
 
            submitBtn.textContent = origText;
            submitBtn.disabled = false;
         }
 
-        closeMatchModal();renderAll({announce:true, preserveScroll:true});playScore();showToast("Partido guardado en Supabase");notifyAlbumResultLoaded();
+        closeMatchModal();renderAll({announce:true, preserveScroll:true});
+        if (guardadoPartido.ok || guardadoPartido.sinNube) {
+          playScore();
+          showToast(guardadoPartido.sinNube ? "Partido guardado en este dispositivo" : "Partido guardado");
+        }
+        notifyAlbumResultLoaded();
       });
 
       function openMatchDataModal(id){
@@ -14305,6 +14502,7 @@ function loop(){
         m.status=$("#matchStatusField").value;
         persist();
 
+        let guardadoDatos = { ok:false, sinNube:true };
         if (window.supabase && m.uuid) {
            const submitBtn = e.target.querySelector('button[type="submit"]');
            const origText = submitBtn.textContent;
@@ -14317,17 +14515,18 @@ function loop(){
              venue: m.venue || null,
              status: m.status
            };
-           const { error } = await supabase.from('matches').update(payload).eq('legacy_id', editingMatchId);
-           if (error) {
-              console.error("Match data update error:", error);
-              if(error.code==="42501") showToast("Error de seguridad: Tu sesión caducó. Volvé a loguearte.");
-           }
+           guardadoDatos = await guardarEnNube("los datos del partido", () =>
+             supabase.from('matches').update(payload).eq('legacy_id', editingMatchId));
 
            submitBtn.textContent = origText;
            submitBtn.disabled = false;
         }
 
-        closeMatchDataModal();renderAll();playScore();showToast("Datos guardados en Supabase");
+        closeMatchDataModal();renderAll();
+        if (guardadoDatos.ok || guardadoDatos.sinNube) {
+          playScore();
+          showToast(guardadoDatos.sinNube ? "Datos guardados en este dispositivo" : "Datos guardados");
+        }
       });
       
       $("#btnCloseMatchDataModal").addEventListener("click",closeMatchDataModal);
@@ -14432,11 +14631,10 @@ function loop(){
               if(c.teamId === teamId) return true;
               const t = state.teams[teamId];
               if(t && (c.teamId === t.uuid || c.teamId === t.id)) return true;
-              const cleanU = String(c.teamId||'').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const cleanT = String(teamId).toLowerCase().replace(/[^a-z0-9]/g, '');
-              const cleanName = String(t?.name||'').toLowerCase().replace(/[^a-z0-9]/g, '');
-              if(cleanU && cleanT && cleanU === cleanT) return true;
-              if(cleanName && cleanU && (cleanName.includes(cleanU) || cleanU.includes(cleanName))) return true;
+              /* Esto es sólo para rotular la tarjeta, no para dar permisos
+                 —de eso se ocupa puedeEditarEquipo() contra el perfil del
+                 servidor—. Aun así se sacó el match por substring del
+                 nombre: podía poner a un capitán en el equipo equivocado. */
               const aliasMap = {
                 "t1": "t-produccion", "t-produccion": "t1",
                 "t2": "t-deposito",   "t-deposito": "t2",
@@ -14466,10 +14664,21 @@ function loop(){
                 </form>`;
               const btnBack = $("#btnBackToTeams");
               if(btnBack) btnBack.onclick = () => { playClick(); renderPasoCapitan(); };
-              $("#pfFormCap").onsubmit=e=>{
+              $("#pfFormCap").onsubmit=async e=>{
                 e.preventDefault();
-                const u=loginCapitan($("#pfUsuario").value,$("#pfClave").value);
-                if(!u){ sacudir($("#pfErr")); return; }
+                // Ahora hay una ida y vuelta al servidor: sin aviso, el
+                // botón parece colgado y la gente lo toca tres veces.
+                const btn=e.target.querySelector('button[type="submit"]');
+                const txt=btn?btn.textContent:"";
+                if(btn){btn.textContent="Entrando…";btn.disabled=true;}
+                const u=await loginCapitan($("#pfUsuario").value,$("#pfClave").value);
+                if(btn){btn.textContent=txt;btn.disabled=false;}
+                if(!u){
+                  const err=$("#pfErr");
+                  if(err)err.textContent=motivoDeFallo(loginCapitan.ultimoMotivo);
+                  sacudir(err);
+                  return;
+                }
                 entrarComo(u.id);
               };
               if(anim()) gsap.fromTo(cont,{y:14,autoAlpha:0},{y:0,autoAlpha:1,duration:.3,ease:"power3.out"});
@@ -14538,23 +14747,41 @@ function loop(){
             if(btnBack) btnBack.onclick = () => { playClick(); renderPasoCapitan(); };
             
             const form = $("#pfFormCapPin");
-            form.onsubmit = e => {
+            form.onsubmit = async e => {
               e.preventDefault();
               const pin = $("#pfClave").value.trim();
               if(!pin) return;
-              
-              let u = null;
-              if(cap && String(cap.clave||"").trim() === pin) {
-                u = cap;
-              } else {
-                u = loginCapitan(cap ? (cap.usuario || cap.name) : selectedTeamId, pin);
+              const err = $("#pfErr");
+
+              // Se entra siempre como el capitán DE ESTE equipo: es el
+              // usuario que la tarjeta muestra en pantalla.
+              const usuario = cap ? (cap.usuario || cap.name) : null;
+              if(!usuario){
+                if(err)err.textContent="Este equipo todavía no tiene capitán asignado. Avisale al administrador.";
+                sacudir(err);
+                return;
               }
+
+              const btn=e.target.querySelector('button[type="submit"]');
+              const txt=btn?btn.textContent:"";
+              if(btn){btn.textContent="Entrando…";btn.disabled=true;}
+              const u = await loginCapitan(usuario, pin);
+              if(btn){btn.textContent=txt;btn.disabled=false;}
+
               if(!u) {
-                const allCaps = usersList(ROL.CAPITAN);
-                u = allCaps.find(c => puedeEditarEquipo(selectedTeamId) && String(c.clave||"").trim() === pin);
+                if(err)err.textContent=motivoDeFallo(loginCapitan.ultimoMotivo);
+                sacudir(err);
+                return;
               }
-              if(!u) {
-                sacudir($("#pfErr"));
+              /* La clave era correcta, pero puede ser la de OTRO equipo: el
+                 servidor dice a cuál pertenece, y no tiene por qué ser el
+                 que se tocó en la pantalla anterior. */
+              const miEquipo = equipoDelCapitan();
+              if(miEquipo && miEquipo !== selectedTeamId){
+                const nombreReal = (state.teams[miEquipo]||{}).name || "otro equipo";
+                if(err)err.textContent=`Esa clave es del capitán de ${nombreReal}, no de ${t.name}.`;
+                sacudir(err);
+                await cerrarSesionNube();
                 return;
               }
               entrarComo(u.id);
@@ -14570,14 +14797,30 @@ function loop(){
             <form class="pf-form" id="pfFormAdmin">
               <h3>Entrar como administrador</h3>
               <p class="ayuda">Control total del torneo.</p>
-              <input type="text" id="pfAdminUser" maxlength="24" placeholder="Nombre" value="Administrador" autocomplete="off">
-              <input type="password" id="pfAdminClave" maxlength="32" placeholder="Clave" required>
+              <input type="email" id="pfAdminEmail" maxlength="80" placeholder="Email" autocomplete="username" required>
+              <input type="password" id="pfAdminClave" maxlength="64" placeholder="Clave" autocomplete="current-password" required>
               <div class="pf-error" id="pfErr">Clave incorrecta.</div>
               <button class="btn" type="submit">Entrar</button>
             </form>`;
-          $("#pfFormAdmin").onsubmit=e=>{
+          /* Antes esto comparaba contra una constante del archivo. Cualquiera
+             que abriera el HTML la leía, así que no era una clave: era un
+             cartel de "no tocar". Ahora valida contra auth y, además, exige
+             que el perfil diga admin — tener cuenta no alcanza. */
+          $("#pfFormAdmin").onsubmit=async e=>{
             e.preventDefault();
-            if($("#pfAdminClave").value!==ADMIN_KEY){ sacudir($("#pfErr")); return; }
+            const err=$("#pfErr");
+            const btn=e.target.querySelector('button[type="submit"]');
+            const txt=btn?btn.textContent:"";
+            if(btn){btn.textContent="Entrando…";btn.disabled=true;}
+            const r=await ingresarConEmail($("#pfAdminEmail").value,$("#pfAdminClave").value);
+            if(btn){btn.textContent=txt;btn.disabled=false;}
+            if(!r.ok || r.perfil.role!==ROL.ADMIN){
+              if(!r.ok && r.motivo==="sin-conexion") { if(err)err.textContent="No hay conexión con el servidor."; }
+              else if(r.ok) { if(err)err.textContent="Esa cuenta no es de administrador."; await cerrarSesionNube(); }
+              else { if(err)err.textContent="Email o clave incorrectos."; }
+              sacudir(err);
+              return;
+            }
             // el admin no necesita figurar en la lista de usuarios: su sesión es
             // el modo administrador, que ya existía
             setCurrentUser(null);
@@ -14610,8 +14853,12 @@ function loop(){
         if(u)showToast(`¡Hola, ${u.name}!`);
       }
 
-      function cerrarSesion(){
+      async function cerrarSesion(){
         applyAdmin(false);
+        // Sin esto la sesión de Supabase sobrevivía al "cerrar sesión": la
+        // pantalla volvía a "¿Quién sos?" pero el navegador seguía pudiendo
+        // escribir como el capitán anterior.
+        await cerrarSesionNube();
         setCurrentUser(null);
         aplicarRolAlBody();
         renderAll();
@@ -14634,6 +14881,7 @@ function loop(){
           <div class="panel-head">
             <div><h2>Capitanes</h2><p>Cada capitán entra con su usuario y sólo puede cargar el plantel del equipo que le asignes.</p></div>
           </div>
+          <p class="ayuda" style="margin:0 0 10px">La clave ya no se define acá: vive en Supabase, que es lo único que puede validarla sin mostrarla. Creá la ficha, y después la cuenta en <b>Authentication → Users</b> con el email que aparece en la lista.</p>
           <form class="cap-alta" id="formCapitan">
             <input type="text" id="capNombre"  maxlength="40" placeholder="Nombre y apellido" required>
             <select id="capEquipo" required>
@@ -14641,15 +14889,14 @@ function loop(){
               ${equipos.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}
             </select>
             <input type="text" id="capUsuario" maxlength="24" placeholder="Usuario" autocomplete="off" required>
-            <input type="text" id="capClave"   maxlength="32" placeholder="Clave" required>
-            <button class="btn small" type="submit">Crear capitán</button>
+            <button class="btn small" type="submit">Crear ficha</button>
           </form>
           ${caps.length?`<div class="cap-lista">${caps.map(c=>{
             const t=c.teamId?state.teams[c.teamId]:null;
             return `<div class="cap-fila">
               <span class="cap-dot">${esc(c.name.slice(0,1).toUpperCase())}</span>
               <div class="cap-id"><strong>${esc(c.name)}</strong><small>${esc(t?t.name:"Sin equipo asignado")}</small></div>
-              <div class="cap-cred"><code>${esc(c.usuario||"—")}</code><code>${esc(c.clave||"—")}</code></div>
+              <div class="cap-cred"><code>${esc(c.usuario||"—")}</code><code>${esc(c.usuario?emailDeUsuario(c.usuario):"—")}</code></div>
               <button class="icon-btn danger" type="button" data-del-cap="${c.id}" title="Eliminar capitán">${ICO.close}</button>
             </div>`;
           }).join("")}</div>`
@@ -14660,15 +14907,17 @@ function loop(){
           const nombre=$("#capNombre").value.trim();
           const teamId=$("#capEquipo").value;
           const usuario=$("#capUsuario").value.trim();
-          const clave=$("#capClave").value;
-          if(!nombre||!teamId||!usuario||!clave)return;
+          if(!nombre||!teamId||!usuario)return;
           // dos capitanes con el mismo usuario harían imposible saber quién entra
           if(usersList(ROL.CAPITAN).some(c=>String(c.usuario||"").toLowerCase()===usuario.toLowerCase())){
             showToast("Ya existe un capitán con ese usuario");return;
           }
-          createUser(nombre,{role:ROL.CAPITAN,teamId,usuario,clave});
+          createUser(nombre,{role:ROL.CAPITAN,teamId,usuario});
           renderCapitanes();
-          showToast(`Capitán creado: ${nombre}`);
+          /* La ficha sola no lo deja entrar: sin cuenta en auth.users y sin
+             fila en profiles, RLS le sigue negando todo. Decirlo acá evita
+             que el admin se entere recién cuando el capitán no puede entrar. */
+          showToast(`Ficha creada. Falta la cuenta ${emailDeUsuario(usuario)} en Supabase.`);
           playAdvance();
         };
         box.querySelectorAll("[data-del-cap]").forEach(b=>{
@@ -14846,7 +15095,6 @@ function loop(){
 
       // ===== modo administrador protegido con clave: los usuarios solo ven =====
       const btnAdmin=$("#btnAdmin");
-      const ADMIN_KEY="121221";
       /* El modo admin se recuerda entre recargas. Antes se llamaba
          applyAdmin(false) en cada arranque, así que el que carga los resultados
          al borde de la cancha tenía que tipear la clave de nuevo cada vez que
@@ -14871,13 +15119,21 @@ function loop(){
         // tienen que volver a medirse o las pestañas quedan corridas
         ajustarBarraSuperior();
       };
-      let adminRecordado=false;
-      try{ adminRecordado=localStorage.getItem(ADMIN_FLAG)==="1"; }catch(e){}
-      applyAdmin(adminRecordado,false);
+      /* El modo admin ya NO se restaura desde localStorage. Esa marca la
+         puede escribir cualquiera desde la consola, y antes alcanzaba para
+         ver la app entera en modo administrador. Ahora la sesión de
+         Supabase es la que manda: más abajo, si hay sesión viva y el perfil
+         dice admin, se vuelve a encender sola. El que carga resultados al
+         borde de la cancha sigue sin tener que tipear la clave en cada
+         recarga, porque la sesión de Supabase también sobrevive. */
+      applyAdmin(false,false);
       if(btnAdmin)btnAdmin.addEventListener("click",async ()=>{
         if(document.body.classList.contains("admin-mode")){
           applyAdmin(false);
-          await supabase.auth.signOut();
+          // cerrarSesionNube también limpia perfilNube; con signOut solo, el
+          // rol del servidor quedaba en memoria después de "cerrar sesión".
+          await cerrarSesionNube();
+          aplicarRolAlBody();
           if(TABS_ADMIN.includes(state.ui.activeTab))switchTab("mapa");
           renderAll();
           showToast("🔑 Sesión cerrada: vista de usuarios");
@@ -14904,31 +15160,30 @@ function loop(){
         
         if(!email || !password) return;
 
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-        
-        if (authError) {
-          if(adminErrEl){adminErrEl.textContent = "Credenciales incorrectas."; adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
+        const mostrarErr=txt=>{
+          if(adminErrEl){adminErrEl.textContent=txt;adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
+        };
+
+        // Misma rutina que usa el resto de la app: deja perfilNube armado,
+        // que es de donde salen el rol y el equipo en todas las pantallas.
+        const r=await ingresarConEmail(email,password);
+
+        if(!r.ok){
+          mostrarErr(r.motivo==="sin-conexion"?"No hay conexión con el servidor.":"Credenciales incorrectas.");
           if(adminKeyFieldEl){adminKeyFieldEl.select();adminKeyFieldEl.focus();}
           return;
         }
-
-        // Fetch profile to verify role
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, team_id')
-          .eq('user_id', authData.user.id)
-          .single();
-
-        if (profileError || !profileData || profileData.role !== 'admin') {
-          // Si no es admin (ej. es un capitan o no tiene perfil) lo deslogueamos.
-          await supabase.auth.signOut();
-          if(adminErrEl){adminErrEl.textContent = "No tienes permisos de administrador."; adminErrEl.classList.remove("show");void adminErrEl.offsetWidth;adminErrEl.classList.add("show");}
+        if(r.perfil.role!==ROL.ADMIN){
+          // Es un capitán, o alguien sin permisos: la sesión se cierra.
+          await cerrarSesionNube();
+          mostrarErr("Esa cuenta no tiene permisos de administrador.");
           return;
         }
 
         // Login Exitoso como admin
         closeAdminModal();
         applyAdmin(true);
+        aplicarRolAlBody();
         renderAll();
         playWhistle();
         showToast("Modo administrador activado");
@@ -14946,18 +15201,41 @@ function loop(){
       setTimeout(requestConnectors,150);
 
       // == SUPABASE INIT ==
-      syncFromSupabase().then(() => {
-        // Verificar si ya hay una sesión activa de Admin
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            supabase.from('profiles').select('role').eq('user_id', session.user.id).single().then(({data}) => {
-              if (data && data.role === 'admin') {
-                applyAdmin(true, false);
-                renderAll();
-              }
-            });
-          }
-        });
+      /* Al arrancar se recupera quién está autenticado. Vale tanto para el
+         admin como para el capitán: si la sesión sigue viva, vuelve con su
+         rol y su equipo sin tener que tipear nada. Y si no hay sesión, no
+         hay rol — que es justamente lo que faltaba antes. */
+      syncFromSupabase().then(async () => {
+        if(!window.supabase) return;
+        let session=null;
+        try{
+          const { data } = await supabase.auth.getSession();
+          session=data?data.session:null;
+        }catch(e){ return; }
+        if(!session||!session.user) return;
+
+        const perfil=await traerPerfil(session.user.id);
+        if(!perfil){
+          // Sesión sin perfil: no habilita nada y confunde. Se cierra.
+          await cerrarSesionNube();
+          return;
+        }
+        perfilNube={ ...perfil, userId:session.user.id };
+
+        if(perfil.role===ROL.ADMIN){
+          applyAdmin(true,false);
+        }else if(perfil.role===ROL.CAPITAN){
+          // Se reengancha con su ficha local para que el álbum y el saludo
+          // sigan siendo los suyos.
+          const equipo=equipoDelCapitan();
+          const local=Object.values(state.users||{}).find(u=>
+            u.role===ROL.CAPITAN &&
+            (String(u.name||"").trim().toLowerCase()===String(perfil.display_name||"").trim().toLowerCase() ||
+             (equipo && u.teamId===equipo)));
+          if(local){ if(equipo)local.teamId=equipo; setCurrentUser(local.id); }
+        }
+        aplicarRolAlBody();
+        renderAll();
       });
 
       /* ====================================================================

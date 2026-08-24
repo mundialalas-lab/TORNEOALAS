@@ -41,3 +41,8 @@ Desktop.ini
 .DS_Store
 .vscode/
 node_modules/
+
+# El script que crea las cuentas de los capitanes lleva las claves adentro.
+# Vive fuera del proyecto: se pega en el SQL Editor de Supabase y se borra.
+CREAR_CAPITANES.sql
+*_con_claves.sql

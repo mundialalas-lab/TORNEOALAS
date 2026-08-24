@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alas-mundial-v8';
+const CACHE_NAME = 'alas-mundial-v10';
 const ASSETS_TO_CACHE = [
   './',
   './ALAS-MUNDIAL.html',
