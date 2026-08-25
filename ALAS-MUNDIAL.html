@@ -1433,6 +1433,13 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 @keyframes pfAdminGiro{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pf-admin-avatar::before{animation:none}}
 .pf-admin-avatar svg{width:46px;height:46px;position:relative;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
+/* El logo del Mundial adentro del círculo. `contain` y no `cover`: recortarlo
+   para llenar el círculo le cortaría las alas, que son justo lo que se
+   reconoce de la marca. */
+.pf-admin-logo{
+  position:relative;width:62px;height:62px;object-fit:contain;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.55));
+}
 .pf-admin-titulo{
   font-family:'Anton','Saira Condensed',var(--font-ui),sans-serif;
   font-size:25px;letter-spacing:.05em;text-transform:uppercase;
@@ -7627,6 +7634,43 @@ body{background:transparent !important}
       background: transparent;
     }
   }
+
+/* ==========================================================================
+   EL SONIDO TAMBIÉN EN EL TELÉFONO
+
+   En móvil la barra de acciones se esconde entera: sus botones (Configurar,
+   pantalla completa, salir, álbum) viven abajo, en la barra de pestañas. Pero
+   el sonido NO está abajo, así que se iba con el resto y quedaba inalcanzable:
+   apagado una vez desde una computadora, desde el teléfono no había forma de
+   volver a encenderlo.
+
+   Así que la barra vuelve, pero sólo con el sonido, apoyada contra el borde
+   derecho del logo. El resto de los botones siguen escondidos, que es lo
+   correcto: ya están abajo.
+   ========================================================================== */
+@media (max-width: 860px), (max-width: 900px) and (orientation: landscape) {
+  .topbar .topbar-inner > .topbar-actions {
+    display: flex !important;
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    background: none !important;
+    /* el contenedor no debe robar toques al logo que tiene detrás */
+    pointer-events: none !important;
+  }
+  .topbar .topbar-actions > * { display: none !important; }
+  .topbar .topbar-actions > #btnSound {
+    display: flex !important;
+    pointer-events: auto !important;
+    width: 40px; height: 40px;
+  }
+  .topbar .topbar-actions > #btnSound svg { width: 20px; height: 20px; }
+}
+
 </style>
 <!-- SPLASH VIDEO -->
   
@@ -15265,10 +15309,12 @@ function loop(){
             <form class="pf-form" id="pfFormAdmin">
               <div class="pf-admin-hero">
                 <div class="pf-admin-avatar">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#ffe9ae" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 2.6 4.5 5.6v6.1c0 5.4 7.5 9.7 7.5 9.7s7.5-4.3 7.5-9.7V5.6z" fill="rgba(255,233,174,.12)"/>
-                    <path d="m12 8.1 1.35 2.74 3.02.44-2.18 2.13.51 3.01L12 15 9.3 16.42l.51-3.01-2.18-2.13 3.02-.44z" fill="#ffe9ae" stroke="none"/>
-                  </svg>
+                  ${(typeof LOGO_LIMPIO==="string"&&LOGO_LIMPIO.startsWith("data:image/png"))
+                    ? `<img class="pf-admin-logo" src="${LOGO_LIMPIO}" alt="" aria-hidden="true">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="#ffe9ae" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                         <path d="M12 2.6 4.5 5.6v6.1c0 5.4 7.5 9.7 7.5 9.7s7.5-4.3 7.5-9.7V5.6z" fill="rgba(255,233,174,.12)"/>
+                         <path d="m12 8.1 1.35 2.74 3.02.44-2.18 2.13.51 3.01L12 15 9.3 16.42l.51-3.01-2.18-2.13 3.02-.44z" fill="#ffe9ae" stroke="none"/>
+                       </svg>`}
                 </div>
                 <h3 class="pf-admin-titulo">Administrador</h3>
                 <span class="pf-admin-sub">Control total del torneo</span>
