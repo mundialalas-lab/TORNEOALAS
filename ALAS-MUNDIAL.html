@@ -10953,11 +10953,51 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         entrada: encodeURI("speed 2.mp3")
       };
       let pistaActual = null;
+      /* Lo que estaba sonando cuando se silenció, para poder retomarlo.
+         Sin esto, silenciar descartaba la pista y al volver a activar el
+         sonido no se escuchaba nada: quedaba prendido pero mudo. */
+      let pistaGuardada = null;
 
-      function pararMusica(){
-        if(!pistaActual) return;
+      /* `recordar` sólo lo usa el silencio. Cuando una pista corta a otra
+         —la de entrada a la de la intro— no hay nada que retomar despues. */
+      function pararMusica(recordar){
+        if(!pistaActual){ if(!recordar) pistaGuardada = null; return; }
+        if(recordar){
+          pistaGuardada = {
+            archivo:  pistaActual.getAttribute ? (pistaActual.getAttribute("src") || pistaActual.src) : pistaActual.src,
+            volumen:  pistaActual.volume,
+            tiempo:   pistaActual.currentTime || 0,
+            duracion: pistaActual.duration || 0,
+            cuando:   Date.now()
+          };
+        } else {
+          pistaGuardada = null;
+        }
         try{ pistaActual.pause(); pistaActual.currentTime = 0; }catch(e){}
         pistaActual = null;
+      }
+
+      /* Vuelve a poner lo que se habia silenciado, desde donde quedó.
+
+         Si pasó más tiempo del que le faltaba a la pista, no se retoma: la
+         canción ya habria terminado sola, y arrancarla de nuevo diez minutos
+         después sería música saliendo de la nada. */
+      function retomarMusica(){
+        const p = pistaGuardada;
+        pistaGuardada = null;
+        if(!p || state.settings.sound === false) return null;
+        if(p.duracion){
+          const pasado = (Date.now() - p.cuando) / 1000;
+          if(p.tiempo + pasado >= p.duracion) return null;
+        }
+        const a = sonarMusica(p.archivo, p.volumen);
+        if(a && p.tiempo > 0){
+          const ubicar = () => { try{ a.currentTime = p.tiempo; }catch(e){} };
+          // currentTime no se puede fijar antes de que el navegador sepa cuánto dura
+          if(a.readyState >= 1) ubicar();
+          else a.addEventListener("loadedmetadata", ubicar, {once:true});
+        }
+        return a;
       }
 
       /* Devuelve el reproductor, o null si el sonido está apagado o el
@@ -10972,6 +11012,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             /* Bloqueado por la política de autoplay: no es un error, es el
                navegador esperando un gesto. El de la intro llega enseguida. */
           });
+          // una pista que termina sola no deja nada que retomar
+          a.addEventListener("ended", () => { if(pistaActual === a) pistaActual = null; }, {once:true});
           pistaActual = a;
           return a;
         }catch(e){ return null; }
@@ -10982,6 +11024,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         ENTRADA: MUSICA.entrada,
         sonar: sonarMusica,
         parar: pararMusica,
+        retomar: retomarMusica,
         permitido: function(){ return state.settings.sound !== false; },
         sonando: function(){ return Boolean(pistaActual && !pistaActual.paused); }
       };
@@ -14485,7 +14528,7 @@ function loop(){
         state.settings.sound=$("#soundEnabledField").checked;
         // mismo alcance que el botón de la barra: si no, apagarlo desde acá
         // dejaba sonando la intro y el álbum
-        if(!state.settings.sound) pararMusica();
+        if(state.settings.sound) retomarMusica(); else pararMusica(true);
         sincronizarSonidoAlbum();
         state.settings.confetti=$("#confettiEnabledField").checked;
         state.settings.volume=Number($("#volumeField").value)/100;
@@ -15139,11 +15182,13 @@ function loop(){
         const sw=$("#soundEnabledField"); if(sw) sw.checked=state.settings.sound;
         sincronizarSonidoAlbum();
         if(state.settings.sound){
+          // vuelve la música donde había quedado, no sólo los efectos
+          const volvio = retomarMusica();
           playWhistle();
-          showToast("🔊 Sonido activado");
+          showToast(volvio ? "🔊 Sonido activado · sigue la música" : "🔊 Sonido activado");
         }else{
-          // se corta lo que esté sonando
-          pararMusica();
+          // se corta lo que esté sonando, guardando dónde quedó
+          pararMusica(true);
           // el silbato no suena para avisar que se apagó el silbato
           showToast("🔇 Silenciado · efectos, intro y álbum");
         }
