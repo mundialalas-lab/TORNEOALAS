@@ -797,6 +797,39 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 /* Los dos equipos apilados, el marcador a la derecha y una barra de resultado
    al costado. Alineados en columna el ojo baja derecho y se escanean muchos
    partidos seguidos, en vez de leer en zigzag como en el formato enfrentado. */
+/* La cinta con el numero de partido. Va pegada arriba del bloque del
+   partido —de ahi el radio solo en las esquinas de arriba y el margen
+   negativo del .mt de abajo— para que se lean como una sola pieza. */
+.mt-orden{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:5px 11px;
+  border:1px solid var(--line);
+  border-bottom:0;
+  border-radius:var(--r-md) var(--r-md) 0 0;
+  background:var(--surface-2);
+  font-family:var(--font-ui);
+  font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-mute);
+}
+.mt-orden + .mt{border-radius:0 0 var(--r-md) var(--r-md)}
+
+/* El siguiente se marca con el acento, que es el unico color fuerte de la
+   app: es la unica fila de toda la pantalla que hay que encontrar de un
+   vistazo. */
+.mt-orden.es-proximo{
+  background:var(--info-soft);
+  border-color:var(--azul);
+  color:var(--info-ink);
+}
+.mt-orden.es-proximo + .mt{border-color:var(--azul)}
+.mt-orden-chip{
+  flex:none;
+  padding:2px 8px;border-radius:var(--r-pill);
+  background:var(--azul);color:var(--on-accent);
+  font-size:9.5px;letter-spacing:.1em;
+}
+
 .mt{
   border:1px solid var(--line);
   border-radius:var(--r-md);
@@ -9841,6 +9874,50 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         }
       });
 
+      /* ==================================================================
+         ORDEN DE LOS PARTIDOS
+         ------------------------------------------------------------------
+         El fixture se lee por grupo, y asi no hay forma de saber cual toca
+         ahora: el partido 3 del grupo A puede jugarse despues del 1 del B.
+         Estos numeros ordenan TODA la fase de grupos por fecha y hora, que
+         es el orden real en que se juegan.
+
+         Se calcula una sola vez por render y queda en un Map. groupMatchRow
+         se llama una vez por partido, asi que recalcular el orden completo
+         adentro seria cuadratico.
+         ================================================================== */
+      let ordenPartidos = new Map();
+      let idProximo = null;
+
+      function calcularOrdenPartidos(){
+        const todos = Object.values(state.matches).filter(m => m.phase === "group");
+
+        /* Los partidos sin fecha van al final y no salteados en el medio: un
+           partido sin programar todavia no tiene lugar en el calendario.
+           El id desempata para que el orden no baile entre renders cuando
+           dos comparten fecha y hora. */
+        const clave = m => (m.date || "9999-12-31") + "T" + (m.time || "23:59") + "|" + m.id;
+        todos.sort((a, b) => clave(a).localeCompare(clave(b)));
+
+        ordenPartidos = new Map(todos.map((m, i) => [m.id, i + 1]));
+
+        /* El proximo es el primero sin resultado. Los suspendidos no cuentan:
+           no se van a jugar en su turno y dejarian el cartel clavado ahi. */
+        const prox = todos.find(m => !matchScoreOk(m) && m.status !== "suspended");
+        idProximo = prox ? prox.id : null;
+      }
+
+      /* La cinta con el numero, arriba de cada partido. */
+      function cintaNumero(m){
+        const n = ordenPartidos.get(m.id);
+        if (!n) return "";
+        const esProximo = m.id === idProximo;
+        return `<div class="mt-orden${esProximo ? " es-proximo" : ""}">
+          <span class="mt-orden-n">Partido ${n}</span>
+          ${esProximo ? '<span class="mt-orden-chip">Siguiente</span>' : ""}
+        </div>`;
+      }
+
       function groupMatchRow(m){
         const homeRes = resolveSlot(m.homeSlot);
         const awayRes = resolveSlot(m.awaySlot);
@@ -9873,7 +9950,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               </select>
             </div>` : "";
 
-          return `<div class="mt ${live?"is-live":""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}" style="padding:0;background:none;border:none;box-shadow:none;">
+          return `${cintaNumero(m)}<div class="mt ${live?"is-live":""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}" style="padding:0;background:none;border:none;box-shadow:none;">
             <div class="twolegs-card-wrap">
               <div class="twolegs-header-row">
                 <span class="twolegs-col-title">IDA</span>
@@ -9914,7 +9991,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           return `<input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" data-leg="1" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
         };
         
-        return `<div class="mt ${live?"is-live":""}">
+        return `${cintaNumero(m)}<div class="mt ${live?"is-live":""}">
           ${mtRow(home.id?home:null, teamName(home), inp("home",home,m.scoreHome), outcome(hs,as,played), home.name)}
           ${mtRow(away.id?away:null, teamName(away), inp("away",away,m.scoreAway), outcome(as,hs,played), away.name)}
           ${home.id && away.id ? mtFoot(m,played,live,"") : `<div class="mt-foot" style="text-align:center; color:var(--text-mute); font-size:11px;">Por definir</div>`}
@@ -9943,6 +10020,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       }
 
       function renderGroups(){
+        // antes de dibujar nada: el orden lo consulta cada fila
+        calcularOrdenPartidos();
         const gids=groupIds();
         const openGroups = new Set();
         document.querySelectorAll("#groupsContainer .group-card").forEach(gc => {
@@ -10113,6 +10192,20 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function renderLlave(){
         const board=$("#llaveBoard");
         if(!board)return null;
+
+        /* La llave no se muestra hasta que se jugaron TODOS los partidos de
+           grupos. Antes aparecia desde el arranque con el cartel de "se
+           dibuja sola cuando termine la fase de grupos", que ocupa media
+           pantalla para decir que todavia no hay nada.
+
+           Se esconde la seccion entera, no solo el tablero: el titulo "Las
+           llaves confirmadas" sobre un hueco vacio es justamente lo que
+           hacia ruido. */
+        const shell = $("#llaveShell");
+        const gids = groupIds();
+        const gruposListos = gids.length > 0 && gids.every(groupComplete);
+        if (shell) shell.hidden = !gruposListos;
+        if (!gruposListos) return null;
         const ko=Object.values(state.matches).filter(m=>m.phase==="knockout"&&!m.isThirdPlace);
         if(!ko.length){
           board.innerHTML=`<div class="empty-state">La llave se dibuja sola cuando termine la fase de grupos.</div>`;
