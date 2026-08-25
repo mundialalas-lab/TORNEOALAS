@@ -16203,20 +16203,78 @@ document.addEventListener("DOMContentLoaded", () => {
     /* --- entrada: los elementos llegan como una alineación que se presenta --- */
     const kicker = el.querySelector(".splash-kicker");
     const bits = [logo, kicker, title, rule, enter, hint].filter(Boolean);
+
+    /* Corta un texto en un <span class="ch"> por caracter y devuelve los
+       nuevos elementos. GSAP trae SplitText para esto, pero es un plugin de
+       pago y esta app carga la version gratuita del CDN, asi que van doce
+       lineas propias.
+
+       El texto original se guarda como aria-label del <h1> y las lineas
+       quedan aria-hidden: un lector de pantalla anuncia "Mundial Alas 2026"
+       de corrido en vez de deletrear diecisiete <span> sueltos. */
+    function cortarEnLetras(linea){
+      const texto = linea.textContent;
+      const frag = document.createDocumentFragment();
+      const chs = [];
+      for (const caracter of texto) {
+        const ch = document.createElement("span");
+        ch.className = "ch";
+        ch.textContent = caracter;
+        frag.appendChild(ch);
+        chs.push(ch);
+      }
+      linea.textContent = "";
+      linea.appendChild(frag);
+      return chs;
+    }
+
     if (g && !REDUCED){
       const lines = title ? [...title.children] : [];
-      g.set([logo, enter, hint].filter(Boolean), {y:22, autoAlpha:0});
-      g.set(kicker, {y:14, autoAlpha:0, letterSpacing:"1.1em"});
-      g.set(lines, {yPercent:110, autoAlpha:0});
-      g.set(rule,  {scaleX:0});
 
-      g.timeline({delay:1.85})
-        .to(logo,  {y:0, autoAlpha:1, duration:.7, ease:"power3.out"})
-        .to(kicker,{y:0, autoAlpha:1, letterSpacing:".44em", duration:.9, ease:"power3.out"}, "-=.45")
-        .to(lines, {yPercent:0, autoAlpha:1, duration:.75, ease:"power4.out", stagger:.09}, "-=.55")
-        .to(rule,  {scaleX:1, duration:.85, ease:"power2.inOut"}, "-=.35")
-        .to(enter, {y:0, autoAlpha:1, duration:.5, ease:"back.out(1.7)"}, "-=.45")
-        .to(hint,  {y:0, autoAlpha:1, duration:.4, ease:"power2.out"}, "-=.25");
+      /* El corte se hace SOLO en esta rama. Si no hay GSAP o el sistema pide
+         menos movimiento, el titulo se queda como vino del HTML: no tiene
+         sentido pagar el costo de tocar el DOM para no animar nada. */
+      let porLinea = [];
+      if (title && lines.length) {
+        /* Las dos lineas van pegadas en el marcado (</span><span>), asi que
+           title.textContent las devuelve sin separacion: "MundialAlas 2026".
+           El nombre accesible se arma juntando linea por linea. */
+        title.setAttribute("aria-label", lines.map(l => l.textContent.trim()).join(" "));
+        porLinea = lines.map(l => { l.setAttribute("aria-hidden", "true"); return cortarEnLetras(l); });
+      }
+
+      /* Los `if` son por el logo: mas arriba, si no hay escudo, se hace
+         logo.remove() y la variable puede quedar en null. gsap.set(null) no
+         rompe pero llena la consola de avisos, y el codigo que habia antes ya
+         se cuidaba de esto con un .filter(Boolean). */
+      if (logo)   g.set(logo,   {y:-8, scale:.84, autoAlpha:0, transformOrigin:"50% 50%"});
+      if (kicker) g.set(kicker, {y:14, autoAlpha:0, letterSpacing:"1.1em"});
+      if (enter)  g.set(enter,  {y:26, scale:.92, autoAlpha:0});
+      if (hint)   g.set(hint,   {y:14, autoAlpha:0});
+      if (rule)   g.set(rule,   {scaleX:0, transformOrigin:"50% 50%"});
+      /* 115% y no 100%: la letra arranca justo por debajo del borde de su
+         mascara, con un pelo de sobra para que no se asome antes de tiempo. */
+      porLinea.forEach(chs => g.set(chs, {yPercent:115, autoAlpha:0}));
+
+      const tl = g.timeline({delay:1.85, defaults:{ease:"power3.out"}});
+
+      tl.to(logo,  {y:0, scale:1, autoAlpha:1, duration:.85, ease:"back.out(1.5)"})
+        .to(kicker,{y:0, autoAlpha:1, letterSpacing:".44em", duration:.9}, "-=.5");
+
+      /* Cada linea entra con su propio stagger y la segunda pisa a la
+         primera: si esperaran una a la otra, "Mundial" y "Alas 2026" se
+         leerian como dos titulos y no como uno solo en dos renglones. */
+      porLinea.forEach((chs, i) => {
+        tl.to(chs, {
+          yPercent:0, autoAlpha:1,
+          duration:.8, ease:"power4.out",
+          stagger:.035
+        }, i === 0 ? "-=.55" : "-=.62");
+      });
+
+      tl.to(rule,  {scaleX:1, duration:.9, ease:"power2.inOut"}, "-=.35")
+        .to(enter, {y:0, scale:1, autoAlpha:1, duration:.65, ease:"back.out(1.8)"}, "-=.5")
+        .to(hint,  {y:0, autoAlpha:1, duration:.45}, "-=.3");
     } else {
       bits.forEach(b => { b.style.opacity = 1; b.style.transform = "none"; });
       if (rule) rule.style.transform = "scaleX(1)";
@@ -16967,6 +17025,33 @@ body.instalada .min-h-pantalla{height:100dvh}
   .group-card:active,.fx-card:active,.team-card:active,.pf-card:active{
     transform:none !important;
   }
+}
+
+/* -------------------------------------- 6b. las letras de la intro ------ */
+
+/* Cada linea del titulo es una ventana con el borde recortado, y las letras
+   entran desde abajo de ese borde. Es el revelado por mascara: la letra no
+   aparece de la nada ni se desliza sobre el fondo, ASOMA. Sin el overflow
+   las letras se verian llegando desde afuera y el efecto se pierde.
+
+   El padding-bottom con margin-bottom negativo que lo cancela es para que la
+   mascara no le coma la cola a las letras con descendente; sin eso, una "j"
+   o una "g" quedan cortadas al ras. */
+/* El `>` importa: sin el, este selector tambien alcanza a los .ch que el
+   JS mete adentro de cada linea, y cada letra terminaria con su propia
+   mascara y su propio padding. Los hijos directos son las dos lineas. */
+.splash-title > span{
+  overflow:hidden;
+  padding-bottom:.12em;
+  margin-bottom:-.12em;
+}
+/* inline-block para que acepte transform —un <span> normal no lo acepta— y
+   white-space:pre para que los espacios entre palabras no se colapsen ahora
+   que cada caracter es su propio elemento. */
+.splash-title .ch{
+  display:inline-block;
+  white-space:pre;
+  will-change:transform,opacity;
 }
 
 /* ------------------------------- 7. con un sheet abierto, el fondo quieto */
