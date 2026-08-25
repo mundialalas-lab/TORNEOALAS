@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alas-mundial-v18';
+const CACHE_NAME = 'alas-mundial-v19';
 const ASSETS_TO_CACHE = [
   './',
   './ALAS-MUNDIAL.html',
@@ -7,7 +7,11 @@ const ASSETS_TO_CACHE = [
   './ICONO DE GOL SIN FONDO.png',
   './PELOTA.jpg',
   './FIFA.jpg',
-  './manifest.json'
+  './manifest.json',
+  // La musica de la intro y de la entrada. El nombre del segundo lleva un
+  // espacio: sin codificar, la cache lo pide mal y queda afuera.
+  './speed.mp3',
+  './speed%202.mp3'
 ];
 
 self.addEventListener('install', (e) => {

@@ -10933,6 +10933,59 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       }
 
       // ===== sonido / confeti (sin cambios de comportamiento) =====
+      /* ==================================================================
+         MÚSICA DEL MUNDIAL
+
+         Aparte de los efectos —que son tonos sintetizados—, hay dos pistas
+         de verdad: la que suena en la intro y la que entra cuando alguien
+         pasa la pantalla de "¿Quién sos?" con su rol.
+
+         Se expone en window porque la intro vive en otro bloque de script y
+         desde ahí no se ve `state`. El bloque principal corre antes, así que
+         cuando la intro lo busca ya está.
+
+         Un solo reproductor a la vez: arrancar una pista corta la anterior.
+         Sin eso, entrar rápido dejaba las dos sonando encimadas. */
+      const MUSICA = {
+        // el nombre del archivo lleva un espacio, y sin codificar algunos
+        // navegadores lo piden mal y no suena
+        intro:   encodeURI("speed.mp3"),
+        entrada: encodeURI("speed 2.mp3")
+      };
+      let pistaActual = null;
+
+      function pararMusica(){
+        if(!pistaActual) return;
+        try{ pistaActual.pause(); pistaActual.currentTime = 0; }catch(e){}
+        pistaActual = null;
+      }
+
+      /* Devuelve el reproductor, o null si el sonido está apagado o el
+         navegador todavía no dejó sonar nada. */
+      function sonarMusica(archivo, volumen){
+        pararMusica();
+        if(state.settings.sound === false) return null;
+        try{
+          const a = new Audio(archivo);
+          a.volume = typeof volumen === "number" ? volumen : 0.8;
+          a.play().catch(()=>{
+            /* Bloqueado por la política de autoplay: no es un error, es el
+               navegador esperando un gesto. El de la intro llega enseguida. */
+          });
+          pistaActual = a;
+          return a;
+        }catch(e){ return null; }
+      }
+
+      window.ALAS_MUSICA = {
+        INTRO: MUSICA.intro,
+        ENTRADA: MUSICA.entrada,
+        sonar: sonarMusica,
+        parar: pararMusica,
+        permitido: function(){ return state.settings.sound !== false; },
+        sonando: function(){ return Boolean(pistaActual && !pistaActual.paused); }
+      };
+
       function ensureAudio(){
         if(!audioContext)audioContext=new(window.AudioContext||window.webkitAudioContext)();
         if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});return audioContext;
@@ -13525,6 +13578,16 @@ window.addEventListener('message', async (e)=>{
     refillDaily();
     persistToParent();
     enterApp();
+  }else if(d.type==='albumMute'){
+    /* El sonido del album lo manda el boton de la barra de arriba. Antes
+       cada uno tenia el suyo y podian quedar en desacuerdo: silenciabas el
+       Mundial y el album seguia sonando abajo. */
+    if(S){
+      S.muted = Boolean(d.muted);
+      const sb=document.getElementById('soundBtn');
+      if(sb) sb.textContent = S.muted ? '\u{1F507}' : '\u{1F50A}';
+      persistToParent();
+    }
   }else if(d.type==='albumGrantPack'){
     if(S){ S.packs=(S.packs||0)+1; refillDaily(); persistToParent(); if(document.getElementById('packLead'))renderPackTab(); toast('\\u{1F4E6} \\u00a1Sobre nuevo por el resultado cargado!'); }
   }else if(d.type==='albumRoster'){
@@ -14200,6 +14263,7 @@ function loop(){
           // se le manda la colección DEL USUARIO ACTUAL, no la compartida
           const mio=currentUserId?albumOf(currentUserId):state.album;
           frame.contentWindow.postMessage({type:"albumInit",album:mio},"*");
+          sincronizarSonidoAlbum();
           pushRosterToAlbum();
         }else if(d.type==="albumUpdate"){
           if(currentUserId){
@@ -14419,6 +14483,10 @@ function loop(){
         state.format.thirdPlaceMatch=$("#thirdPlaceField").checked;
         state.format.h2hTiebreak=$("#h2hField").checked;
         state.settings.sound=$("#soundEnabledField").checked;
+        // mismo alcance que el botón de la barra: si no, apagarlo desde acá
+        // dejaba sonando la intro y el álbum
+        if(!state.settings.sound) pararMusica();
+        sincronizarSonidoAlbum();
         state.settings.confetti=$("#confettiEnabledField").checked;
         state.settings.volume=Number($("#volumeField").value)/100;
         persist();
@@ -15048,17 +15116,36 @@ function loop(){
         persist();applyTheme();playClick();requestConnectors();
         showToast(state.settings.theme==="dark"?"🌙 Tema oscuro activado":"☀️ Tema claro activado");
       });
+      /* Le avisa al álbum, que corre en un iframe y tiene su propio estado de
+         sonido. Sin esto se podía silenciar el Mundial y seguir escuchando
+         los sobres abriéndose. */
+      function sincronizarSonidoAlbum(){
+        try{
+          const frame=$("#albumFrame");
+          if(frame&&frame.contentWindow)
+            frame.contentWindow.postMessage({type:"albumMute",muted:!state.settings.sound},"*");
+        }catch(e){}
+      }
+
+      /* Silenciar tiene que callar TODO lo que suena, y en la app suenan tres
+         cosas distintas por caminos distintos: los efectos, el audio de la
+         intro que sigue corriendo un rato después de entrar, y el álbum
+         adentro de su iframe. Apagar sólo los efectos era lo que hacía que
+         el sonido "siguiera" después de tocar el botón. */
       $("#btnSound")?.addEventListener("click",()=>{
         state.settings.sound=!state.settings.sound;
         persist();
         renderHeader();
         const sw=$("#soundEnabledField"); if(sw) sw.checked=state.settings.sound;
+        sincronizarSonidoAlbum();
         if(state.settings.sound){
           playWhistle();
           showToast("🔊 Sonido activado");
         }else{
+          // se corta lo que esté sonando
+          pararMusica();
           // el silbato no suena para avisar que se apagó el silbato
-          showToast("🔇 Sonido silenciado · también en la intro");
+          showToast("🔇 Silenciado · efectos, intro y álbum");
         }
       });
       /* Antes acá se forzaba state.settings.sound=true en cada arranque,
@@ -15349,6 +15436,7 @@ function loop(){
             aplicarRolAlBody();
             ocultarPerfiles();
             renderAll();
+            sonarMusica(MUSICA.entrada, 0.7);
             playWhistle();
             showToast("Bienvenido, Administrador");
           };
@@ -15369,6 +15457,8 @@ function loop(){
         aplicarRolAlBody();
         ocultarPerfiles();
         renderAll();
+        // la pista de entrada reemplaza a la de la intro, no se le encima
+        sonarMusica(MUSICA.entrada, 0.7);
         playAdvance();
         const u=currentUser();
         if(u)showToast(`¡Hola, ${u.name}!`);
@@ -16037,34 +16127,41 @@ document.addEventListener("DOMContentLoaded", () => {
          Aseguramos que el video se desmutee y continúe reproduciendo tanto al tocar
          la pantalla como al presionar 'Ingresar ahora'.
          ===================================================================== */
-      const marcarMudo = () => { if (el) el.classList.toggle("is-muted", video.muted); };
+      /* La intro ya no suena con la pista del video: suena con speed.mp3.
+         El video queda MUDO para siempre — su trabajo es la imagen. Tener las
+         dos cosas sonando encimadas era ruido, y separar la música del video
+         permite cambiarla sin volver a exportar 12 MB de mp4. */
+      video.muted = true;
 
-      const unlockAudio = () => {
-        if (!video) return;
-        video.muted = false;
-        video.volume = 1;
-        const pr = video.play();
-        if (pr && pr.catch) {
-          pr.then(() => {
-            marcarMudo();
-          }).catch(() => {
-            // si el navegador aún bloquea antes del clic de entrada, mantiene video mudo
-            video.muted = true;
-            video.play().catch(()=>{});
-            marcarMudo();
-          });
-        } else {
-          marcarMudo();
-        }
+      const musica = window.ALAS_MUSICA;
+      let sonandoIntro = false;
+
+      const marcarMudo = () => {
+        // el cartelito de "tocá para escuchar" mira la MÚSICA, no el video
+        if (el) el.classList.toggle("is-muted", !sonandoIntro);
       };
 
-      // Escuchar eventos válidos de interacción en Android e iOS
+      const unlockAudio = () => {
+        if (sonandoIntro || !musica) return;
+        if (!musica.permitido()) { marcarMudo(); return; }   // silenciado a propósito
+        const a = musica.sonar(musica.INTRO, 0.85);
+        if (!a) { marcarMudo(); return; }
+        /* `play()` puede prometer y despues fallar por la politica de
+           autoplay. Recien cuando empieza de verdad se da por sonando: si se
+           marcara antes, el cartel de "tocá para escuchar" desapareceria sin
+           que se escuche nada. */
+        a.addEventListener("playing", () => { sonandoIntro = true; marcarMudo(); }, {once:true});
+        setTimeout(marcarMudo, 400);
+      };
+
+      // Android e iOS sólo dejan sonar dentro de un gesto real
       el.addEventListener("click", unlockAudio, { passive: true });
       el.addEventListener("touchend", unlockAudio, { passive: true });
       document.addEventListener("keydown", unlockAudio, { once: true, passive: true });
 
-      // Intento inicial con sonido si el entorno lo permite (ej. PWA o flags)
+      // Intento inicial: si el entorno lo permite (el .bat, o una PWA), suena sola
       unlockAudio();
+      marcarMudo();
 
       video.addEventListener("pause", () => {
         if (!dismissed && video.paused) {
@@ -16136,33 +16233,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    function carryAudio(){
-      if (!video) return;
-      try {
-        const st = JSON.parse(localStorage.getItem("alas-torneo-v3") || "null");
-        if (st && st.settings && st.settings.sound === false) return;
-      } catch(e){}
+    /* Antes acá se llevaba la pista del video hacia adentro de la app con un
+       fundido de 7,5 segundos. Ya no hace falta: la música es un Audio suelto
+       que sigue sonando por su cuenta cuando el splash se va del DOM, y se
+       corta sola cuando entra la pista de entrada.
 
-      // Forzar desmuteo y play durante el clic del usuario (clave para Android)
-      video.muted = false;
-      video.volume = 1;
-      const playPromise = video.play();
-      if (playPromise && playPromise.catch) playPromise.catch(()=>{});
-
-      video.classList.remove("splash-video");
-      video.setAttribute("aria-hidden","true");
-      video.style.cssText =
-        "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1";
-      document.body.appendChild(video);
-
-      const DUR = 7500, t0 = performance.now(), v0 = 1;
-      (function fade(){
-        const p = Math.min(1, (performance.now() - t0) / DUR);
-        video.volume = Math.max(0, v0 * (1 - p * p));
-        if (p < 1) requestAnimationFrame(fade);
-        else { try { video.pause(); } catch(e){} video.remove(); }
-      })();
-    }
+       De paso se arregla lo que se reportó: durante aquel fundido el video ya
+       no estaba en el splash sino suelto en el body, y apretar "silenciar" no
+       lo alcanzaba. El sonido seguía y no había forma de pararlo. */
+    function carryAudio(){ /* la música se sostiene sola */ }
 
     function revealApp(){
       carryAudio();
@@ -16172,11 +16251,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (enter) enter.addEventListener("click", () => {
-      if (video) {
-        video.muted = false;
-        video.volume = 1;
-        try { video.play(); } catch(e){}
-      }
+      /* El video sigue mudo. Este clic es el gesto que muchos navegadores
+         esperan para dejar sonar algo, asi que se aprovecha para arrancar la
+         musica si todavia no arranco — aunque dure poco, porque enseguida
+         entra la pista de entrada. */
+      try { if (window.ALAS_MUSICA && !window.ALAS_MUSICA.sonando())
+              window.ALAS_MUSICA.sonar(window.ALAS_MUSICA.INTRO, 0.85); } catch(e){}
       try { if (window.playClick) window.playClick(); } catch(e){}
       finish();
     });
