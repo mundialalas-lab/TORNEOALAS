@@ -1334,15 +1334,22 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 }
 .perfiles[hidden]{display:none}
 .pf-inner{width:min(900px,100%);text-align:center;color:#eef2f7;margin:auto 0;}
-.pf-logo{width:clamp(74px,8vw,110px);height:auto;margin:0 auto 14px;display:block}
+.pf-logo{width:clamp(118px,14vw,178px);height:auto;margin:0 auto 18px;display:block}
 .pf-kicker{
   font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:700;
-  letter-spacing:.34em;text-transform:uppercase;font-size:11px;color:#ffd966;
+  letter-spacing:.34em;text-transform:uppercase;color:#ffd966;
+  /* Antes eran 11px fijos, debajo de un "¿Quién sos?" enorme que se llevaba
+     toda la atención. Sacado ese título, el nombre del torneo pasa a ser el
+     encabezado de la pantalla y tiene que pesar como tal. */
+  font-size:clamp(15px,2.6vw,24px);line-height:1.2;
+  /* El margen inferior que aportaba .pf-title: sin él la grilla de perfiles
+     se pegaba contra el texto. */
+  margin:0 0 30px;
 }
-.pf-title{
-  font-family:'Anton',var(--font-display),sans-serif;font-weight:400;
-  font-size:clamp(30px,6vw,58px);line-height:1;text-transform:uppercase;
-  margin:8px 0 30px;
+/* El .34em de tracking sobre 15px hace que "MUNDIAL ALAS 2026" mida ~245px:
+   entra en un teléfono angosto, pero sin aire de sobra. Se afloja un poco. */
+@media (max-width:380px){
+  .pf-kicker{letter-spacing:.24em;font-size:14px}
 }
 .pf-grid{
   display:grid;
@@ -5581,7 +5588,6 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   <div class="pf-inner">
     <img class="pf-logo" id="pfLogo" alt="" aria-hidden="true">
     <p class="pf-kicker">Mundial ALAS 2026</p>
-    <h1 class="pf-title">¿Quién sos?</h1>
 
     <div class="pf-grid" id="pfGrid">
       <!-- Los iconos son del oficio de cada uno, no genéricos: el megáfono es
@@ -15228,7 +15234,7 @@ function loop(){
         if(anim()){
           gsap.fromTo("#pantallaPerfiles",{autoAlpha:0},{autoAlpha:1,duration:.4,ease:"power2.out"});
           gsap.fromTo("#pfLogo",{y:-16,autoAlpha:0},{y:0,autoAlpha:1,duration:.5,ease:"power3.out",delay:.1});
-          gsap.fromTo(".pf-kicker,.pf-title",{y:14,autoAlpha:0},
+          gsap.fromTo(".pf-kicker",{y:14,autoAlpha:0},
             {y:0,autoAlpha:1,duration:.5,stagger:.07,ease:"power3.out",delay:.18});
           // las tarjetas entran escalonadas, como las fichas de un mazo
           gsap.fromTo(".pf-card",{y:28,scale:.94,autoAlpha:0},
