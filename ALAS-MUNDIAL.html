@@ -5588,7 +5588,22 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
    distintos y todos corren después.
    ========================================================================== */
 window.ALAS_SESION = (function(){
+  /* DOS marcas, y la diferencia entre las dos es todo el asunto:
+
+     MARCA vive en localStorage y dice "este dispositivo tiene rol".
+     Sobrevive a cerrar la app, y tiene que sobrevivir: es lo que evita
+     volver a pedir el rol en cada arranque.
+
+     VISTA vive en sessionStorage y dice "la intro ya corrió en ESTA
+     apertura de la app". sessionStorage muere cuando se cierra la app y
+     sobrevive a un refresh, que es exactamente la linea que hay que
+     trazar: refrescar no es entrar de nuevo, abrir la app sí.
+
+     Usar MARCA para saltear la intro —que es lo que se hacia antes— la
+     mataba para siempre: una vez elegido el rol, la bienvenida no volvia
+     a verse nunca, ni abriendo la app de cero al dia siguiente. */
   var MARCA = "alas-sesion-abierta";
+  var VISTA = "alas-intro-vista";
   var soltar, resuelta = false;
   var lista = new Promise(function(r){ soltar = r; });
   function marcarLista(){ if(resuelta) return; resuelta = true; soltar(); }
@@ -5602,7 +5617,9 @@ window.ALAS_SESION = (function(){
     marcarLista: marcarLista,
     abierta: function(){ try{ return localStorage.getItem(MARCA)==="1"; }catch(e){ return false; } },
     abrir:   function(){ try{ localStorage.setItem(MARCA,"1"); }catch(e){} },
-    cerrar:  function(){ try{ localStorage.removeItem(MARCA); }catch(e){} }
+    cerrar:  function(){ try{ localStorage.removeItem(MARCA); }catch(e){} },
+    introVista:   function(){ try{ return sessionStorage.getItem(VISTA)==="1"; }catch(e){ return false; } },
+    marcarIntro:  function(){ try{ sessionStorage.setItem(VISTA,"1"); }catch(e){} }
   };
 })();
 </script>
@@ -16017,15 +16034,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* RECARGA CON SESIÓN ABIERTA: la intro se saltea entera.
        Mirar el video de bienvenida una vez es una entrada; mirarlo cada vez
-       que se refresca la pantalla es un peaje. Si este dispositivo ya eligió
-       rol, la app aparece directamente.
+       que se refresca la pantalla es un peaje.
+
+       Lo que decide NO es tener rol —eso duraba para siempre y mataba la
+       bienvenida— sino si la intro ya corrió en esta misma apertura de la
+       app. Cerrarla y volver a abrirla vacía sessionStorage, y la intro
+       vuelve como corresponde.
 
        Los dos eventos se disparan en DOMContentLoaded y no acá mismo a
        propósito: este <script> corre en el medio del documento, y varios de
        los que escuchan "splashDone" se registran en <script>s posteriores
        que todavía no se parsearon. Disparar ahora sería hablarle a una sala
        vacía. */
-    if (window.ALAS_SESION && window.ALAS_SESION.abierta()) {
+    /* Se marca antes de decidir: si la intro arranca en esta apertura, un
+       refresh posterior ya no la repite, haya terminado o no. */
+    const yaCorrio = window.ALAS_SESION && window.ALAS_SESION.introVista();
+    if (window.ALAS_SESION) window.ALAS_SESION.marcarIntro();
+
+    if (yaCorrio) {
       const v = $("#splashVideo");
       if (v) { try { v.pause(); } catch(e){} v.remove(); }
       el.remove();
