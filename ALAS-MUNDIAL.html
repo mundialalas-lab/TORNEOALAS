@@ -6442,6 +6442,24 @@ body.presentation-mode .champion-name{font-size:clamp(30px,3.4vw,58px)}
   letter-spacing:-.005em;
   text-transform:uppercase;
 }
+/* El logotipo se acuesta debajo de MUNDIAL y busca su mismo ancho optico.
+   Va en vw como el titulo —que es clamp(52px,13.5vw,168px)— para que los dos
+   crezcan juntos y la relacion entre ellos no cambie de un telefono a otro. */
+.splash-marca-wrap{
+  /* La ventana del revelado, igual que la de las letras del titulo. */
+  overflow:hidden;
+  margin-top:clamp(10px,1.6vw,20px);
+  line-height:0;
+}
+.splash-marca{
+  display:block;
+  width:clamp(158px,46vw,452px);
+  height:auto;
+  margin:0 auto;
+  /* El halo lo separa del video de fondo sin ponerle una caja alrededor. */
+  filter:drop-shadow(0 8px 30px rgba(0,0,0,.6));
+}
+
 .splash-title .l1{
   color:transparent;
   -webkit-text-stroke:clamp(1.2px,.16vw,2.6px) rgba(255,255,255,.92);
@@ -7803,7 +7821,15 @@ body{background:transparent !important}
     <div class="splash-content">
       <img class="splash-logo" id="splashLogo" alt="" aria-hidden="true">
       <p class="splash-kicker">Torneo interno · Edición 2026</p>
-      <h1 class="splash-title"><span class="l1">Mundial</span><span class="l2">Alas 2026</span></h1>
+      <h1 class="splash-title"><span class="l1">Mundial</span></h1>
+      <!-- La marca institucional debajo del titulo. El PNG blanco sobre
+           transparente ya vive embebido como ALAS_MARCA (es byte a byte el
+           mismo archivo que ALAS_blanco.png), asi que se usa la constante y
+           no la ruta: no suma un pedido mas y funciona igual sin conexion o
+           abriendo el HTML con doble clic. El JS le pone el src. -->
+      <div class="splash-marca-wrap">
+        <img class="splash-marca" id="splashMarca" alt="ALAS S.A.">
+      </div>
       <div class="splash-rule" id="splashRule" aria-hidden="true"></div>
       <button class="splash-enter" id="splashEnter" type="button">Ingresar ahora</button>
       <p class="splash-hint" id="splashHint">o presioná Enter</p>
@@ -16129,6 +16155,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (logo && typeof FULLLOGO === "string") logo.src = FULLLOGO;
     else if (logo) logo.remove();
 
+    /* La marca de ALAS, blanca sobre transparente. Misma politica que el
+       escudo: si la constante no esta, se saca el hueco en vez de dejar una
+       imagen rota. */
+    const marca = $("#splashMarca");
+    if (marca && typeof ALAS_MARCA === "string" && ALAS_MARCA) marca.src = ALAS_MARCA;
+    else if (marca && marca.parentElement) marca.parentElement.remove();
+
     /* La variable dismissed se declara ACÁ ARRIBA a propósito. El bloque del video de
        abajo la consulta, y si se declarara recién junto a finish() quedaría en
        zona muerta temporal: leerla lanzaba un ReferenceError que mataba en
@@ -16274,7 +16307,12 @@ document.addEventListener("DOMContentLoaded", () => {
          logo.remove() y la variable puede quedar en null. gsap.set(null) no
          rompe pero llena la consola de avisos, y el codigo que habia antes ya
          se cuidaba de esto con un .filter(Boolean). */
+      const marcaEl = $("#splashMarca");
       if (logo)   g.set(logo,   {y:-8, scale:.84, autoAlpha:0, transformOrigin:"50% 50%"});
+      /* La marca asoma desde abajo de su ventana, igual que las letras. Es a
+         proposito: si entrara con un fundido distinto se leeria como un
+         elemento pegado y no como parte del mismo movimiento. */
+      if (marcaEl) g.set(marcaEl, {yPercent:110, autoAlpha:0});
       if (kicker) g.set(kicker, {y:14, autoAlpha:0, letterSpacing:"1.1em"});
       if (enter)  g.set(enter,  {y:26, scale:.92, autoAlpha:0});
       if (hint)   g.set(hint,   {y:14, autoAlpha:0});
@@ -16298,6 +16336,8 @@ document.addEventListener("DOMContentLoaded", () => {
           stagger:.035
         }, i === 0 ? "-=.55" : "-=.62");
       });
+
+      if (marcaEl) tl.to(marcaEl, {yPercent:0, autoAlpha:1, duration:.7, ease:"power4.out"}, "-=.45");
 
       tl.to(rule,  {scaleX:1, duration:.9, ease:"power2.inOut"}, "-=.35")
         .to(enter, {y:0, scale:1, autoAlpha:1, duration:.65, ease:"back.out(1.8)"}, "-=.5")
