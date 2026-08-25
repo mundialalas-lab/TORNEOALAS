@@ -520,14 +520,28 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .icon-btn.danger:hover{color:var(--elimina);border-color:var(--elimina);background:var(--danger-soft)}
 .icon-btn{transition:color var(--t-fast),border-color var(--t-fast),background var(--t-fast),transform var(--t-fast)}
 
+/* Un recuadro rojo de 44px con un aspa de 26px leia como boton de borrar,
+   no como cerrar: el rojo pleno es el color con el que esta app avisa que
+   algo se elimina. Ademas cada modal la dibujaba de un tamaño distinto.
+
+   Ahora es un circulo neutro, que es la forma que usan las apps para cerrar
+   una hoja, y el rojo aparece recien al apretarla: sigue diciendo lo mismo
+   sin gritarlo desde el reposo. `color:inherit` es a proposito —las
+   cabeceras de esta app van de superficie clara a fondo oscuro segun el
+   modal, y asi el aspa toma el color del texto que tiene al lado en vez de
+   pelearse con el fondo. */
 .close-btn{
-  width:44px;height:44px;flex:none;
-  display:grid;place-items:center;border-radius:var(--r-sm);
-  border:1px solid rgba(239, 68, 68, 0.4);color:#ef4444;background:rgba(239, 68, 68, 0.08);
-  font-size:26px;font-weight:300;line-height:1;
+  width:38px;height:38px;flex:none;
+  display:grid;place-items:center;border-radius:50%;
+  border:1px solid rgba(128,140,160,.30);
+  background:rgba(128,140,160,.14);
+  color:inherit;
+  font-size:21px;font-weight:400;line-height:1;
   transition:all var(--t-fast);
 }
-.close-btn:hover{color:#f87171;border-color:#ef4444;background:rgba(239, 68, 68, 0.15);transform:scale(1.05);}
+.close-btn:hover,.close-btn:focus-visible{
+  color:#ef4444;border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.14);
+}
 
 /* ------------------------------------------------------- mapa / llave ---- */
 .map-shell{
@@ -7042,7 +7056,11 @@ body{background:transparent !important}
   .modal-head::before {
     display: none !important;
   }
-  .modal-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; margin-top: 24px !important; }
+  /* Sin margin-top. .modal-actions es el pie del modal, con su propio
+     padding y su borde de arriba; el margen extra lo empujaba hacia abajo
+     dentro de un contenedor flex con overflow:hidden, y en pantallas
+     bajas los botones quedaban cortados fuera de la vista. */
+  .modal-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; }
   .modal-actions .btn { width: 100% !important; min-height: 48px !important; border-radius: 12px !important; }
   
   /* GRAN FINAL - Layout épico vertical en móvil */
@@ -7401,6 +7419,9 @@ body{background:transparent !important}
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
   border-radius: 14px !important;
   min-height: 46px !important;
+  height: auto !important;      /* dos lineas cuando la etiqueta es larga */
+  white-space: normal !important;
+  line-height: 1.25 !important;
   font-size: 15px !important;
   font-weight: 800 !important;
   letter-spacing: 0.08em !important;
@@ -8427,7 +8448,7 @@ body{background:transparent !important}
             Arrastrá para encuadrar y ajustá el tamaño para tu figurita.
           </p>
         </div>
-        <button class="close-btn" id="btnClosePaniniCropper" type="button" aria-label="Cerrar" style="width: 32px; height: 32px; font-size: 20px;">×</button>
+        <button class="close-btn" id="btnClosePaniniCropper" type="button" aria-label="Cerrar">×</button>
       </header>
 
       <div class="modal-body" style="padding: 10px 16px 6px; display:flex; flex-direction:column; align-items:center;">
@@ -8483,7 +8504,7 @@ body{background:transparent !important}
             Total: <b id="uKpiTotal" style="color:#fff;">0</b> · <span style="color:#4ade80;">🟢 <span id="uKpiOnline">0</span> activos</span> · <span style="color:#f87171;">🔴 <span id="uKpiOffline">0</span> inactivos</span>
           </p>
         </div>
-        <button class="close-btn" id="btnCloseUsersMonitor" type="button" aria-label="Cerrar" style="width: 32px; height: 32px; font-size: 20px;">×</button>
+        <button class="close-btn" id="btnCloseUsersMonitor" type="button" aria-label="Cerrar">×</button>
       </header>
 
       <div style="padding: 10px 14px; display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
@@ -9889,7 +9910,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           : "<span class='chip-status chip-blue'>A jugar</span>";
         
         const isAdmin = document.body.classList.contains("admin-mode");
-        const btnBase = "width: 100%; height: 32px; min-height: 32px; border-radius: 8px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box; white-space: nowrap;";
+        /* Sin white-space:nowrap y sin alto fijo. La etiqueta mas larga
+           —"REGISTRAR SERIE (IDA Y VUELTA)"— son 29 caracteres en mayuscula
+           con letter-spacing, y la tarjeta que la contiene mide ~160px en un
+           telefono: con nowrap se desbordaba siempre. Ahora corta en dos
+           lineas y el alto lo pone el contenido, con min-height de 44px para
+           que siga siendo un objetivo tactil comodo. */
+        const btnBase = "width: 100%; min-height: 44px; padding: 9px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box;";
         const primaryStyle = btnBase + " background: linear-gradient(180deg, #2563eb, #1d4ed8); border: 1px solid #3b82f6; color: #ffffff; box-shadow: 0 2px 6px rgba(37,99,235,0.25);";
         const secStyle = btnBase + " border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cbd5e1;";
         
@@ -16760,7 +16787,11 @@ html,body{overscroll-behavior-y:none}
 
 /* --------------------------------------------- 2. zona del pulgar (48px) -- */
 @media (max-width:860px){
-  .btn,.tab-btn,.icon-btn,.close-btn,.top-action-btn,
+  /* .icon-btn y .close-btn quedan AFUERA a proposito: mas abajo reciben un
+     ::after de 48px que les agranda el area tactil sin agrandar el dibujo.
+     Poniendoles ademas min-height/min-width se hacia las dos cosas, y el
+     boton de cerrar terminaba siendo un recuadro de 48px. */
+  .btn,.tab-btn,.top-action-btn,
   .pf-card,[role="tab"]{
     min-height:48px;min-width:48px;
   }
