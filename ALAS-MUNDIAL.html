@@ -7045,23 +7045,50 @@ body{background:transparent !important}
   
   /* MODALES PREMIUM */
   .modal-backdrop { align-items: flex-end !important; padding: 0 !important; background: rgba(0,0,0,0.7) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+
+  /* height:auto, NO 100dvh.
+     Con el alto forzado a la pantalla entera, un modal de cuatro campos
+     dejaba medio telefono de vacio entre el ultimo campo y los botones, y
+     el pie terminaba pegado al borde de abajo. Ademas convertia la hoja en
+     una pagina: sin esquinas redondeadas, sin tirador, sin fondo visible
+     detras. Justo lo contrario de una app.
+
+     El diseno de bottom sheet ya existia mas arriba en esta misma hoja
+     (max-height:92dvh, esquinas redondeadas, tirador en ::before). Este
+     bloque lo pisaba entero con !important. Ahora lo respeta: la hoja mide
+     lo que mide su contenido y sube desde abajo. */
   .modal {
-    width: 100% !important; height: 100dvh !important; max-height: 100dvh !important; margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 92dvh !important;
+    margin: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    box-shadow: 0 -18px 50px rgba(0,0,0,.55) !important;
   }
+  /* El safe-area de ARRIBA no corresponde: la hoja nace pegada al borde de
+     abajo, no debajo de la muesca. Lo que hace falta es aire para el
+     tirador. */
   .modal-head {
-    padding-top: max(20px, env(safe-area-inset-top)) !important;
-  }
-  .modal-head::before {
-    display: none !important;
+    padding-top: 20px !important;
   }
   /* Sin margin-top. .modal-actions es el pie del modal, con su propio
      padding y su borde de arriba; el margen extra lo empujaba hacia abajo
      dentro de un contenedor flex con overflow:hidden, y en pantallas
      bajas los botones quedaban cortados fuera de la vista. */
-  .modal-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; }
-  .modal-actions .btn { width: 100% !important; min-height: 48px !important; border-radius: 12px !important; }
+  /* El padding va con !important porque tres modales traen su propio
+     padding en un atributo style=, y un estilo inline le gana a
+     cualquier regla que no lo lleve. Sin esto, esos tres apoyan los
+     botones sobre la barra de gestos del telefono. */
+  .modal-actions {
+    display: flex !important; flex-direction: column !important;
+    gap: 10px !important; width: 100% !important;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+  .modal-actions .btn {
+    width: 100% !important; min-height: 50px !important;
+    border-radius: 14px !important;
+    margin: 0 !important;   /* algunos traen margenes sueltos del pie viejo */
+  }
   
   /* GRAN FINAL - Layout épico vertical en móvil */
   .llave-center { display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important; margin: 32px auto 0 !important; gap: 16px !important; }
@@ -8240,9 +8267,9 @@ body{background:transparent !important}
             </div>
           </section>
         </div>
-        <footer class="modal-foot">
-          <button type="button" class="btn cancel-btn" id="btnCancelMatchDataModal">Cancelar</button>
-          <button type="submit" class="btn primary save-state">Guardar Datos</button>
+        <footer class="modal-actions">
+          <button type="button" class="btn secondary" id="btnCancelMatchDataModal">Cancelar</button>
+          <button type="submit" class="btn">Guardar Datos</button>
         </footer>
       </form>
     </div>
