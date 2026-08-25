@@ -3963,7 +3963,11 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 /* ============================================================= MÓVIL ===== */
 /* la app se opera con el pulgar, parado al borde de la cancha */
 @media (max-width:860px){
-  :root{--gap:11px;--pad:13px;--tabbar-h:calc(58px + env(safe-area-inset-bottom))}
+  /* --tabbar-h NO va aca. Se declaraba con 58px y mas abajo, en el mismo
+     breakpoint, se volvia a declarar con 68px: misma especificidad, gana
+     la ultima, asi que este valor nunca se uso. Ahora hay uno solo, en
+     el bloque del dock, que es el unico que sabe cuanto mide. */
+  :root{--gap:11px;--pad:13px}
 
   .app-shell{padding:14px 11px 26px}
 
@@ -3976,33 +3980,14 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   .topbar .phase-pill{display:none}
   .topbar .ibtn{height:34px;min-width:34px;padding:0 9px;font-size:11px}
 
-  /* las pestañas bajan al alcance del pulgar */
-  .topbar-tabs{
-    position:fixed;left:0;right:0;bottom:0;z-index:400;
-    display:flex;gap:0;
-    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
-    background:color-mix(in srgb,var(--bg) 94%,transparent);
-    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-    border-top:1px solid var(--line-strong);
-  }
-  .topbar-tabs .tab-btn{
-    flex:1 1 0;min-width:0;
-    flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    padding:6px 2px;min-height:46px;border-radius:var(--r-sm);
-    font-size:11px;
-  }
-  .topbar-tabs .tab-btn .tab-icon svg{width:20px;height:20px}
-  .topbar-tabs .tab-btn:hover{background:transparent}
-  .topbar-tabs .tab-btn.active{
-    color:#fff;background:linear-gradient(135deg,var(--azul-lo),var(--azul-hi));
-    box-shadow:0 6px 14px -6px rgba(47,127,240,.5);
-  }
-  .topbar-tabs .tab-btn.active::after{
-    left:50%;right:auto;transform:translateX(-50%);bottom:auto;top:0;width:24px;height:3px;
-    background:var(--azul-hi);
-  }
-  .tab-label-full{display:none}
-  .tab-label-short{display:inline}
+  /* El dock movil NO se define aca. Vivia un diseño completo en este lugar
+     —barra fija con display:flex, z-index 400, fondo con color-mix— y otro
+     mas abajo en "MOBILE PREMIUM UX", con !important en cada linea. El de
+     abajo ganaba entero: posicion, display, fondo, z-index, sombra, y hasta
+     el degradado de la pestaña activa. Este no pintaba un solo pixel.
+
+     Se borra en vez de dejarlo "por las dudas": dos diseños para el mismo
+     componente es como se llego a esto. El unico dock vive mas abajo. */
 
   /* la navegación por fases queda como riel horizontal bajo el header */
   
@@ -4098,14 +4083,9 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   html, body {
     -webkit-tap-highlight-color: transparent;
   }
-  .tab-bar.topbar-tabs {
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
-    padding-bottom: max(6px, env(safe-area-inset-bottom));
-  }
-  .tab-btn {
-    min-height: 48px;
-    touch-action: manipulation;
-  }
+  /* Otro parche muerto sobre el dock: sombra y padding-bottom que el bloque
+     del dock reescribe con !important. El min-height de 48px y el
+     touch-action de .tab-btn ya los declara la seccion de zona del pulgar. */
   .modal-dialog {
     max-height: calc(100vh - 40px);
     overflow-y: auto;
@@ -7017,8 +6997,12 @@ body{background:transparent !important}
     transition: left .28s cubic-bezier(.22,1,.36,1), width .28s cubic-bezier(.22,1,.36,1) !important;
   }
 
-  /* ESPACIO SEGURO — el contenido nunca queda detrás del dock */
-  .app-shell { padding-top: 16px !important; padding-bottom: calc(var(--tabbar-h) + 44px) !important; overflow-x: hidden !important; }
+  /* ESPACIO SEGURO — el contenido nunca queda detrás del dock.
+     El alto del dock lo reserva el <body> una sola vez (padding-bottom:
+     var(--tabbar-h), arriba de todo). Aca se sumaba de nuevo, asi que
+     entre los dos quedaban ~160px de aire muerto al final de CADA
+     pantalla. Aca va solo el respiro, no el alto de la barra. */
+  .app-shell { padding-top: 16px !important; padding-bottom: 24px !important; overflow-x: hidden !important; }
   .footer-strip { padding-bottom: calc(env(safe-area-inset-bottom) + 6px) !important; }
   
   /* HERO — portada compacta 220-300px (selectores reales del HTML) */
@@ -7160,7 +7144,8 @@ body{background:transparent !important}
   .hero-title { font-size: clamp(20px, 4.5vw, 30px) !important; margin-top: 4px !important; }
   .hero-sub { display: none !important; }
   .scoreboard { max-width: 560px !important; margin-left: auto !important; margin-right: auto !important; }
-  .app-shell { padding-bottom: calc(var(--tabbar-h) + 24px) !important; }
+  /* misma razon que arriba: el alto del dock ya lo reserva el body */
+  .app-shell { padding-bottom: 24px !important; }
   .topbar-actions { display: none !important; }
   #albumFrame { height: calc(100dvh - var(--tabbar-h) - 110px) !important; min-height: 300px !important; }
 }
