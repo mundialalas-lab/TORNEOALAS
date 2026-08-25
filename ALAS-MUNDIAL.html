@@ -10982,10 +10982,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const grosor = Math.max(2, Math.round(Math.min(W, H) * 0.015));
           const paso   = Math.max(1, Math.round((W + H) / 500));
           const muestras = [];   // [indice, ladoBit]
+          /* EL BORDE DE ABAJO NO ENTRA, y es la regla que hace que esto
+             funcione con fotos de jugadores.
+
+             En un retrato de torso, abajo está el jugador: su camiseta llega
+             al final del cuadro. Si ese borde alimenta el modelo, el blanco
+             de la camiseta y el blanco de una pared clara terminan en el
+             mismo grupo, y después el relleno entra por abajo y borra al
+             jugador entero. Pasó exactamente eso.
+
+             El fondo no se pierde por no mirar abajo: rodea al jugador, así
+             que entrando por arriba y por los costados se llega igual a la
+             parte de abajo — de eso se encarga la conectividad. */
           for (let x = 0; x < W; x += paso) {
             for (let k = 0; k < grosor; k++) {
               muestras.push([(k * W + x) * 4, 1]);
-              muestras.push([((H - 1 - k) * W + x) * 4, 2]);
             }
           }
           for (let y = 0; y < H; y += paso) {
@@ -11024,17 +11035,17 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           }
           if (!grupos.length) return canvas;
 
-          /* Descartar lo que NO es fondo. Un fondo real rodea al sujeto,
-             así que aparece en dos lados o más. Un hombro apoyado contra
-             el borde de abajo aparece en uno solo — y si además pesa poco,
-             es del jugador y no de la pared. */
+          /* Antes se exigía que un color apareciera en DOS lados para
+             considerarlo fondo. Esa regla existía para que un hombro contra
+             el borde no envenenara el modelo — pero como el borde de abajo
+             ya no se mira, dejó de hacer falta, y mientras estuvo hizo daño:
+             una pared con una zona más clara sobre un solo costado quedaba
+             descartada del modelo y aparecía como un manchón sin recortar.
+
+             Ahora sólo se descarta lo anecdótico: menos del 4% del marco no
+             es la pared, es un detalle que se coló en una esquina. */
           const total = grupos.reduce(function(a, g){ return a + g.n; }, 0);
-          const cuentaLados = function(m){
-            return (m & 1 ? 1 : 0) + (m & 2 ? 1 : 0) + (m & 4 ? 1 : 0) + (m & 8 ? 1 : 0);
-          };
-          let fondo = grupos.filter(function(g){
-            return cuentaLados(g.lados) >= 2 || g.n / total >= 0.25;
-          });
+          let fondo = grupos.filter(function(g){ return g.n / total >= 0.04; });
           if (!fondo.length) {
             fondo = [grupos.reduce(function(a, b){ return a.n >= b.n ? a : b; })];
           }
@@ -11061,7 +11072,25 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
              separan lo que es CLARAMENTE fondo de lo que es CLARAMENTE el
              jugador. Todo lo del medio —que es donde se juega el partido—
              lo resuelve el paso 5, midiendo la mezcla. */
-          const tFondo  = 14 + sens * 0.30;   // por debajo: fondo seguro
+          /* El rango arranca mucho mas fino que antes (era 14 a 44, ahora 6
+             a 40), y ese piso bajo es el punto.
+
+             Con una camiseta blanca contra una pared clara los dos colores
+             quedan a distancia 12, asi que con el piso en 14 no habia forma
+             de salvar al jugador NI bajando la barra a cero: el recorte se
+             comia el torso y no habia nada que hacer. Con el piso en 6 la
+             barra se vuelve un rescate de verdad.
+
+             Cuesta medio punto de tincion en el borde con la barra en su
+             valor normal (22.4 contra 17.6 medido sobre fondos sinteticos),
+             y vale la pena: un borde apenas menos limpio se nota mucho
+             menos que media figurita sin torso.
+
+             Se probo tambien proteger el centro del cuadro exigiendo mas
+             parecido ahi. Se descarto: el barrido mostro que empeora la
+             tincion —protege tambien al fondo que rodea al jugador— y no
+             llega a salvar la camiseta. */
+          const tFondo  = 6 + sens * 0.34;    // por debajo: fondo seguro
           const tNucleo = tFondo + 46;        // por encima: jugador seguro
 
           // ---- 4. relleno desde los bordes ------------------------------
@@ -11080,7 +11109,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             if (distFondo(p * 4) > tFondo) return;
             visto[p] = 1; alfa[p] = 0; cola[fin++] = p;
           };
-          for (let x = 0; x < W; x++) { encolar(x, 0); encolar(x, H - 1); }
+          /* Misma razón que arriba: sembrar desde el borde de abajo es
+             sembrar desde la camiseta del jugador. Se entra por arriba y por
+             los costados, y el fondo de abajo se alcanza igual siguiendo la
+             pared, que es lo que la conectividad hace bien. */
+          for (let x = 0; x < W; x++) { encolar(x, 0); }
           for (let y = 0; y < H; y++) { encolar(0, y); encolar(W - 1, y); }
 
           while (cab < fin) {
