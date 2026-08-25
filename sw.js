@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alas-mundial-v20';
+const CACHE_NAME = 'alas-mundial-v22';
 const ASSETS_TO_CACHE = [
   './',
   './ALAS-MUNDIAL.html',
@@ -8,6 +8,14 @@ const ASSETS_TO_CACHE = [
   './PELOTA.jpg',
   './FIFA.jpg',
   './manifest.json',
+  // Los iconos de instalacion. Van en la cache porque Android los vuelve a
+  // pedir al crear el acceso directo, y si en ese momento no hay red el icono
+  // queda generico.
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon-180.png',
   // La musica de la intro y de la entrada. El nombre del segundo lleva un
   // espacio: sin codificar, la cache lo pide mal y queda afuera.
   './speed.mp3',

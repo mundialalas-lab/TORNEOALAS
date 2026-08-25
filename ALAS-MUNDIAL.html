@@ -2,14 +2,22 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- viewport-fit=cover es lo que HABILITA env(safe-area-inset-*). Sin el, las
+       15 reglas de safe-area que ya tiene esta hoja calculan 0px y la barra
+       inferior queda debajo de la barra de gestos del telefono. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#080e18" id="themeColorMeta" />
   <link rel="manifest" href="manifest.json" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Mundial ALAS" />
-  <link rel="apple-touch-icon" href="ALAS.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+  <meta name="application-name" content="Mundial ALAS" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="color-scheme" content="light dark" />
   <title>Mundial ALAS 2026 · Centro de competición</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12634,7 +12642,7 @@ const ALBUM_DOC = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Álbum Mundial ALAS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16718,5 +16726,387 @@ document.addEventListener("DOMContentLoaded", () => {
   window.mobileAnimations = mobileAnimations;
 })();
 </script>
+
+<!-- ==========================================================================
+     CAPA NATIVA · Mundial ALAS 2026
+     --------------------------------------------------------------------------
+     Va última a propósito. La hoja principal tiene ~919 reglas con !important
+     repartidas en 60 media queries, así que una capa nueva metida en el medio
+     perdería todas las peleas de cascada. Estando al final gana por orden, y
+     el !important queda reservado para las pocas reglas que tienen que
+     sobreescribir a otro !important (van marcadas una por una).
+
+     Esta capa NO toca colores, tipografías ni jerarquía: toma los mismos
+     tokens de :root que ya existen. Lo único que cambia es la ergonomía
+     táctil, el gesto y el ritmo de las transiciones.
+     ========================================================================== -->
+<style id="capa-nativa">
+
+/* ---------------------------------------------------------------- tokens -- */
+:root{
+  /* Curva de iOS. Todo lo que se mueve usa ésta o la de salida: dos curvas en
+     toda la app es lo que hace que se sienta un solo sistema y no piezas
+     sueltas. */
+  --ease-nativa:cubic-bezier(.32,.72,0,1);
+  --ease-salida:cubic-bezier(.4,0,.6,1);
+  --t-vista:240ms;
+  --t-toque:150ms;
+
+  /* Muescas y barra de gestos. Se leen una sola vez y el resto de la hoja usa
+     el alias: si mañana hay que forzar un mínimo, se cambia acá. */
+  --sa-top:env(safe-area-inset-top,0px);
+  --sa-right:env(safe-area-inset-right,0px);
+  --sa-bottom:env(safe-area-inset-bottom,0px);
+  --sa-left:env(safe-area-inset-left,0px);
+}
+
+/* ----------------------------------------------------- 1. matar el "look web" */
+
+/* Barras de scroll: no existen en una app. El contenido sigue scrolleando
+   igual, sólo deja de dibujarse el riel. */
+*{scrollbar-width:none;-ms-overflow-style:none}
+*::-webkit-scrollbar{width:0;height:0;display:none}
+
+/* El destello gris de Android al tocar, y el menú de "copiar / compartir" que
+   iOS abre al mantener apretado un botón. Los dos delatan el navegador. */
+*{-webkit-tap-highlight-color:transparent}
+button,.btn,.tab-btn,.pf-card,.icon-btn,.close-btn,.top-action-btn,
+.card,.group-card,.fx-card,.team-card,.tv-win,label,.tab-label,.tab-icon,
+.topbar,.modal-head,.modal-actions,nav,[role="tab"],[role="tablist"]{
+  -webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none;
+}
+/* El texto que sí es dato —nombres, resultados, estadísticas— se sigue
+   pudiendo seleccionar y copiar. Sólo el cromo queda bloqueado. */
+input,textarea,[contenteditable],.selectable,
+td,th,.stat-value,.player-name,.match-score{
+  -webkit-user-select:text;user-select:text;
+}
+
+/* Doble toque para hacer zoom: mete 300ms de espera en cada tap y hace que la
+   app se sienta lenta aunque no lo sea. Se saca sólo de lo interactivo, para
+   no pisar los gestos propios del álbum (que declara touch-action: pan-y). */
+button,a,input,select,textarea,label,
+.btn,.tab-btn,.card,.group-card,.fx-card,.team-card,.pf-card,
+.icon-btn,.close-btn,.top-action-btn,.switch,[role="tab"],[role="button"]{
+  touch-action:manipulation;
+}
+
+/* Rebote de la página y "tirar para recargar". En una PWA instalada el
+   pull-to-refresh recarga la app entera y se ve como un cuelgue. */
+html,body{overscroll-behavior-y:none}
+.modal-body,.app-shell,.map-scroller,.alas-schedule,
+[class*="scroller"],[class*="-list"],[class*="-grid"]{
+  overscroll-behavior:contain;
+}
+
+/* iOS hace zoom al enfocar cualquier campo de menos de 16px, y después no
+   vuelve. Es la razón número uno por la que un formulario se siente web.
+   Sólo aplica en pantalla táctil: en el proyector se conserva la escala fina
+   que ya tenía el diseño. */
+@media (pointer:coarse){
+  .field input,.field select,.field textarea,
+  input,select,textarea{
+    font-size:16px;
+  }
+  .field input[type="file"]{font-size:14px}
+}
+
+/* --------------------------------------------- 2. zona del pulgar (48px) -- */
+@media (max-width:860px){
+  .btn,.tab-btn,.icon-btn,.close-btn,.top-action-btn,
+  .pf-card,[role="tab"]{
+    min-height:48px;min-width:48px;
+  }
+  .field input,.field select,.field textarea{min-height:48px;height:48px}
+  .field input[type="file"]{height:auto;min-height:48px}
+
+  /* Los iconitos chicos siguen viéndose chicos, pero el área que responde al
+     dedo se agranda por debajo. Es el truco de las apps nativas: el objetivo
+     táctil no tiene por qué medir lo mismo que el dibujo. */
+  .icon-btn,.close-btn{position:relative}
+  .icon-btn::after,.close-btn::after{
+    content:"";position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:48px;height:48px;
+  }
+}
+
+/* ------------------------------------------------------- 3. safe areas --- */
+
+/* La barra inferior se apoya SOBRE la barra de gestos, no debajo. */
+@media (max-width:860px){
+  #tabBar,.topbar .tab-bar,.topbar-tabs{
+    /* pelea contra el !important que declara esta misma regla más arriba */
+    padding-bottom:calc(8px + var(--sa-bottom)) !important;
+    padding-left:calc(8px + var(--sa-left)) !important;
+    padding-right:calc(8px + var(--sa-right)) !important;
+  }
+  /* En iOS con status-bar-style black-translucent el contenido arranca DEBAJO
+     de la hora y la señal. La barra superior se corre hacia abajo. */
+  .topbar{
+    padding-top:var(--sa-top) !important;
+    height:calc(56px + var(--sa-top)) !important;
+  }
+  body{
+    padding-left:var(--sa-left);
+    padding-right:var(--sa-right);
+  }
+}
+
+/* Utilidades sueltas, por si hace falta puntualmente en algún panel nuevo. */
+.pt-safe{padding-top:var(--sa-top)}
+.pb-safe{padding-bottom:var(--sa-bottom)}
+.px-safe{padding-left:var(--sa-left);padding-right:var(--sa-right)}
+.mt-safe{margin-top:var(--sa-top)}
+.mb-safe{margin-bottom:var(--sa-bottom)}
+.h-pantalla{height:100dvh}
+.min-h-pantalla{min-height:100dvh}
+.scroll-propio{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* ------------------------------------------------- 4. feedback al tocar -- */
+
+/* La tecla se hunde. 150ms, escala apenas perceptible: si se nota la
+   animación, está de más. */
+@media (hover:none){
+  .btn,.tab-btn,.icon-btn,.close-btn,.top-action-btn,
+  .card,.group-card,.fx-card,.team-card,.tv-win,.pf-card{
+    transition:transform var(--t-toque) var(--ease-salida),
+               opacity var(--t-toque) var(--ease-salida);
+  }
+  .btn:active,.tab-btn:active,.icon-btn:active,
+  .close-btn:active,.top-action-btn:active{
+    transform:scale(.94);
+  }
+  /* Las tarjetas son más grandes: la misma escala en una tarjeta se ve
+     exagerada, así que se hunden menos. */
+  .card:active,.group-card:active,.fx-card:active,
+  .team-card:active,.tv-win:active,.pf-card:active{
+    transform:scale(.975);
+    opacity:.92;
+  }
+  /* El hover no existe en un teléfono y deja estados "pegados" después de
+     tocar. Se apaga. */
+  .card:hover,.group-card:hover,.fx-card:hover,.team-card:hover{
+    transform:none;
+  }
+}
+
+/* ------------------------------------------- 5. entrada y salida de vista */
+
+/* Cambio de pestaña: la vista entra aclarándose.
+   Acá NO va transform, y la razón está escrita más arriba en esta misma hoja
+   (el comentario del .topbar, sobre backdrop-filter): un transform en el
+   ancestro lo convierte en bloque contenedor de sus hijos position:fixed, y
+   adentro de las pestañas hay varios —.hero-photo, .mr-hoja, .mr-ev—. Se
+   despegarían de la ventana durante los 240ms de la animación.
+   El desplazamiento de 8px ya lo hace GSAP sobre .app-tab.active .panel, que
+   son hijos y no contienen nada fijo. Acá alcanza con el fundido.
+   opacity crea contexto de apilamiento, pero no bloque contenedor: es seguro. */
+@keyframes vista-entra{
+  from{opacity:0}
+  to{opacity:1}
+}
+.app-tab.active{
+  animation:vista-entra var(--t-vista) var(--ease-nativa) both;
+}
+
+/* ------------------------------------------------------ 6. bottom sheet -- */
+@media (max-width:860px){
+
+  /* El fondo se oscurece y desenfoca por separado del panel: así el panel
+     puede seguir al dedo sin arrastrar el blur, que es lo caro de dibujar. */
+  .modal-backdrop{
+    opacity:0;
+    transition:opacity var(--t-vista) var(--ease-nativa);
+  }
+  .modal-backdrop.open{opacity:1}
+
+  .modal-backdrop.open > .modal{
+    animation:sheet-sube var(--t-vista) var(--ease-nativa) both;
+  }
+  /* El transform vive SÓLO mientras el dedo arrastra. Dejarlo puesto en
+     reposo —aunque valga 0px— convierte al .modal en bloque contenedor de
+     cualquier hijo position:fixed, que es el mismo pozo que documenta el
+     comentario del .topbar. La clase la pone y la saca el JS. */
+  .modal-backdrop > .modal.arrastrando{
+    animation:none;
+    transform:translate3d(0,var(--arrastre,0px),0);
+  }
+  @keyframes sheet-sube{
+    from{transform:translate3d(0,100%,0)}
+    to{transform:translate3d(0,0,0)}
+  }
+  /* Al soltar por debajo del umbral, el panel vuelve a su lugar. */
+  .modal-backdrop > .modal.volviendo{
+    transition:transform var(--t-vista) var(--ease-nativa);
+    animation:none;
+  }
+  /* Al descartar, baja y recién ahí se cierra de verdad. */
+  .modal-backdrop > .modal.bajando{
+    transition:transform 200ms var(--ease-salida);
+    transform:translate3d(0,100%,0);
+    animation:none;
+  }
+  .modal-backdrop.cerrando{opacity:0}
+
+  /* El tirador de arriba deja de ser un adorno: es la zona que agarra el
+     dedo, y tiene que medir lo que mide un dedo. */
+  .modal-head{
+    touch-action:none;
+    cursor:grab;
+  }
+  .modal-head:active{cursor:grabbing}
+}
+
+/* ----------------------------------------------------- 7. app instalada -- */
+
+/* Cuando corre instalada no hay barra de navegador que absorba el gesto de
+   "volver", ni barra de URL que se esconda al scrollear. */
+body.instalada{
+  overscroll-behavior:none;
+}
+body.instalada .h-pantalla,
+body.instalada .min-h-pantalla{height:100dvh}
+
+/* --------------------------------------------------- 8. respeto al freno -- */
+@media (prefers-reduced-motion:reduce){
+  .app-tab.active,
+  .modal-backdrop.open > .modal{animation:none !important}
+  .btn:active,.tab-btn:active,.card:active,
+  .group-card:active,.fx-card:active,.team-card:active,.pf-card:active{
+    transform:none !important;
+  }
+}
+</style>
+
+<script>
+/* ==========================================================================
+   CAPA NATIVA · gestos y navegación
+   --------------------------------------------------------------------------
+   Tres cosas, ninguna reescribe lógica que ya existe:
+     1. marca el <body> cuando la app corre instalada
+     2. arrastrar el sheet hacia abajo para cerrarlo
+     3. el botón "volver" del teléfono cierra el sheet en vez de salir de la app
+   El cierre nunca se hace a mano: siempre se dispara el .close-btn que el
+   modal ya tiene, para que corra la limpieza propia de la app (restaurar el
+   overflow del body, quitar .modal-open, etc.).
+   ========================================================================== */
+(function(){
+  'use strict';
+
+  var esTactil = window.matchMedia('(max-width: 860px)');
+
+  /* ------------------------------------------------ 1. modo instalado --- */
+  var mmStandalone = window.matchMedia('(display-mode: standalone)');
+  function marcarInstalada(){
+    var instalada = mmStandalone.matches
+                 || window.matchMedia('(display-mode: minimal-ui)').matches
+                 || window.navigator.standalone === true;
+    document.body.classList.toggle('instalada', instalada);
+  }
+  marcarInstalada();
+  if (mmStandalone.addEventListener) mmStandalone.addEventListener('change', marcarInstalada);
+
+  /* ------------------------------------------------ 2. arrastre del sheet */
+  var UMBRAL = 90;      // px que hay que bajar para que se cierre
+  var arrastrando = null;
+
+  function pedirCierre(fondo){
+    // La app ya sabe cerrar lo suyo. Se le pide a ella, no se le pisa el
+    // estado: cada modal restaura cosas distintas al cerrarse.
+    var cerrar = fondo.querySelector('.modal-head .close-btn') || fondo.querySelector('.close-btn');
+    if (cerrar) cerrar.click();
+    else fondo.classList.remove('open');
+  }
+
+  function cerrarSheet(panel, fondo){
+    panel.classList.add('bajando');
+    fondo.classList.add('cerrando');
+    var listo = false;
+    function rematar(){
+      if (listo) return; listo = true;
+      panel.classList.remove('bajando', 'arrastrando');
+      panel.style.removeProperty('--arrastre');
+      fondo.classList.remove('cerrando');
+      pedirCierre(fondo);
+    }
+    panel.addEventListener('transitionend', rematar, { once: true });
+    setTimeout(rematar, 260);   // por si la transición no dispara
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if (!esTactil.matches) return;
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var cabecera = t.closest('.modal-head');
+    if (!cabecera) return;
+    if (t.closest('.close-btn')) return;   // el botón de cerrar hace lo suyo
+    var panel = cabecera.closest('.modal');
+    var fondo = cabecera.closest('.modal-backdrop');
+    if (!panel || !fondo || !fondo.classList.contains('open')) return;
+    arrastrando = { panel: panel, fondo: fondo, y0: e.touches[0].clientY, dy: 0 };
+    panel.classList.remove('volviendo');
+    panel.classList.add('arrastrando');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e){
+    if (!arrastrando) return;
+    var dy = e.touches[0].clientY - arrastrando.y0;
+    // Hacia arriba no se estira: se frena con resistencia, como en iOS.
+    if (dy < 0) dy = dy / 6;
+    arrastrando.dy = dy;
+    arrastrando.panel.style.setProperty('--arrastre', dy + 'px');
+    if (dy > 0) arrastrando.fondo.style.opacity = String(Math.max(0.25, 1 - dy / 400));
+  }, { passive: true });
+
+  function soltar(){
+    if (!arrastrando) return;
+    var a = arrastrando; arrastrando = null;
+    a.fondo.style.removeProperty('opacity');
+    if (a.dy > UMBRAL) {
+      cerrarSheet(a.panel, a.fondo);
+    } else {
+      a.panel.classList.add('volviendo');
+      a.panel.style.setProperty('--arrastre', '0px');
+      setTimeout(function(){
+        // recién acá se saca .arrastrando: sacarla antes cortaría el regreso
+        a.panel.classList.remove('volviendo', 'arrastrando');
+        a.panel.style.removeProperty('--arrastre');
+      }, 260);
+    }
+  }
+  document.addEventListener('touchend', soltar, { passive: true });
+  document.addEventListener('touchcancel', soltar, { passive: true });
+
+  /* --------------------------------- 3. el botón "volver" cierra el sheet */
+  /* Sin esto, en una PWA instalada el gesto de volver saca de la app entera
+     con un modal abierto, que es la queja clásica de las webs "appificadas". */
+  var enPila = 0;
+  var observador = new MutationObserver(function(muts){
+    for (var i = 0; i < muts.length; i++){
+      var el = muts[i].target;
+      if (!el.classList || !el.classList.contains('modal-backdrop')) continue;
+      if (el.classList.contains('open') && !el.dataset.enPila){
+        el.dataset.enPila = '1';
+        enPila++;
+        history.pushState({ sheet: enPila }, '');
+      } else if (!el.classList.contains('open') && el.dataset.enPila){
+        delete el.dataset.enPila;
+        if (enPila > 0) enPila--;
+      }
+    }
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(function(el){
+    observador.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+
+  window.addEventListener('popstate', function(){
+    var abierto = document.querySelector('.modal-backdrop.open');
+    if (abierto) pedirCierre(abierto);
+  });
+})();
+</script>
+
 </body>
 </html>
