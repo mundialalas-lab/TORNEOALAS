@@ -730,6 +730,27 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 /* clasificación / eliminación: se comunica con la línea del borde izquierdo */
 .standings tbody tr.is-qualified td:first-child{box-shadow:inset 3px 0 0 var(--clasifica)}
 .standings tbody tr.is-out td:first-child{box-shadow:inset 3px 0 0 var(--elimina)}
+/* La diferencia de gol ya se usaba para ordenar la tabla —es el primer
+   desempate despues de los puntos— pero no se mostraba, asi que dos equipos
+   con los mismos puntos aparecian en un orden que no se podia explicar
+   mirando la pantalla. Ahora se ve por que uno esta arriba del otro.
+
+   Va mas tenue que los puntos a proposito: es informacion de apoyo, y la
+   columna que manda sigue siendo PTS. */
+.standings .dg-cell{color:var(--text-mute);font-weight:600}
+.standings .dg-cell.es-positiva{color:var(--clasifica)}
+.standings .dg-cell.es-negativa{color:var(--elimina)}
+.grupos-shell .standings .dg-cell{color:var(--ll-dim)}
+.grupos-shell .standings .dg-cell.es-positiva{color:var(--ll-win,#3ddc8b)}
+.grupos-shell .standings .dg-cell.es-negativa{color:#e8705f}
+
+/* Con una columna mas, los 20px de padding lateral de cada celda dejan de
+   entrar en un telefono. Se achica solo donde hace falta. */
+@media (max-width:560px){
+  .grupos-shell .standings th{padding:11px 10px}
+  .grupos-shell .standings td{padding:13px 10px}
+}
+
 .standings tbody tr.is-qualified .pts-cell{color:var(--clasifica)}
 .standings tbody tr.is-out{opacity:.6}
 
@@ -9281,9 +9302,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         if(slot.type==="bye")return{id:null,name:"BYE",isBye:true};
         if(slot.type==="team")return teamSlot(slot.teamId);
         if(slot.type==="groupPos"){
-          const ms = groupMatches(slot.groupId);
-          const hasPlayedAny = ms.some(matchScoreOk);
-          if(!hasPlayedAny){
+          /* El puesto se llena cuando el grupo TERMINO, no cuando empezo.
+             Antes alcanzaba con que se hubiera jugado un solo partido: se
+             tomaba la tabla provisoria y se ponia ese equipo en el cuadro.
+             Con una fecha jugada de tres, el que va primero puede terminar
+             ultimo, asi que el cuadro mostraba clasificados que no habian
+             clasificado — y la seccion se llama "Las llaves confirmadas".
+
+             Mientras el grupo sigue abierto se muestra el puesto ("1º Grupo
+             A"), que es la verdad: todavia no se sabe quien va a ser. */
+          if(!groupComplete(slot.groupId)){
             return emptySlot(`${slot.pos+1}º ${state.groups[slot.groupId]?.name||slot.groupId}`);
           }
           const standings=getGroupStandings(slot.groupId);
@@ -10036,7 +10064,12 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             const t=state.teams[r.id];
             // La clasificación se comunica con color, no con una columna de texto.
             const rowClass=!groupComplete(g)?"":pos<qCut?"is-qualified":"is-out";
-            return `<tr class="${rowClass}" data-tid="${r.id}"><td><span class="pos">${pos+1}</span></td><td class="team-cell">${teamCrest(t,"crest-bracket")}<span class="team-cell-name">${esc(t?.name||"?")}</span></td><td data-v="${r.pj}">${r.pj}</td><td class="pts-cell" data-v="${r.pts}">${r.pts}</td></tr>`;
+            /* La diferencia se escribe con el signo puesto: "+3" y "-2" se
+               leen de un vistazo, "3" y "-2" obligan a mirar dos veces cual
+               es cual. El cero va sin signo. */
+            const dg = r.dg > 0 ? "+" + r.dg : String(r.dg);
+            const dgCls = r.dg > 0 ? " es-positiva" : r.dg < 0 ? " es-negativa" : "";
+            return `<tr class="${rowClass}" data-tid="${r.id}"><td><span class="pos">${pos+1}</span></td><td class="team-cell">${teamCrest(t,"crest-bracket")}<span class="team-cell-name">${esc(t?.name||"?")}</span></td><td data-v="${r.pj}">${r.pj}</td><td class="dg-cell${dgCls}" data-v="${r.dg}">${dg}</td><td class="pts-cell" data-v="${r.pts}">${r.pts}</td></tr>`;
           }).join("");
           const ms=groupMatches(g);
           const matches=ms.map(groupMatchRow).join("");
@@ -10046,7 +10079,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const safeName = String(groupDef?.name || g).toUpperCase();
           const finalName = safeName.startsWith("GRUPO") ? safeName : "GRUPO " + safeName;
           const isOpen = openGroups.has(`node-${g}`) ? "open" : "";
-          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th style="width:40px">#</th><th>Equipo</th><th style="width:38px">PJ</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches" ${isOpen}><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
+          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th style="width:40px">#</th><th>Equipo</th><th style="width:38px">PJ</th><th style="width:46px">DG</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches" ${isOpen}><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
         }).join(""):`<div class="empty-state">Configurá al menos un grupo desde "Configurar".</div>`;
         document.querySelectorAll("#groupsContainer .group-card").forEach((el,i)=>{
           if(!revealedOnce.has(el.id)){revealedOnce.add(el.id);el.classList.add("reveal");el.style.transitionDelay=(i*70)+"ms"}
@@ -10193,19 +10226,20 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const board=$("#llaveBoard");
         if(!board)return null;
 
-        /* La llave no se muestra hasta que se jugaron TODOS los partidos de
-           grupos. Antes aparecia desde el arranque con el cartel de "se
-           dibuja sola cuando termine la fase de grupos", que ocupa media
-           pantalla para decir que todavia no hay nada.
+        /* La llave aparece con el PRIMER grupo cerrado, y se va completando
+           sola a medida que cierran los demas. Con ninguno cerrado no hay un
+           solo clasificado que mostrar, asi que la seccion entera se esconde
+           —no solo el tablero: el titulo "Las llaves confirmadas" flotando
+           sobre un hueco vacio era justamente lo que hacia ruido.
 
-           Se esconde la seccion entera, no solo el tablero: el titulo "Las
-           llaves confirmadas" sobre un hueco vacio es justamente lo que
-           hacia ruido. */
+           Con al menos uno cerrado ya hay equipos confirmados, y los puestos
+           que faltan se muestran como "1º Grupo B" hasta que ese grupo
+           termine. */
         const shell = $("#llaveShell");
         const gids = groupIds();
-        const gruposListos = gids.length > 0 && gids.every(groupComplete);
-        if (shell) shell.hidden = !gruposListos;
-        if (!gruposListos) return null;
+        const hayConfirmados = gids.some(groupComplete);
+        if (shell) shell.hidden = !hayConfirmados;
+        if (!hayConfirmados) return null;
         const ko=Object.values(state.matches).filter(m=>m.phase==="knockout"&&!m.isThirdPlace);
         if(!ko.length){
           board.innerHTML=`<div class="empty-state">La llave se dibuja sola cuando termine la fase de grupos.</div>`;
