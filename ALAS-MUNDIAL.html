@@ -17093,6 +17093,50 @@ body.instalada .min-h-pantalla{height:100dvh}
     transform:none !important;
   }
 }
+
+/* ------------------------------- 7. con un sheet abierto, el fondo quieto */
+
+/* position:fixed, y no overflow:hidden. En iOS el overflow:hidden sobre el
+   <body> NO frena el scroll táctil —es la queja clásica— y la página de
+   atrás se sigue moviendo debajo del sheet. Fijar el body es lo único que
+   la detiene de verdad; el JS guarda la posición antes y la restaura al
+   cerrar, así que no se pierde el lugar donde estabas.
+
+   Al contrario que transform o filter, position:fixed NO convierte al body
+   en bloque contenedor de sus hijos position:fixed. El dock, la barra de
+   arriba y los sheets siguen anclados a la ventana. Es el mismo pozo que
+   documenta el comentario del .topbar más arriba, y por eso acá se evita. */
+body.modal-open{
+  position:fixed;
+  left:0;right:0;
+  width:100%;
+  overflow:hidden;
+}
+
+/* El dock no puede quedar flotando por encima de un sheet: es navegación de
+   la pantalla de atrás, y mientras el sheet está abierto esa pantalla no se
+   puede tocar.
+
+   Esta regla ya existía —"REGLA DEFINITIVA: OCULTAR DOCK"— pero está escrita
+   adentro de ALBUM_DOC, el template del álbum embebido. O sea que se inyecta
+   en el iframe del álbum, que no tiene dock, y nunca aplicó a la app. Acá
+   queda donde corresponde.
+
+   Se apaga con visibility y opacity en vez de display:none para que la
+   salida se pueda animar; display no transiciona. Y lleva !important porque
+   la regla móvil del dock también lo lleva: entre dos !important gana la
+   más específica, y `body.modal-open #tabBar` (1,1,1) le gana a `#tabBar`. */
+body.modal-open #tabBar,
+body.modal-open .topbar .tab-bar,
+body.modal-open .topbar-tabs{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  transform:translate3d(0,100%,0) !important;
+  transition:opacity var(--t-toque) var(--ease-salida),
+             transform var(--t-toque) var(--ease-salida),
+             visibility var(--t-toque) var(--ease-salida) !important;
+}
 </style>
 
 <script>
@@ -17220,6 +17264,51 @@ body.instalada .min-h-pantalla{height:100dvh}
     var abierto = document.querySelector('.modal-backdrop.open');
     if (abierto) pedirCierre(abierto);
   });
+
+  /* ------------------------------- 4. el fondo no se mueve con el sheet */
+  /* Cada modal se bloqueaba el scroll a mano, en su propio par de
+     abrir/cerrar. Tres se lo olvidaron, y no son tres cualesquiera: la hoja
+     de jugadores y la de eventos del registro de partido —que no son
+     .modal-backdrop sino .mr-hoja y .mr-ev, así que ningún selector genérico
+     las alcanzaba— y el modal de la clave del admin. Justo las que más se
+     tocan al costado de la cancha.
+
+     En vez de agregar el bloqueo a mano en esos tres (y confiar en que el
+     próximo modal se acuerde), se centraliza: un observador cuenta si hay
+     algún sheet abierto y aplica el bloqueo una sola vez, desde un solo
+     lugar. Es idempotente, así que no pelea con el código que cada modal ya
+     tiene, y cubre de arranque a cualquier modal que se agregue después. */
+  var ABIERTOS = '.modal-backdrop.open, .mr-hoja.open, .mr-ev.open';
+  var scrollGuardado = 0;
+  var bloqueado = false;
+
+  function revisarBloqueo(){
+    var hay = document.querySelector(ABIERTOS) !== null;
+    if (hay === bloqueado) return;      // nada que hacer: evita reentrar
+    bloqueado = hay;
+
+    if (hay) {
+      scrollGuardado = window.pageYOffset || document.documentElement.scrollTop || 0;
+      document.body.style.top = (-scrollGuardado) + 'px';
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      /* El <html> de esta hoja declara scroll-behavior:smooth. Sin apagarlo
+         acá, volver a la posición guardada se vería como un viaje animado
+         por toda la página en vez de un regreso instantáneo. */
+      var antes = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, scrollGuardado);
+      document.documentElement.style.scrollBehavior = antes;
+    }
+  }
+
+  var vigia = new MutationObserver(revisarBloqueo);
+  document.querySelectorAll('.modal-backdrop, .mr-hoja, .mr-ev').forEach(function(el){
+    vigia.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+  revisarBloqueo();
 })();
 </script>
 
