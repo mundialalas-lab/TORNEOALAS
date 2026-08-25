@@ -5575,6 +5575,49 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
      booting apaga las transiciones hasta el primer frame, para que ninguna
      corrección inicial se vea como animación. -->
 <body class="presentation-mode booting tab-torneo">
+
+<script>
+/* ==========================================================================
+   SESIÓN QUE SOBREVIVE A LA RECARGA
+   --------------------------------------------------------------------------
+   El problema que arregla: al refrescar (o al tirar para recargar en el
+   teléfono) la app volvía a la intro y pedía el rol de nuevo, aunque la
+   sesión siguiera viva.
+
+   La causa era una carrera. La intro decidía "¿ya tiene rol?" leyendo
+   localStorage en el acto, pero el rol del capitán y del admin no vive ahí:
+   vive en la sesión de Supabase, que se restaura por RED y tarda dos viajes
+   de ida y vuelta. Cuando la intro preguntaba, todavía no había llegado la
+   respuesta, así que contestaba "no" y mandaba a "¿Quién sos?".
+
+   Se resuelve con dos cosas, y este objeto es el dueño de las dos:
+     · una PROMESA que avisa cuándo terminó de restaurarse la sesión, para
+       que nadie decida antes de tiempo;
+     · una MARCA en localStorage que recuerda que este dispositivo ya eligió
+       rol, para saltear la intro entera en las recargas.
+
+   Va acá arriba, en su propio <script>, porque lo consultan tres bloques
+   distintos y todos corren después.
+   ========================================================================== */
+window.ALAS_SESION = (function(){
+  var MARCA = "alas-sesion-abierta";
+  var soltar, resuelta = false;
+  var lista = new Promise(function(r){ soltar = r; });
+  function marcarLista(){ if(resuelta) return; resuelta = true; soltar(); }
+  /* Red de seguridad. Si Supabase no contesta —sin señal al costado de la
+     cancha, que es exactamente donde se usa esto— a los 2,5 s se sigue con
+     lo que haya localmente. Sin este plazo, un servidor caído dejaría la app
+     esperando en la intro para siempre. */
+  setTimeout(marcarLista, 2500);
+  return {
+    lista: lista,
+    marcarLista: marcarLista,
+    abierta: function(){ try{ return localStorage.getItem(MARCA)==="1"; }catch(e){ return false; } },
+    abrir:   function(){ try{ localStorage.setItem(MARCA,"1"); }catch(e){} },
+    cerrar:  function(){ try{ localStorage.removeItem(MARCA); }catch(e){} }
+  };
+})();
+</script>
 <div class="global-bg" style="background-image:url('PELOTA.jpg');background-position:center 86%"></div>
 <div class="global-veil"></div>
 
@@ -12397,6 +12440,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       async function cerrarSesionNube(){
         perfilNube=null;
+        // Salir es lo único que borra la marca: la próxima carga vuelve a
+        // mostrar la intro y a preguntar el rol, que es lo correcto.
+        if(window.ALAS_SESION)window.ALAS_SESION.cerrar();
         if(!window.supabase) return;
         try{ await supabase.auth.signOut(); }catch(e){}
       }
@@ -12459,6 +12505,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         document.body.classList.toggle("rol-capitan",r===ROL.CAPITAN);
         document.body.classList.toggle("rol-admin",r===ROL.ADMIN);
         document.body.classList.toggle("sin-sesion",!r);
+        /* Este dispositivo ya eligió rol: la próxima recarga entra derecho a
+           la app en vez de mirar la intro otra vez. Sólo se ENCIENDE acá,
+           nunca se apaga: esta función también corre en el arranque, antes de
+           que Supabase conteste, y ahí r todavía es null. Apagarla en ese
+           momento borraría la marca justo cuando hace falta. La marca se
+           apaga sólo al cerrar sesión de verdad. */
+        if(r&&window.ALAS_SESION)window.ALAS_SESION.abrir();
       }
       function albumOf(uid){
         state.albums=state.albums||{};
@@ -15610,13 +15663,25 @@ function loop(){
       /* Arranque: si ya hay sesión en este dispositivo se entra directo; si no,
          se pide el perfil apenas termina la intro. El listener va con {once}
          porque la intro sólo se muestra una vez por carga. */
+      /* Se llega acá con la sesión ya restaurada y sin rol: o nunca hubo, o
+         el token de Supabase venció. En los dos casos la marca que saltea la
+         intro quedó mintiendo, así que se borra: la próxima carga vuelve a
+         ser un arranque limpio, con intro y con "¿Quién sos?". */
+      function sinRol(){
+        if(window.ALAS_SESION)window.ALAS_SESION.cerrar();
+        mostrarPerfiles();
+      }
       aplicarRolAlBody();
       window.addEventListener("pedirPerfil",()=>{
-        if(!rolActual())mostrarPerfiles();
+        /* La espera es el arreglo. Antes esto preguntaba rolActual() en el
+           acto y, en una recarga, la sesión de Supabase todavía estaba
+           viajando: contestaba null y tapaba la app con "¿Quién sos?" un
+           segundo después de que el rol ya había vuelto. */
+        window.ALAS_SESION.lista.then(()=>{ if(!rolActual())sinRol(); });
       },{once:true});
-      // si no hay intro (ya se saltó), igual hay que preguntar
-      if(!document.getElementById("splash")&&!rolActual())
-        setTimeout(mostrarPerfiles,300);
+      // si no hay intro (ya se saltó, o se salteó por recarga), igual hay que preguntar
+      if(!document.getElementById("splash"))
+        window.ALAS_SESION.lista.then(()=>{ if(!rolActual())setTimeout(sinRol,300); });
 
       $("#pfVolver")?.addEventListener("click",()=>{
         $("#pfPaso").hidden=true;
@@ -15872,7 +15937,12 @@ function loop(){
          admin como para el capitán: si la sesión sigue viva, vuelve con su
          rol y su equipo sin tener que tipear nada. Y si no hay sesión, no
          hay rol — que es justamente lo que faltaba antes. */
+      /* El try/finally no es decorativo: este bloque tiene cinco `return`
+         tempranos (sin supabase, sin sesión, sin perfil...) y CADA UNO tiene
+         que avisar que la restauración terminó. Si uno solo se olvidara, la
+         intro se quedaría esperando los 2,5 s del plazo de seguridad. */
       syncFromSupabase().then(async () => {
+       try{
         if(!window.supabase) return;
         let session=null;
         try{
@@ -15903,7 +15973,10 @@ function loop(){
         }
         aplicarRolAlBody();
         renderAll();
-      });
+       } finally {
+        window.ALAS_SESION.marcarLista();
+       }
+      }).catch(()=>window.ALAS_SESION.marcarLista());
 
       /* ====================================================================
          CAPA "AFICHE OFICIAL" · comportamiento
@@ -16122,6 +16195,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = $("#splash");
     if (!el) return;
 
+    /* RECARGA CON SESIÓN ABIERTA: la intro se saltea entera.
+       Mirar el video de bienvenida una vez es una entrada; mirarlo cada vez
+       que se refresca la pantalla es un peaje. Si este dispositivo ya eligió
+       rol, la app aparece directamente.
+
+       Los dos eventos se disparan en DOMContentLoaded y no acá mismo a
+       propósito: este <script> corre en el medio del documento, y varios de
+       los que escuchan "splashDone" se registran en <script>s posteriores
+       que todavía no se parsearon. Disparar ahora sería hablarle a una sala
+       vacía. */
+    if (window.ALAS_SESION && window.ALAS_SESION.abierta()) {
+      const v = $("#splashVideo");
+      if (v) { try { v.pause(); } catch(e){} v.remove(); }
+      el.remove();
+      const soltar = () => {
+        window.dispatchEvent(new Event("splashDone"));
+        window.dispatchEvent(new Event("pedirPerfil"));
+      };
+      if (document.readyState === "loading")
+        document.addEventListener("DOMContentLoaded", soltar, { once:true });
+      else soltar();
+      return;
+    }
+
     const video = $("#splashVideo");
     const veil  = $("#splashVeil");
     const logo  = $("#splashLogo");
@@ -16261,7 +16358,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (dismissed) return;
       dismissed = true;
       const content = el.querySelector(".splash-content");
-      const hasRol = Boolean(localStorage.getItem("alas-usuario-actual") || document.body.classList.contains("admin-mode"));
+      /* Acá estaba el bug de raíz. Este Boolean se evaluaba en el instante en
+         que terminaba la intro, y sólo miraba localStorage y la clase del
+         body — dos lugares donde el capitán y el admin NO tienen su rol al
+         recargar. El rol de ellos venía por red y llegaba después, así que la
+         respuesta era siempre "no" y la app tiraba a "¿Quién sos?" con la
+         sesión perfectamente viva. Ahora se espera a que la sesión conteste. */
+      window.ALAS_SESION.lista.then(() => {
+      const hasRol = Boolean(
+        window.ALAS_SESION.abierta() ||
+        localStorage.getItem("alas-usuario-actual") ||
+        document.body.classList.contains("admin-mode")
+      );
 
       if (!hasRol) {
         // Transición directa y cinematográfica a Selección de Rol (SIN PARPADEO)
@@ -16290,6 +16398,7 @@ document.addEventListener("DOMContentLoaded", () => {
           revealApp();
         }
       }
+      });
     }
 
     /* Antes acá se llevaba la pista del video hacia adentro de la app con un
