@@ -1804,7 +1804,11 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .panini-crop-stage {
   position: relative;
   width: min(260px, 72vw);
-  aspect-ratio: 3 / 4.15;
+  /* 3/4, la misma de .pcard. Antes era 3/4.15 y ya ahi empezaba a mentir. */
+  aspect-ratio: 3 / 4;
+  /* cqw, igual que la figurita real, para que el 26 del fondo ocupe la
+     misma proporcion en la vista previa que en la tarjeta. */
+  container-type: inline-size;
   margin: 10px auto 14px;
   border-radius: 18px;
   overflow: hidden;
@@ -1824,22 +1828,48 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
               repeating-linear-gradient(115deg, transparent 0 16px, rgba(255, 255, 255, 0.04) 16px 17px);
   pointer-events: none;
 }
+/* La figurita real no tiene banda de color arriba: tiene el kit del equipo
+   como FONDO de toda la carta, con el "26" gigante encima. Esta capa deja de
+   ser una franja del 28% y pasa a ser ese fondo. El JS le sigue poniendo los
+   colores del equipo. */
 .panini-crop-top-strip {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 28%;
+  inset: 0;
   background: linear-gradient(180deg, #2f7ff0, #0f3f96);
-  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+/* El "26" detras de todo, con la misma medida en cqw que .pcard-26 usa en la
+   figurita de verdad. */
+.panini-crop-stage::after {
+  content: "26";
+  position: absolute;
+  top: -6%;
+  left: -4%;
+  font-family: 'Anton', 'Saira Condensed', sans-serif;
+  font-size: 56cqw;
+  line-height: .74;
+  letter-spacing: -.06em;
+  color: rgba(255, 255, 255, .30);
+  z-index: 0;
   pointer-events: none;
 }
+/* Aca esta el arreglo. El lienzo NO ocupa la tarjeta entera: ocupa el mismo
+   rectangulo donde la figurita real deja la foto.
+
+   .pcard-photo es una caja de top:3% a bottom:26% con object-fit:contain, y
+   una imagen de 460x636 ahi adentro entra por altura y queda en el 68.48%
+   del ancho, centrada. Esos son los numeros de abajo, no estan elegidos a
+   ojo. Poner inset:0 —que es lo que habia— mostraba la foto a sangre y hacia
+   creer que el encuadre llegaba a los bordes. */
 .panini-crop-canvas {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 3%;
+  left: 15.76%;
+  width: 68.48%;
+  height: 71%;
   display: block;
+  z-index: 1;
 }
 .panini-crop-card-frame {
   position: absolute;
@@ -1849,10 +1879,12 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
+/* .pcard-ovr vive arriba a la DERECHA, no arriba a la izquierda. */
 .panini-crop-badge-top {
   position: absolute;
-  top: 8px;
-  left: 10px;
+  top: 5%;
+  right: 5.5%;
+  z-index: 3;
   font-family: 'Anton', sans-serif;
   font-size: 20px;
   color: #fff;
@@ -1860,10 +1892,13 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   text-shadow: 0 2px 6px rgba(0,0,0,0.6);
   pointer-events: none;
 }
+/* La posicion del jugador no existe arriba en la figurita real: se dice en
+   la barra de abajo. Se corre a la izquierda para no pisar el puntaje. */
 .panini-crop-badge-pos {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: 5%;
+  left: 5.5%;
+  z-index: 3;
   font-family: 'Saira Condensed', sans-serif;
   font-weight: 800;
   font-size: 11px;
@@ -1874,15 +1909,18 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   color: #fff;
   pointer-events: none;
 }
+/* Copia de .pcard-info: mismo degradado, mismo padding, misma posicion. Asi
+   el nombre tapa exactamente lo que va a tapar en la figurita. */
 .panini-crop-footer-banner {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 10px;
-  background: linear-gradient(180deg, transparent, rgba(4, 8, 15, 0.96) 40%);
+  padding: 32px 8px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.65) 60%, transparent 100%);
   text-align: center;
   pointer-events: none;
+  z-index: 4;
 }
 .panini-crop-pname {
   font-family: 'Saira Condensed', sans-serif;
@@ -11438,14 +11476,55 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         img.onload = () => {
           cropperState.origImg = img;
           
-          // Calculate initial base scale to fit stage nicely
+          /* ENCUADRE POR DEFECTO
+             --------------------------------------------------------------
+             El calculo anterior era:
+
+                 max(460/ancho, (636 * 0.75)/alto) * 0.9
+
+             Dos factores lo achicaban a proposito —medir el alto contra el
+             75% de la figurita, y despues un 0.9 encima— y entre los dos
+             garantizaban que la foto NO llegara a cubrirla. Medido sobre las
+             tres formas de foto que llegan en la practica:
+
+                 foto vertical 3:4  ->  118 px vacios arriba (19%)
+                 foto horizontal    ->  180 px vacios arriba (28%)
+                 foto cuadrada      ->  180 px vacios arriba (28%)
+
+             O sea que entre un quinto y un cuarto de cada figurita nacia en
+             blanco, y ademas la foto no tocaba los costados. El posY de
+             +12% empeoraba lo de arriba: empujaba la foto hacia abajo, que
+             es justo la direccion equivocada.
+
+             Ahora se usa cobertura real —el MAYOR de los dos cocientes, sin
+             factores de encogimiento— asi la foto llena el lienzo entero sea
+             cual sea su forma. El 1.06 extra deja un margen para reencuadrar
+             arrastrando sin descubrir el borde.
+
+             El lienzo sigue siendo 460x636 a proposito: es la medida con la
+             que estan horneadas las figuritas que ya existen, y cambiarla
+             haria que las nuevas salgan de otro tamaño al lado de las
+             viejas. Lo que se corrigio es DONDE se muestra ese lienzo. */
           const stageW = 460;
           const stageH = 636;
-          const scaleFit = Math.max(stageW / img.width, (stageH * 0.75) / img.height) * 0.9;
-          cropperState.baseScale = scaleFit;
+          const cubrir = Math.max(stageW / img.width, stageH / img.height);
+          cropperState.baseScale = cubrir * 1.06;
           cropperState.scale = 1;
           cropperState.posX = 0;
-          cropperState.posY = (stageH * 0.12);
+
+          /* Sesgo hacia arriba, no centrado. En una figurita la cabeza va en
+             el tercio superior; centrar deja la cara en el medio y el pecho
+             comiendose el espacio del nombre.
+
+             posY positivo corre la imagen hacia abajo, y eso hace que la
+             ventana muestre una franja MAS ALTA de la foto: es lo que sube
+             la cabeza dentro de la figurita. El maximo util es sobra/2 —ahi
+             el borde de arriba de la foto queda al ras del de la figurita—
+             asi que 0.35 de la sobra es el 70% de ese recorrido: arriba,
+             pero sin pegarse al borde. */
+          const altoDibujado = img.height * cropperState.baseScale;
+          const sobra = Math.max(0, altoDibujado - stageH);
+          cropperState.posY = sobra * 0.35;
 
           renderCropperCanvas();
           $("#paniniCropperModal").classList.add("open");
