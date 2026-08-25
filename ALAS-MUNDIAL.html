@@ -3882,6 +3882,29 @@ body.album-fs .footer-strip{display:none}
 }
 .mr-buscar-x:hover{background:rgba(255,255,255,.22)}
 
+/* Interruptor de sonido de la barra. Dos iconos en el mismo boton y el CSS
+   elige cual se ve: cambiar el path por JS obliga a re-dibujar el svg en cada
+   toque y se pierde la transicion. */
+.btn-sonido .ico-mute{display:none}
+.btn-sonido.muted .ico-son{display:none}
+.btn-sonido.muted .ico-mute{display:block}
+.btn-sonido.is-active{color:#7ee2b8;border-color:rgba(126,226,184,.42)}
+.btn-sonido.muted{color:#8fa0b8}
+.btn-sonido svg{transition:transform .2s var(--ease-out)}
+.btn-sonido:active svg{transform:scale(.86)}
+
+/* Autoajustar es la accion principal del recortador: es lo que resuelve el
+   encuadre de una. Va marcada para que se vea antes que "Centrar". */
+.btn-crop-destacado{
+  background:rgba(90,162,255,.16);
+  border-color:rgba(90,162,255,.45);
+  color:#cfe3ff;
+}
+.btn-crop-destacado:hover{
+  background:rgba(90,162,255,.26);
+  border-color:rgba(90,162,255,.75);
+}
+
 /* --------------------------------------------------------- revelaciones -- */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
 .reveal.reveal-in{opacity:1;transform:none}
@@ -7672,7 +7695,22 @@ body{background:transparent !important}
       <div class="topbar-actions" aria-label="Acciones principales">
         <!-- La fase del torneo ya la anuncia el hero arriba del todo; repetirla
              acá sólo cargaba la barra. renderHeader() la sigue calculando. -->
-        <!-- El botón de Sonido salió: el sonido queda activo por defecto. -->
+        <!-- Sonido del Mundial. Manda sobre la intro y sobre los efectos de la
+             app: es un solo interruptor porque para quien lo usa es una sola
+             cosa —"que suene" o "que no suene"—, y tener dos era pedirle que
+             adivine cuál apaga qué. -->
+        <button class="top-action-btn btn-sonido" id="btnSound" type="button"
+                aria-pressed="true" title="Sonido del Mundial">
+          <svg class="ico-son" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6.5 8.5H3v7h3.5L11 19z"/>
+            <path d="M15.6 8.4a5 5 0 0 1 0 7.2"/>
+            <path d="M18.4 5.6a9 9 0 0 1 0 12.8"/>
+          </svg>
+          <svg class="ico-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6.5 8.5H3v7h3.5L11 19z"/>
+            <path d="M16.5 9.5 21 14M21 9.5 16.5 14"/>
+          </svg>
+        </button>
         <button class="ibtn admin-only" id="btnConfigure" type="button" title="Configurar torneo">Configurar</button>
         
         <button class="top-action-btn" id="btnFullscreen" title="Pantalla Completa">
@@ -8326,20 +8364,12 @@ body{background:transparent !important}
           <input type="range" id="paniniZoomSlider" class="panini-zoom-slider" min="0.4" max="3" step="0.02" value="1">
           <span id="paniniZoomValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">100%</span>
         </div>
-        <!-- Ninguna detección automática acierta con todas las fotos: contra una
-             pared parecida al color de la piel hay que aflojar, y contra un fondo
-             con sombras hay que apretar. Antes eso no se podía tocar. -->
-        <div class="panini-zoom-row" id="paniniRecorteRow">
-          <span>🪄 Recorte</span>
-          <input type="range" id="paniniBgSlider" class="panini-zoom-slider" min="0" max="100" step="1" value="50">
-          <span id="paniniBgValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">50</span>
-        </div>
-        <div class="panini-crop-guide-hint" id="paniniBgHint" style="margin-top:-2px">
-          Menos = conserva más al jugador · Más = saca más fondo
-        </div>
         <div class="panini-tools-row">
-          <button type="button" class="btn-crop-tool active" id="btnToggleCropBg">
-            <span>🪄</span> <span id="lblToggleCropBg">Sin fondo (Auto)</span>
+          <!-- Autoajustar busca dónde está el jugador dentro de la foto y lo
+               encuadra: la cabeza arriba, los hombros llenando el ancho. Es lo
+               que uno haría a mano arrastrando, hecho de una. -->
+          <button type="button" class="btn-crop-tool btn-crop-destacado" id="btnAutoAjustar">
+            <span>🎯</span> <span>Autoajustar</span>
           </button>
           <button type="button" class="btn-crop-tool" id="btnResetCropPos">
             <span>🔄</span> <span>Centrar</span>
@@ -10921,38 +10951,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          SMART BACKGROUND REMOVAL ENGINE (CANVAS PIXEL PROCESSING)
          ========================================================================== */
       /* ==================================================================
-         RECORTE DE FONDO PARA LA FIGURITA
+         DONDE ESTA EL JUGADOR DENTRO DE LA FOTO
 
-         Por qué se reescribió. La versión anterior fallaba en cuatro
-         puntos, y los cuatro se veían juntos en la misma foto:
+         Esto era un recortador de fondo: dejaba la figura sobre transparente.
+         Se saco, porque sobre fotos cualquiera —sacadas con el telefono, con
+         la pared del galpon atras— acertaba a veces y a veces dejaba
+         manchones o se comia medio torso, y eso no se puede publicar.
 
-         · Modelaba el fondo con UN color: el promedio de 9 puntos. Un
-           fondo con degradado, o una pared con dos tonos de luz, rompe
-           ese promedio y quedan manchones sin sacar.
-         · Medía distancia en RGB plano, que no se parece a cómo vemos.
-           Una sombra sobre la MISMA pared da una distancia enorme.
-         · El alfa era binario, con un feather de un píxel: el borde
-           quedaba dentado.
-         · Y el peor, porque es el que más se nota: los píxeles del borde
-           conservaban color del fondo mezclado. Ese es el halo de color
-           alrededor de la cara y los hombros.
+         Pero la parte que SI funcionaba bien era darse cuenta de que parte de
+         la imagen es pared y que parte es persona. Eso es justo lo que hace
+         falta para encuadrar solo: sabiendo donde empieza la cabeza y donde
+         terminan los hombros, la foto se acomoda sola en la figurita.
 
-         Cómo funciona ahora:
-           1. modela el fondo con hasta 6 colores tomados de todo el marco
-           2. descarta los que son del jugador y no del fondo
-           3. mide con distancia perceptual en vez de RGB plano
-           4. saca sólo el fondo conectado al borde
-           5. en el contorno MIDE la mezcla, proyectando el color sobre la
-              recta fondo→jugador, en vez de decidirla con un umbral
-           6. despeja el color real del jugador, que es lo que borra el halo
-
-         Medido contra la versión anterior sobre fondos sintéticos con
-         bordes realistas, la tinción del contorno baja de 54 a 14 en un
-         fondo plano y de 54 a 22 en uno con degradado; con un fondo de dos
-         tonos, la anterior no sacaba absolutamente nada.
-
-         `sensibilidad` va de 0 a 100: más alto saca más fondo, a costa de
-         empezar a comerse al jugador. 50 es el punto de partida.
+         Asi que el motor queda, pero ahora devuelve un rectangulo en vez de
+         borrar pixeles. Si se equivoca, lo peor que pasa es un encuadre
+         mejorable que se corrige arrastrando — no una figurita rota.
          ================================================================== */
 
       /* Distancia "redmean": aproxima cómo percibimos la diferencia entre
@@ -10964,159 +10977,82 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         return Math.sqrt(((512+rm)*dr*dr)/256 + 4*dg*dg + ((767-rm)*db*db)/256)/3;
       }
 
-      function removeCanvasBackground(canvas, sensibilidad = 50) {
-        try {
+      /* Devuelve {x0,y0,x1,y1} con el recuadro que ocupa el jugador, o null
+         si no se puede decidir (una foto que es toda fondo, o toda persona). */
+      function recuadroDelJugador(canvas){
+        try{
           const ctx = canvas.getContext("2d", { willReadFrequently: true });
           const W = canvas.width, H = canvas.height;
-          if (!W || !H) return canvas;
-          const imgData = ctx.getImageData(0, 0, W, H);
-          const d = imgData.data;
+          if (!W || !H) return null;
+          const d = ctx.getImageData(0, 0, W, H).data;
           const N = W * H;
 
-          const sens = Math.max(0, Math.min(100, Number(sensibilidad) || 0));
-
-          // ---- 1. muestrear el marco -----------------------------------
-          /* Se recorre un anillo de varios píxeles de ancho, no cuatro
-             esquinas: si el jugador toca una esquina, cuatro muestras
-             alcanzan para envenenar todo el modelo del fondo. */
+          // ---- el color de la pared, tomado del marco -------------------
+          /* Sin el borde de abajo: en un retrato de torso, abajo esta el
+             jugador. Si ese borde entrara, su camiseta contaria como pared. */
           const grosor = Math.max(2, Math.round(Math.min(W, H) * 0.015));
           const paso   = Math.max(1, Math.round((W + H) / 500));
-          const muestras = [];   // [indice, ladoBit]
-          /* EL BORDE DE ABAJO NO ENTRA, y es la regla que hace que esto
-             funcione con fotos de jugadores.
-
-             En un retrato de torso, abajo está el jugador: su camiseta llega
-             al final del cuadro. Si ese borde alimenta el modelo, el blanco
-             de la camiseta y el blanco de una pared clara terminan en el
-             mismo grupo, y después el relleno entra por abajo y borra al
-             jugador entero. Pasó exactamente eso.
-
-             El fondo no se pierde por no mirar abajo: rodea al jugador, así
-             que entrando por arriba y por los costados se llega igual a la
-             parte de abajo — de eso se encarga la conectividad. */
-          for (let x = 0; x < W; x += paso) {
-            for (let k = 0; k < grosor; k++) {
-              muestras.push([(k * W + x) * 4, 1]);
+          const muestras = [];
+          for (let x = 0; x < W; x += paso)
+            for (let k = 0; k < grosor; k++) muestras.push((k * W + x) * 4);
+          for (let y = 0; y < H; y += paso)
+            for (let k = 0; k < grosor; k++){
+              muestras.push((y * W + k) * 4);
+              muestras.push((y * W + (W - 1 - k)) * 4);
             }
-          }
-          for (let y = 0; y < H; y += paso) {
-            for (let k = 0; k < grosor; k++) {
-              muestras.push([(y * W + k) * 4, 4]);
-              muestras.push([(y * W + (W - 1 - k)) * 4, 8]);
-            }
-          }
-          if (!muestras.length) return canvas;
+          if (!muestras.length) return null;
 
-          // ---- 2. agrupar en pocos colores de fondo ---------------------
           const TOL_GRUPO = 30;
-          const grupos = [];   // {r,g,b,n,lados}
-          for (let m = 0; m < muestras.length; m++) {
-            const idx = muestras[m][0], lado = muestras[m][1];
+          const grupos = [];
+          for (let m = 0; m < muestras.length; m++){
+            const idx = muestras[m];
             if (d[idx + 3] < 40) continue;
             const r = d[idx], g = d[idx + 1], b = d[idx + 2];
             let mejor = -1, mejorD = Infinity;
-            for (let i = 0; i < grupos.length; i++) {
+            for (let i = 0; i < grupos.length; i++){
               const dist = distanciaColor(r, g, b, grupos[i].r, grupos[i].g, grupos[i].b);
-              if (dist < mejorD) { mejorD = dist; mejor = i; }
+              if (dist < mejorD){ mejorD = dist; mejor = i; }
             }
-            if (mejor >= 0 && mejorD <= TOL_GRUPO) {
+            if (mejor >= 0 && mejorD <= TOL_GRUPO){
               const gr = grupos[mejor];
               gr.r += (r - gr.r) / (gr.n + 1);
               gr.g += (g - gr.g) / (gr.n + 1);
               gr.b += (b - gr.b) / (gr.n + 1);
               gr.n++;
-              gr.lados |= lado;
-            } else if (grupos.length < 6) {
-              grupos.push({ r: r, g: g, b: b, n: 1, lados: lado });
-            } else if (mejor >= 0) {
+            } else if (grupos.length < 6){
+              grupos.push({ r: r, g: g, b: b, n: 1 });
+            } else if (mejor >= 0){
               grupos[mejor].n++;
-              grupos[mejor].lados |= lado;
             }
           }
-          if (!grupos.length) return canvas;
-
-          /* Antes se exigía que un color apareciera en DOS lados para
-             considerarlo fondo. Esa regla existía para que un hombro contra
-             el borde no envenenara el modelo — pero como el borde de abajo
-             ya no se mira, dejó de hacer falta, y mientras estuvo hizo daño:
-             una pared con una zona más clara sobre un solo costado quedaba
-             descartada del modelo y aparecía como un manchón sin recortar.
-
-             Ahora sólo se descarta lo anecdótico: menos del 4% del marco no
-             es la pared, es un detalle que se coló en una esquina. */
+          if (!grupos.length) return null;
           const total = grupos.reduce(function(a, g){ return a + g.n; }, 0);
           let fondo = grupos.filter(function(g){ return g.n / total >= 0.04; });
-          if (!fondo.length) {
-            fondo = [grupos.reduce(function(a, b){ return a.n >= b.n ? a : b; })];
-          }
+          if (!fondo.length) fondo = [grupos.reduce(function(a,b){ return a.n>=b.n?a:b; })];
 
           const distFondo = function(idx){
             let m = Infinity;
-            for (let i = 0; i < fondo.length; i++) {
+            for (let i = 0; i < fondo.length; i++){
               const dist = distanciaColor(d[idx], d[idx+1], d[idx+2], fondo[i].r, fondo[i].g, fondo[i].b);
               if (dist < m) m = dist;
             }
             return m;
           };
-          const fondoMasCercano = function(idx){
-            let m = Infinity, cual = fondo[0];
-            for (let i = 0; i < fondo.length; i++) {
-              const dist = distanciaColor(d[idx], d[idx+1], d[idx+2], fondo[i].r, fondo[i].g, fondo[i].b);
-              if (dist < m) { m = dist; cual = fondo[i]; }
-            }
-            return cual;
-          };
 
-          // ---- 3. umbrales ---------------------------------------------
-          /* Deliberadamente conservadores. No deciden el recorte: sólo
-             separan lo que es CLARAMENTE fondo de lo que es CLARAMENTE el
-             jugador. Todo lo del medio —que es donde se juega el partido—
-             lo resuelve el paso 5, midiendo la mezcla. */
-          /* El rango arranca mucho mas fino que antes (era 14 a 44, ahora 6
-             a 40), y ese piso bajo es el punto.
-
-             Con una camiseta blanca contra una pared clara los dos colores
-             quedan a distancia 12, asi que con el piso en 14 no habia forma
-             de salvar al jugador NI bajando la barra a cero: el recorte se
-             comia el torso y no habia nada que hacer. Con el piso en 6 la
-             barra se vuelve un rescate de verdad.
-
-             Cuesta medio punto de tincion en el borde con la barra en su
-             valor normal (22.4 contra 17.6 medido sobre fondos sinteticos),
-             y vale la pena: un borde apenas menos limpio se nota mucho
-             menos que media figurita sin torso.
-
-             Se probo tambien proteger el centro del cuadro exigiendo mas
-             parecido ahi. Se descarto: el barrido mostro que empeora la
-             tincion —protege tambien al fondo que rodea al jugador— y no
-             llega a salvar la camiseta. */
-          const tFondo  = 6 + sens * 0.34;    // por debajo: fondo seguro
-          const tNucleo = tFondo + 46;        // por encima: jugador seguro
-
-          // ---- 4. relleno desde los bordes ------------------------------
-          /* Sólo se saca el fondo CONECTADO al marco. Si el jugador lleva
-             una camiseta del mismo color que la pared, esa zona no toca el
-             borde y se conserva: es la diferencia entre recortarlo y
-             hacerle un agujero en el pecho. */
-          const alfa  = new Float32Array(N); alfa.fill(1);
-          const visto = new Uint8Array(N);
-          const cola  = new Int32Array(N);
-          let cab = 0, fin = 0;
-
+          // ---- se pinta la pared desde los bordes -----------------------
+          const UMBRAL = 24;
+          const esFondo = new Uint8Array(N);
+          const cola = new Int32Array(N);
+          let cab = 0, fin2 = 0;
           const encolar = function(x, y){
             const p = y * W + x;
-            if (visto[p]) return;
-            if (distFondo(p * 4) > tFondo) return;
-            visto[p] = 1; alfa[p] = 0; cola[fin++] = p;
+            if (esFondo[p]) return;
+            if (distFondo(p * 4) > UMBRAL) return;
+            esFondo[p] = 1; cola[fin2++] = p;
           };
-          /* Misma razón que arriba: sembrar desde el borde de abajo es
-             sembrar desde la camiseta del jugador. Se entra por arriba y por
-             los costados, y el fondo de abajo se alcanza igual siguiendo la
-             pared, que es lo que la conectividad hace bien. */
-          for (let x = 0; x < W; x++) { encolar(x, 0); }
-          for (let y = 0; y < H; y++) { encolar(0, y); encolar(W - 1, y); }
-
-          while (cab < fin) {
+          for (let x = 0; x < W; x++) encolar(x, 0);
+          for (let y = 0; y < H; y++){ encolar(0, y); encolar(W - 1, y); }
+          while (cab < fin2){
             const p = cola[cab++];
             const px = p % W, py = (p - px) / W;
             if (px > 0)     encolar(px - 1, py);
@@ -11125,131 +11061,36 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             if (py < H - 1) encolar(px, py + 1);
           }
 
-          // ---- 5. medir la mezcla del borde -----------------------------
-          /* El paso que hace la diferencia.
-
-             Un píxel del contorno no es "fondo" ni "jugador": es la mezcla
-                 observado = a * jugador + (1 - a) * fondo
-             y lo único que falta para despejarla es cuánto vale `a`.
-
-             La versión anterior sacaba `a` de un umbral sobre la distancia
-             al fondo, y eso está mal por una razón concreta: esa distancia
-             depende de cuánto se parecen el jugador y la pared. Con piel
-             sobre rojo la separación es de unos 100, así que un píxel
-             mezclado al 50% caía por debajo del umbral y se borraba entero,
-             y uno al 60% recibía alfa 76 cuando le correspondía 153. Al
-             despejar la mezcla con un alfa mal medido, el color se
-             dispara. Eso ES el halo.
-
-             Acá `a` se mide como corresponde: se proyecta el color
-             observado sobre la recta que va del fondo al jugador. Si cae a
-             un tercio del camino, el píxel es un tercio jugador. */
-          const ANCHO_BANDA  = 5;
-          const RADIO_NUCLEO = 3;
-
-          for (let ronda = 0; ronda < ANCHO_BANDA; ronda++) {
-            const pendientes = [];
-            for (let y = 0; y < H; y++) {
-              for (let x = 0; x < W; x++) {
-                const p = y * W + x;
-                if (alfa[p] !== 1) continue;
-                const tocaFuera =
-                  (x > 0     && alfa[p - 1] < 1) ||
-                  (x < W - 1 && alfa[p + 1] < 1) ||
-                  (y > 0     && alfa[p - W] < 1) ||
-                  (y < H - 1 && alfa[p + W] < 1);
-                if (!tocaFuera) continue;
-
-                const idx = p * 4;
-                const dist = distFondo(idx);
-                if (dist >= tNucleo) continue;   // jugador macizo, no se toca
-
-                const bg = fondoMasCercano(idx);
-
-                /* El color del jugador se estima con los píxeles macizos de
-                   alrededor: es el mejor dato disponible de cómo se ve este
-                   jugador justo acá, sin inventar nada. */
-                let fr = 0, fg = 0, fb = 0, fn = 0;
-                for (let j = -RADIO_NUCLEO; j <= RADIO_NUCLEO; j++) {
-                  const yy = y + j; if (yy < 0 || yy >= H) continue;
-                  for (let i = -RADIO_NUCLEO; i <= RADIO_NUCLEO; i++) {
-                    const xx = x + i; if (xx < 0 || xx >= W) continue;
-                    const q = yy * W + xx;
-                    if (alfa[q] !== 1) continue;
-                    const qi = q * 4;
-                    if (distFondo(qi) < tNucleo) continue;
-                    fr += d[qi]; fg += d[qi + 1]; fb += d[qi + 2]; fn++;
-                  }
-                }
-
-                let a;
-                if (fn > 0) {
-                  fr /= fn; fg /= fn; fb /= fn;
-                  const vr = fr - bg.r, vg = fg - bg.g, vb = fb - bg.b;
-                  const largo = vr * vr + vg * vg + vb * vb;
-                  if (largo > 1) {
-                    const cr = d[idx] - bg.r, cg = d[idx + 1] - bg.g, cb = d[idx + 2] - bg.b;
-                    a = (cr * vr + cg * vg + cb * vb) / largo;
-                  } else {
-                    a = dist / tNucleo;   // fondo y jugador casi del mismo color
-                  }
-                } else {
-                  a = dist / tNucleo;     // sin núcleo cerca: plan B
-                }
-
-                a = Math.max(0, Math.min(1, a));
-                if (a > 0.985) continue;  // es jugador: ni se toca ni propaga
-                pendientes.push([p, a]);
-              }
-            }
-            if (!pendientes.length) break;
-            for (let i = 0; i < pendientes.length; i++) alfa[pendientes[i][0]] = pendientes[i][1];
+          // ---- lo que no es pared, es el jugador ------------------------
+          /* Por filas y columnas en vez de pixel por pixel: un pixel suelto
+             que se salvo del relleno estiraria el recuadro hasta el borde.
+             Se exige que la fila tenga algo de cuerpo (5%) para contar. */
+          const MIN = 0.05;
+          let x0 = -1, x1 = -1, y0 = -1, y1 = -1;
+          for (let y = 0; y < H; y++){
+            let c = 0;
+            for (let x = 0; x < W; x++) if (!esFondo[y * W + x]) c++;
+            if (c > W * MIN){ if (y0 < 0) y0 = y; y1 = y; }
           }
-
-          // ---- 6. sacar motas sueltas -----------------------------------
-          for (let y = 1; y < H - 1; y++) {
-            for (let x = 1; x < W - 1; x++) {
-              const p = y * W + x;
-              if (alfa[p] < 0.16) continue;
-              let vecinos = 0;
-              if (alfa[p - 1] > 0.16) vecinos++;
-              if (alfa[p + 1] > 0.16) vecinos++;
-              if (alfa[p - W] > 0.16) vecinos++;
-              if (alfa[p + W] > 0.16) vecinos++;
-              if (vecinos <= 1) alfa[p] = 0;
-            }
+          for (let x = 0; x < W; x++){
+            let c = 0;
+            for (let y = 0; y < H; y++) if (!esFondo[y * W + x]) c++;
+            if (c > H * MIN){ if (x0 < 0) x0 = x; x1 = x; }
           }
+          if (x0 < 0 || y0 < 0) return null;
 
-          // ---- 7. despejar el color real del jugador --------------------
-          /* Con el alfa ya bien medido, se despeja la mezcla:
-                 jugador = (observado - (1 - a) * fondo) / a
-             Sin esto el contorno queda teñido del color de la pared: es el
-             halo que se ve alrededor de la cara y los hombros. */
-          for (let p = 0; p < N; p++) {
-            const a = alfa[p];
-            const idx = p * 4;
-            if (a <= 0.004) { d[idx + 3] = 0; continue; }
-            if (a < 0.98) {
-              const bg = fondoMasCercano(idx);
-              /* Con alfas muy chicos la división amplifica el ruido y saca
-                 píxeles fluorescentes. Por debajo de 0.15 el píxel casi no
-                 se ve, así que se despeja parcialmente y alcanza. */
-              const seguro = Math.max(a, 0.15);
-              d[idx]     = Math.max(0, Math.min(255, Math.round((d[idx]     - (1 - seguro) * bg.r) / seguro)));
-              d[idx + 1] = Math.max(0, Math.min(255, Math.round((d[idx + 1] - (1 - seguro) * bg.g) / seguro)));
-              d[idx + 2] = Math.max(0, Math.min(255, Math.round((d[idx + 2] - (1 - seguro) * bg.b) / seguro)));
-            }
-            d[idx + 3] = Math.round(a * 255);
-          }
-
-          ctx.putImageData(imgData, 0, 0);
-        } catch(e) {
-          console.warn("Background removal notice:", e);
+          const ancho = x1 - x0, alto = y1 - y0;
+          // Si "el jugador" es casi toda la foto, no se detecto nada util.
+          if (ancho > W * 0.97 && alto > H * 0.97) return null;
+          if (ancho < W * 0.08 || alto < H * 0.08) return null;
+          return { x0: x0, y0: y0, x1: x1, y1: y1 };
+        }catch(e){
+          console.warn("No pude medir al jugador:", e);
+          return null;
         }
-        return canvas;
       }
 
-      function compressImage(file,maxSize,keepAlpha,removeBg=false){
+      function compressImage(file,maxSize,keepAlpha){
         return new Promise((resolve,reject)=>{
           const reader=new FileReader();
           reader.onerror=()=>reject(new Error("read error"));
@@ -11261,12 +11102,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
               const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
               const ctx=canvas.getContext("2d");
-              const alpha=keepAlpha || removeBg;
+              const alpha=keepAlpha;
               if(!alpha){ctx.fillStyle="#ffffff";ctx.fillRect(0,0,w,h)}
               ctx.drawImage(img,0,0,w,h);
-              if(removeBg){
-                removeCanvasBackground(canvas);
-              }
               resolve(alpha?canvas.toDataURL("image/png"):canvas.toDataURL("image/jpeg",.82));
             };
             img.src=reader.result;
@@ -11275,100 +11113,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         });
       }
 
-      // Helper to process a data URL and remove its background on demand
-      function removeBgFromDataUrl(dataUrl) {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            removeCanvasBackground(canvas);
-            resolve(canvas.toDataURL("image/png"));
-          };
-          img.src = dataUrl;
-        });
-      }
-
-
-      // ===== mantenimiento: resetear torneo =====
-      window.resetearPuntosTorneo = async function(){
-        if(!confirm("¿Estás seguro de que querés borrar TODOS los resultados y puntos del torneo? Esta acción no se puede deshacer.")) return;
-        
-        showToast("Reseteando partidos y puntos...");
-        
-        Object.values(state.matches).forEach(m=>{
-          m.scoreHome = null;
-          m.scoreAway = null;
-          m.scoreHome2 = null;
-          m.scoreAway2 = null;
-          m.tieBreakWinner = null;
-          m.mvpPlayerId = null;
-          m.status = "scheduled";
-          m.events = [];
-          if(m.homeSlot && m.homeSlot.type !== "team") m.homeSlot.teamId = null;
-          if(m.awaySlot && m.awaySlot.type !== "team") m.awaySlot.teamId = null;
-        });
-        
-        previousChampion = null;
-        lastPlayedCount = 0;
-        
-        persist();
-        renderAll();
-
-        // Limpiar inputs manuales en pantalla si están abiertos
-        document.querySelectorAll(".group-score-manual").forEach(inp => { inp.value = ""; });
-        document.querySelectorAll(".tie-penal-quick").forEach(sel => { sel.value = ""; });
-
-        /* El reset es la operación donde un fallo silencioso engaña más: la
-           pantalla queda en cero, el admin se va tranquilo, y la próxima
-           recarga trae de vuelta todos los resultados desde la nube. */
-        let resetNube = { ok:true, sinNube:true };
-        if (window.supabase && state.tournament.uuid) {
-          const tid = state.tournament.uuid;
-          let tourMatches = null, errLectura = null;
-          try {
-            const res = await supabase.from('matches').select('id').eq('tournament_id', tid);
-            tourMatches = res.data; errLectura = res.error;
-          } catch(e){ errLectura = e; }
-          if (errLectura) {
-            console.error("Supabase · lectura de partidos para el reset:", errLectura);
-            resetNube = { ok:false, sinNube:false };
-          } else {
-            resetNube = { ok:true, sinNube:false };
-          }
-          if (!errLectura && tourMatches && tourMatches.length) {
-            const matchIds = tourMatches.map(m => m.id);
-            const borrado = await guardarEnNube("el borrado de los eventos", () =>
-              supabase.from('match_events').delete().in('match_id', matchIds));
-            const limpieza = await guardarEnNube("el reseteo de los marcadores", () =>
-              supabase.from('matches').update({
-                score_home: null,
-                score_away: null,
-                score_home_leg2: null,
-                score_away_leg2: null,
-                tie_break_winner: null,
-                mvp_player_id: null,
-                status: 'scheduled'
-              }).eq('tournament_id', tid));
-            resetNube = { ok: borrado.ok && limpieza.ok, sinNube:false };
-          }
-        }
-
-        if (resetNube.ok) {
-          showToast(resetNube.sinNube
-            ? "🏆 Torneo reseteado en este dispositivo."
-            : "🏆 Torneo reseteado: todos los puntos y resultados quedaron en cero.");
-        } else {
-          showToastError("El torneo se reseteó en pantalla pero NO en la nube: al recargar vuelven los resultados.");
-        }
-        if (typeof playAdvance === 'function') playAdvance();
-      };
-
-      // ===== modal: configuración =====
-      
       function populateConfigForm() {
         if (!$("#tournamentName")) return;
         $("#tournamentName").value = state.tournament.name || "";
@@ -11501,13 +11245,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       // ==========================================================================
       let cropperState = {
         origImg: null,
-        cutoutImg: null,
-        removeBg: true,
         scale: 1,
         baseScale: 1,
         posX: 0,
         posY: 0,
-        sensibilidad: 50,
         isDragging: false,
         dragStartX: 0,
         dragStartY: 0,
@@ -11518,8 +11259,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       function openPaniniCropper(imgSource, playerContext, onConfirmCallback) {
         cropperState.targetCallback = onConfirmCallback;
-        cropperState.removeBg = true;
-        cropperState.sensibilidad = 50;
         cropperState.scale = 1;
         cropperState.posX = 0;
         cropperState.posY = 0;
@@ -11537,19 +11276,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
         const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
-        const bgSl = $("#paniniBgSlider"); if(bgSl) bgSl.value = 50;
-        const bgVal = $("#paniniBgValue"); if(bgVal) bgVal.textContent = "50";
-        // si en la foto anterior se habia elegido conservar el fondo, la fila
-        // quedo escondida: cada foto arranca de cero
-        const bgRow = $("#paniniRecorteRow"); if(bgRow) bgRow.style.display = "";
-        const bgHint = $("#paniniBgHint"); if(bgHint) bgHint.style.display = "";
-
-        const btnBg = $("#btnToggleCropBg");
-        if(btnBg) {
-          btnBg.classList.add("active");
-          const lbl = $("#lblToggleCropBg"); if(lbl) lbl.textContent = "Sin fondo (Auto)";
-        }
-
         // Load image and generate transparent cutout
         const img = new Image();
         img.onload = () => {
@@ -11564,8 +11290,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           cropperState.posX = 0;
           cropperState.posY = (stageH * 0.12);
 
-          regenerarRecorte();
-          renderCropperCanvas();
+          /* Se encuadra solo al abrir. Es lo que uno iba a hacer a mano de
+             todos modos, y si no gusta se arrastra: no se pierde nada. */
+          if(!autoajustar(true)) renderCropperCanvas();
           $("#paniniCropperModal").classList.add("open");
           document.body.style.overflow="hidden";document.body.classList.add("modal-open");
         };
@@ -11577,32 +11304,53 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         document.body.style.overflow="";document.body.classList.remove("modal-open");
       }
 
-      /* Rehace el recorte con la sensibilidad actual. En una foto grande el
-         cálculo tarda lo suyo, así que mientras corre se avisa: sin eso, al
-         mover la barra la app parece trabada. */
-      let recorteEnCurso = null;
-      function regenerarRecorte(){
+      /* Encuadra la foto en la figurita.
+
+         La cuenta: se mide el recuadro que ocupa el jugador, se elige un zoom
+         para que su alto llene casi toda la figurita, y se corre la imagen
+         para que quede centrado a lo ancho y con la cabeza arriba —no en el
+         medio: una figurita con la cara al centro deja los pies afuera y un
+         hueco arriba.
+
+         `silencioso` es para el encuadre automatico al abrir: si no se puede
+         medir nada, no tiene sentido avisar de algo que el usuario no pidio. */
+      function autoajustar(silencioso){
         const img = cropperState.origImg;
-        if (!img) return;
-        const etiqueta = $("#paniniBgValue");
-        if (etiqueta) etiqueta.textContent = "…";
+        if (!img) return false;
 
-        clearTimeout(recorteEnCurso);
-        recorteEnCurso = setTimeout(() => {
-          const lienzo = document.createElement("canvas");
-          lienzo.width = img.width;
-          lienzo.height = img.height;
-          lienzo.getContext("2d").drawImage(img, 0, 0);
-          removeCanvasBackground(lienzo, cropperState.sensibilidad);
+        const lienzo = document.createElement("canvas");
+        lienzo.width = img.width;
+        lienzo.height = img.height;
+        lienzo.getContext("2d").drawImage(img, 0, 0);
+        const r = recuadroDelJugador(lienzo);
 
-          const recorte = new Image();
-          recorte.onload = () => {
-            cropperState.cutoutImg = recorte;
-            if (etiqueta) etiqueta.textContent = String(cropperState.sensibilidad);
-            renderCropperCanvas();
-          };
-          recorte.src = lienzo.toDataURL("image/png");
-        }, 60);
+        if (!r) {
+          if (!silencioso) showToast("No pude distinguir al jugador del fondo. Acomodalo arrastrando.");
+          return false;
+        }
+
+        const stageW = 460, stageH = 636;
+        const ancho = r.x1 - r.x0, alto = r.y1 - r.y0;
+
+        // que el alto del jugador llene el 88% de la figurita...
+        let escala = (stageH * 0.88) / alto;
+        // ...salvo que asi se salga de ancho
+        if (ancho * escala > stageW * 0.94) escala = (stageW * 0.94) / ancho;
+
+        cropperState.scale = Math.max(0.4, Math.min(3, escala / cropperState.baseScale));
+        const efectiva = cropperState.baseScale * cropperState.scale;
+
+        const cxJug = (r.x0 + r.x1) / 2, cyJug = (r.y0 + r.y1) / 2;
+        // centrado a lo ancho
+        cropperState.posX = -(cxJug - img.width / 2) * efectiva;
+        // la cabeza a un 6% del borde de arriba
+        const yDeseado = stageH * 0.06 + (alto * efectiva) / 2;
+        cropperState.posY = yDeseado - stageH / 2 - (cyJug - img.height / 2) * efectiva;
+
+        const sl = $("#paniniZoomSlider"); if (sl) sl.value = cropperState.scale;
+        const vv = $("#paniniZoomValue"); if (vv) vv.textContent = Math.round(cropperState.scale * 100) + "%";
+        renderCropperCanvas();
+        return true;
       }
 
       function renderCropperCanvas() {
@@ -11614,7 +11362,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         ctx.clearRect(0, 0, w, h);
 
-        const currentImg = cropperState.removeBg && cropperState.cutoutImg ? cropperState.cutoutImg : cropperState.origImg;
+        const currentImg = cropperState.origImg;
         if (!currentImg) return;
 
         const effectiveScale = cropperState.baseScale * cropperState.scale;
@@ -11670,30 +11418,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         renderCropperCanvas();
       });
 
-      // Sensibilidad del recorte
-      $("#paniniBgSlider")?.addEventListener("input", e => {
-        cropperState.sensibilidad = parseInt(e.target.value, 10);
-        // mover la barra sin el recorte puesto no mostraria nada
-        if (!cropperState.removeBg) {
-          cropperState.removeBg = true;
-          const b = $("#btnToggleCropBg"); if (b) b.classList.add("active");
-          const l = $("#lblToggleCropBg"); if (l) l.textContent = "Sin fondo (Auto)";
-        }
-        regenerarRecorte();
-      });
-
-      // Toggle background cutout
-      $("#btnToggleCropBg")?.addEventListener("click", () => {
-        cropperState.removeBg = !cropperState.removeBg;
-        const btn = $("#btnToggleCropBg");
-        const lbl = $("#lblToggleCropBg");
-        if (btn) btn.classList.toggle("active", cropperState.removeBg);
-        if (lbl) lbl.textContent = cropperState.removeBg ? "Sin fondo (Auto)" : "Con fondo original";
-        const fila = $("#paniniRecorteRow"), pista = $("#paniniBgHint");
-        if (fila) fila.style.display = cropperState.removeBg ? "" : "none";
-        if (pista) pista.style.display = cropperState.removeBg ? "" : "none";
+      $("#btnAutoAjustar")?.addEventListener("click", () => {
         playClick();
-        renderCropperCanvas();
+        if (autoajustar(false)) showToast("Foto encuadrada");
       });
 
       // Reset position
@@ -15277,9 +15004,23 @@ function loop(){
         persist();applyTheme();playClick();requestConnectors();
         showToast(state.settings.theme==="dark"?"🌙 Tema oscuro activado":"☀️ Tema claro activado");
       });
-      $("#btnSound")?.addEventListener("click",()=>{state.settings.sound=!state.settings.sound;persist();renderHeader();if(state.settings.sound){playWhistle();showToast("Efectos de sonido activados")}else showToast("Efectos de sonido silenciados")});
-      // el sonido ya no se puede apagar desde la barra: se fuerza encendido
-      if(state.settings.sound===false){state.settings.sound=true;persist();}
+      $("#btnSound")?.addEventListener("click",()=>{
+        state.settings.sound=!state.settings.sound;
+        persist();
+        renderHeader();
+        const sw=$("#soundEnabledField"); if(sw) sw.checked=state.settings.sound;
+        if(state.settings.sound){
+          playWhistle();
+          showToast("🔊 Sonido activado");
+        }else{
+          // el silbato no suena para avisar que se apagó el silbato
+          showToast("🔇 Sonido silenciado · también en la intro");
+        }
+      });
+      /* Antes acá se forzaba state.settings.sound=true en cada arranque,
+         porque no habia forma de apagarlo desde la barra. Ahora si la hay, y
+         forzarlo haria que apagar el sonido no sirviera de nada: volveria
+         solo en la siguiente recarga. */
 
       /* ====================================================================
          PANTALLA DE PERFILES
