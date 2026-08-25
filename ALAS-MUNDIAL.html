@@ -1792,225 +1792,6 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 /* ==========================================================================
    PANINI PHOTO STUDIO & INTERACTIVE CROPPER
    ========================================================================== */
-.panini-cropper-modal {
-  background: rgba(8, 14, 26, 0.97) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 24px !important;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(47, 127, 240, 0.25) !important;
-  width: min(440px, 94vw) !important;
-}
-.panini-crop-stage {
-  position: relative;
-  width: min(260px, 72vw);
-  /* 3/4, la misma de .pcard. Antes era 3/4.15 y ya ahi empezaba a mentir. */
-  aspect-ratio: 3 / 4;
-  /* cqw, igual que la figurita real, para que el 26 del fondo ocupe la
-     misma proporcion en la vista previa que en la tarjeta. */
-  container-type: inline-size;
-  margin: 10px auto 14px;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.15), 0 0 25px rgba(47, 127, 240, 0.3);
-  background: linear-gradient(180deg, #101a2c, #0a1120);
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
-}
-.panini-crop-stage:active {
-  cursor: grabbing;
-}
-.panini-crop-bg-pattern {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 30%, rgba(47, 127, 240, 0.25) 0%, transparent 70%),
-              repeating-linear-gradient(115deg, transparent 0 16px, rgba(255, 255, 255, 0.04) 16px 17px);
-  pointer-events: none;
-}
-/* La figurita real no tiene banda de color arriba: tiene el kit del equipo
-   como FONDO de toda la carta, con el "26" gigante encima. Esta capa deja de
-   ser una franja del 28% y pasa a ser ese fondo. El JS le sigue poniendo los
-   colores del equipo. */
-.panini-crop-top-strip {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #2f7ff0, #0f3f96);
-  pointer-events: none;
-  z-index: 0;
-}
-/* El "26" detras de todo, con la misma medida en cqw que .pcard-26 usa en la
-   figurita de verdad. */
-.panini-crop-stage::after {
-  content: "26";
-  position: absolute;
-  top: -6%;
-  left: -4%;
-  font-family: 'Anton', 'Saira Condensed', sans-serif;
-  font-size: 56cqw;
-  line-height: .74;
-  letter-spacing: -.06em;
-  color: rgba(255, 255, 255, .30);
-  z-index: 0;
-  pointer-events: none;
-}
-/* Aca esta el arreglo. El lienzo NO ocupa la tarjeta entera: ocupa el mismo
-   rectangulo donde la figurita real deja la foto.
-
-   .pcard-photo es una caja de top:3% a bottom:26% con object-fit:contain, y
-   una imagen de 460x636 ahi adentro entra por altura y queda en el 68.48%
-   del ancho, centrada. Esos son los numeros de abajo, no estan elegidos a
-   ojo. Poner inset:0 —que es lo que habia— mostraba la foto a sangre y hacia
-   creer que el encuadre llegaba a los bordes. */
-.panini-crop-canvas {
-  position: absolute;
-  top: 3%;
-  left: 15.76%;
-  width: 68.48%;
-  height: 71%;
-  display: block;
-  z-index: 1;
-}
-.panini-crop-card-frame {
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-}
-/* .pcard-ovr vive arriba a la DERECHA, no arriba a la izquierda. */
-.panini-crop-badge-top {
-  position: absolute;
-  top: 5%;
-  right: 5.5%;
-  z-index: 3;
-  font-family: 'Anton', sans-serif;
-  font-size: 20px;
-  color: #fff;
-  line-height: 1;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-  pointer-events: none;
-}
-/* La posicion del jugador no existe arriba en la figurita real: se dice en
-   la barra de abajo. Se corre a la izquierda para no pisar el puntaje. */
-.panini-crop-badge-pos {
-  position: absolute;
-  top: 5%;
-  left: 5.5%;
-  z-index: 3;
-  font-family: 'Saira Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 11px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 2px 7px;
-  border-radius: 6px;
-  color: #fff;
-  pointer-events: none;
-}
-/* Copia de .pcard-info: mismo degradado, mismo padding, misma posicion. Asi
-   el nombre tapa exactamente lo que va a tapar en la figurita. */
-.panini-crop-footer-banner {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 32px 8px 12px;
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.65) 60%, transparent 100%);
-  text-align: center;
-  pointer-events: none;
-  z-index: 4;
-}
-.panini-crop-pname {
-  font-family: 'Saira Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-  text-transform: uppercase;
-  color: #fff;
-  letter-spacing: 0.04em;
-  line-height: 1;
-}
-.panini-crop-pteam {
-  font-family: 'Saira Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 11px;
-  color: #9fb6d2;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-.panini-crop-guide-hint {
-  font-size: 11.5px;
-  color: #94a3b8;
-  text-align: center;
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-
-.panini-crop-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 16px 12px;
-}
-.panini-zoom-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 14px;
-  border-radius: 12px;
-}
-.panini-zoom-row span {
-  font-family: 'Saira Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 12.5px;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-.panini-zoom-slider {
-  flex: 1;
-  accent-color: #2f7ff0;
-  cursor: pointer;
-}
-.panini-tools-row {
-  display: flex;
-  gap: 8px;
-}
-.btn-crop-tool {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
-  font-family: 'Saira Condensed', sans-serif;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-.btn-crop-tool:hover {
-  background: rgba(47, 127, 240, 0.2);
-  border-color: rgba(47, 127, 240, 0.5);
-  color: #fff;
-}
-.btn-crop-tool.active {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
-  border-color: #22c55e;
-  color: #4ade80;
-}
-
 .pf-lista{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:12px}
 .pf-sep{
   display:flex;align-items:center;gap:10px;
@@ -8527,62 +8308,6 @@ body{background:transparent !important}
   
   <!-- Modal: Monitor de Usuarios (Minimalista PRO) -->
   
-  <!-- Modal: Adaptar Foto al Panini (Studio & Cropper) -->
-  <div class="modal-backdrop" id="paniniCropperModal" role="dialog" aria-modal="true" aria-labelledby="paniniCropperModalTitle">
-    <div class="modal panini-cropper-modal" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-      <header class="modal-head" style="padding: 14px 18px 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <div>
-          <h2 id="paniniCropperModalTitle" style="font-family:'Saira Condensed',sans-serif; font-size: 19px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #fff; margin: 0;">
-            ✂️ Adaptar Foto al Panini
-          </h2>
-          <p style="margin: 2px 0 0; font-size: 11.5px; color: #94a3b8;">
-            Arrastrá para encuadrar y ajustá el tamaño para tu figurita.
-          </p>
-        </div>
-        <button class="close-btn" id="btnClosePaniniCropper" type="button" aria-label="Cerrar">×</button>
-      </header>
-
-      <div class="modal-body" style="padding: 10px 16px 6px; display:flex; flex-direction:column; align-items:center;">
-        <!-- Canvas Stage interactivo con diseño Panini -->
-        <div class="panini-crop-stage" id="paniniCropStage">
-          <div class="panini-crop-bg-pattern"></div>
-          <div class="panini-crop-top-strip" id="paniniCropTopStrip"></div>
-          <canvas id="paniniCropCanvas" class="panini-crop-canvas" width="460" height="636"></canvas>
-          <div class="panini-crop-card-frame"></div>
-          <div class="panini-crop-badge-top" id="paniniCropNumber">10</div>
-          <div class="panini-crop-badge-pos" id="paniniCropPos">DEL</div>
-          <div class="panini-crop-footer-banner">
-            <div class="panini-crop-pname" id="paniniCropName">JUGADOR</div>
-            <div class="panini-crop-pteam" id="paniniCropTeam">EQUIPO</div>
-          </div>
-        </div>
-        <div class="panini-crop-guide-hint">
-          <span>👆 Arrastrá la foto para mover</span> · <span>🔍 Usá el zoom abajo</span>
-        </div>
-      </div>
-
-      <div class="panini-crop-controls">
-        <div class="panini-zoom-row">
-          <span>🔍 Zoom</span>
-          <input type="range" id="paniniZoomSlider" class="panini-zoom-slider" min="0.4" max="3" step="0.02" value="1">
-          <span id="paniniZoomValue" style="min-width:38px; text-align:right; font-weight:700; color:#fff;">100%</span>
-        </div>
-        <div class="panini-tools-row">
-          <button type="button" class="btn-crop-tool" id="btnResetCropPos">
-            <span>🔄</span> <span>Centrar</span>
-          </button>
-        </div>
-      </div>
-
-      <footer class="modal-actions" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); gap: 10px;">
-        <button class="btn secondary" id="btnCancelPaniniCropper" type="button" style="flex: 1; height: 42px; border-radius: 12px; font-weight: 700;">Cancelar</button>
-        <button class="btn" id="btnConfirmPaniniCropper" type="button" style="flex: 2; height: 42px; border-radius: 12px; font-weight: 800; background: linear-gradient(135deg, #2f7ff0, #1d4ed8); box-shadow: 0 4px 16px rgba(47,127,240,0.4);">
-          ✨ Confirmar y Aplicar
-        </button>
-      </footer>
-    </div>
-  </div>
-
   <div class="modal-backdrop" id="usersMonitorModal" role="dialog" aria-modal="true" aria-labelledby="usersMonitorModalTitle">
     <div class="modal" style="max-width: 460px; max-height: 85dvh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; background: #0c1424; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
       
@@ -11438,209 +11163,72 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       // ==========================================================================
       // PANINI PHOTO STUDIO & INTERACTIVE CROPPER ENGINE
       // ==========================================================================
-      let cropperState = {
-        origImg: null,
-        scale: 1,
-        baseScale: 1,
-        posX: 0,
-        posY: 0,
-        isDragging: false,
-        dragStartX: 0,
-        dragStartY: 0,
-        initialPosX: 0,
-        initialPosY: 0,
-        targetCallback: null
-      };
 
-      function openPaniniCropper(imgSource, playerContext, onConfirmCallback) {
-        cropperState.targetCallback = onConfirmCallback;
-        cropperState.scale = 1;
-        cropperState.posX = 0;
-        cropperState.posY = 0;
+      /* ==================================================================
+         FOTO -> FIGURITA
+         ------------------------------------------------------------------
+         Antes de esto habia un modal para encuadrar a mano: arrastrar,
+         zoom y un boton de centrar. Se saco entero.
 
-        // Populate card context badges
-        const numEl = $("#paniniCropNumber"); if(numEl) numEl.textContent = playerContext.number || "10";
-        const posEl = $("#paniniCropPos"); if(posEl) posEl.textContent = playerContext.position || "DEL";
-        const nameEl = $("#paniniCropName"); if(nameEl) nameEl.textContent = playerContext.name || "JUGADOR";
-        const teamEl = $("#paniniCropTeam"); if(teamEl) teamEl.textContent = playerContext.teamName || "EQUIPO";
+         Lo que queda es el mismo horneado que hacia el modal al confirmar,
+         sin la interfaz: se dibuja la foto en un lienzo de 460x636 y se
+         devuelve un PNG. El formato no cambia, asi que las figuritas nuevas
+         conviven con las que ya estaban guardadas.
 
-        const topStrip = $("#paniniCropTopStrip");
-        if (topStrip && playerContext.color1 && playerContext.color2) {
-          topStrip.style.background = `linear-gradient(180deg, ${playerContext.color1}, ${playerContext.color2})`;
-        }
+         El encuadre:
 
-        const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
-        const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
-        // Load image and generate transparent cutout
+           · COBERTURA REAL — el mayor de los dos cocientes. La foto llena
+             el lienzo sea cual sea su forma. El calculo anterior medía el
+             alto contra el 75% del lienzo y encima multiplicaba por 0.9:
+             entre los dos factores dejaba entre 19% y 28% de la figurita en
+             blanco arriba, segun la forma de la foto.
+
+           · SESGO HACIA ARRIBA — en una figurita la cabeza va en el tercio
+             superior, no en el centro. posY positivo corre la imagen hacia
+             abajo, y eso hace que el lienzo muestre una franja MAS ALTA de
+             la foto: es lo que sube la cabeza. El maximo util es sobra/2
+             (ahi el borde de arriba de la foto queda al ras), asi que 0.35
+             de la sobra es el 70% de ese recorrido.
+         ================================================================== */
+      const PANINI_W = 460, PANINI_H = 636;
+
+      function adaptarFotoAlPanini(imgSource, onListo) {
         const img = new Image();
+
         img.onload = () => {
-          cropperState.origImg = img;
-          
-          /* ENCUADRE POR DEFECTO
-             --------------------------------------------------------------
-             El calculo anterior era:
+          const lienzo = document.createElement("canvas");
+          lienzo.width = PANINI_W;
+          lienzo.height = PANINI_H;
+          const ctx = lienzo.getContext("2d");
 
-                 max(460/ancho, (636 * 0.75)/alto) * 0.9
+          const cubrir = Math.max(PANINI_W / img.width, PANINI_H / img.height);
+          const escala = cubrir * 1.06;
+          const anchoDib = img.width * escala;
+          const altoDib = img.height * escala;
 
-             Dos factores lo achicaban a proposito —medir el alto contra el
-             75% de la figurita, y despues un 0.9 encima— y entre los dos
-             garantizaban que la foto NO llegara a cubrirla. Medido sobre las
-             tres formas de foto que llegan en la practica:
+          const sobra = Math.max(0, altoDib - PANINI_H);
+          const desplazamientoY = sobra * 0.35;
 
-                 foto vertical 3:4  ->  118 px vacios arriba (19%)
-                 foto horizontal    ->  180 px vacios arriba (28%)
-                 foto cuadrada      ->  180 px vacios arriba (28%)
+          const centroX = PANINI_W / 2;
+          const centroY = PANINI_H / 2 + desplazamientoY;
 
-             O sea que entre un quinto y un cuarto de cada figurita nacia en
-             blanco, y ademas la foto no tocaba los costados. El posY de
-             +12% empeoraba lo de arriba: empujaba la foto hacia abajo, que
-             es justo la direccion equivocada.
+          ctx.drawImage(img,
+            centroX - anchoDib / 2, centroY - altoDib / 2,
+            anchoDib, altoDib);
 
-             Ahora se usa cobertura real —el MAYOR de los dos cocientes, sin
-             factores de encogimiento— asi la foto llena el lienzo entero sea
-             cual sea su forma. El 1.06 extra deja un margen para reencuadrar
-             arrastrando sin descubrir el borde.
-
-             El lienzo sigue siendo 460x636 a proposito: es la medida con la
-             que estan horneadas las figuritas que ya existen, y cambiarla
-             haria que las nuevas salgan de otro tamaño al lado de las
-             viejas. Lo que se corrigio es DONDE se muestra ese lienzo. */
-          const stageW = 460;
-          const stageH = 636;
-          const cubrir = Math.max(stageW / img.width, stageH / img.height);
-          cropperState.baseScale = cubrir * 1.06;
-          cropperState.scale = 1;
-          cropperState.posX = 0;
-
-          /* Sesgo hacia arriba, no centrado. En una figurita la cabeza va en
-             el tercio superior; centrar deja la cara en el medio y el pecho
-             comiendose el espacio del nombre.
-
-             posY positivo corre la imagen hacia abajo, y eso hace que la
-             ventana muestre una franja MAS ALTA de la foto: es lo que sube
-             la cabeza dentro de la figurita. El maximo util es sobra/2 —ahi
-             el borde de arriba de la foto queda al ras del de la figurita—
-             asi que 0.35 de la sobra es el 70% de ese recorrido: arriba,
-             pero sin pegarse al borde. */
-          const altoDibujado = img.height * cropperState.baseScale;
-          const sobra = Math.max(0, altoDibujado - stageH);
-          cropperState.posY = sobra * 0.35;
-
-          renderCropperCanvas();
-          $("#paniniCropperModal").classList.add("open");
-          document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+          if (typeof onListo === "function") onListo(lienzo.toDataURL("image/png"));
+          if (typeof URL !== "undefined" && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
         };
+
+        /* Si la foto no se puede leer —un archivo roto, o un formato que el
+           navegador no abre— no se puede seguir en silencio: sin este aviso
+           el usuario elige la foto y no pasa nada visible. */
+        img.onerror = () => {
+          showToast("No pude leer esa imagen. Probá con otra.");
+        };
+
         img.src = (typeof imgSource === "string") ? imgSource : URL.createObjectURL(imgSource);
       }
-
-      function closePaniniCropper() {
-        $("#paniniCropperModal").classList.remove("open");
-        document.body.style.overflow="";document.body.classList.remove("modal-open");
-      }
-
-      /* Encuadra la foto en la figurita.
-
-         La cuenta: se mide el recuadro que ocupa el jugador, se elige un zoom
-         para que su alto llene casi toda la figurita, y se corre la imagen
-         para que quede centrado a lo ancho y con la cabeza arriba —no en el
-         medio: una figurita con la cara al centro deja los pies afuera y un
-         hueco arriba.
-
-         `silencioso` es para el encuadre automatico al abrir: si no se puede
-         medir nada, no tiene sentido avisar de algo que el usuario no pidio. */
-
-      function renderCropperCanvas() {
-        const canvas = $("#paniniCropCanvas");
-        if(!canvas) return;
-        const ctx = canvas.getContext("2d");
-        const w = canvas.width;
-        const h = canvas.height;
-
-        ctx.clearRect(0, 0, w, h);
-
-        const currentImg = cropperState.origImg;
-        if (!currentImg) return;
-
-        const effectiveScale = cropperState.baseScale * cropperState.scale;
-        const drawW = currentImg.width * effectiveScale;
-        const drawH = currentImg.height * effectiveScale;
-
-        const centerX = w / 2 + cropperState.posX;
-        const centerY = h / 2 + cropperState.posY;
-
-        ctx.save();
-        ctx.drawImage(currentImg, centerX - drawW / 2, centerY - drawH / 2, drawW, drawH);
-        ctx.restore();
-      }
-
-      // Pointer drag interaction for Panini Cropper
-      const cropStage = $("#paniniCropStage");
-      if (cropStage) {
-        cropStage.addEventListener("pointerdown", e => {
-          cropperState.isDragging = true;
-          cropperState.dragStartX = e.clientX;
-          cropperState.dragStartY = e.clientY;
-          cropperState.initialPosX = cropperState.posX;
-          cropperState.initialPosY = cropperState.posY;
-          cropStage.setPointerCapture(e.pointerId);
-        });
-
-        cropStage.addEventListener("pointermove", e => {
-          if (!cropperState.isDragging) return;
-          const dx = e.clientX - cropperState.dragStartX;
-          const dy = e.clientY - cropperState.dragStartY;
-          // Scale drag factor for high-DPI canvas
-          const factor = 460 / cropStage.clientWidth;
-          cropperState.posX = cropperState.initialPosX + dx * factor;
-          cropperState.posY = cropperState.initialPosY + dy * factor;
-          renderCropperCanvas();
-        });
-
-        const endDrag = e => {
-          if (cropperState.isDragging) {
-            cropperState.isDragging = false;
-            try { cropStage.releasePointerCapture(e.pointerId); } catch(err){}
-          }
-        };
-        cropStage.addEventListener("pointerup", endDrag);
-        cropStage.addEventListener("pointercancel", endDrag);
-      }
-
-      // Zoom slider
-      $("#paniniZoomSlider")?.addEventListener("input", e => {
-        cropperState.scale = parseFloat(e.target.value);
-        const valEl = $("#paniniZoomValue");
-        if(valEl) valEl.textContent = Math.round(cropperState.scale * 100) + "%";
-        renderCropperCanvas();
-      });
-
-      // Reset position
-      $("#btnResetCropPos")?.addEventListener("click", () => {
-        cropperState.scale = 1;
-        cropperState.posX = 0;
-        cropperState.posY = (636 * 0.12);
-        const slider = $("#paniniZoomSlider"); if(slider) slider.value = 1;
-        const valEl = $("#paniniZoomValue"); if(valEl) valEl.textContent = "100%";
-        playClick();
-        renderCropperCanvas();
-      });
-
-      // Confirm and Apply
-      $("#btnConfirmPaniniCropper")?.addEventListener("click", () => {
-        const canvas = $("#paniniCropCanvas");
-        if (!canvas) return;
-        const finalDataUrl = canvas.toDataURL("image/png");
-        if (typeof cropperState.targetCallback === "function") {
-          cropperState.targetCallback(finalDataUrl);
-        }
-        playAdvance();
-        showToast("¡Foto adaptada al Panini con éxito!");
-        closePaniniCropper();
-      });
-
-      $("#btnClosePaniniCropper")?.addEventListener("click", closePaniniCropper);
-      $("#btnCancelPaniniCropper")?.addEventListener("click", closePaniniCropper);
-      $("#paniniCropperModal")?.addEventListener("click", e => { if(e.target === e.currentTarget) closePaniniCropper(); });
 
       function renderUsersPanel() {
         const grid = $("#usersActiveGrid");
@@ -13240,7 +12828,6 @@ body:has(#playerModal.open) #tabBar,
 body:has(#teamPhotoModal.open) #tabBar,
 body:has(#viewResultsModal.open) #tabBar,
 body:has(#usersMonitorModal.open) #tabBar,
-body:has(#paniniCropperModal.open) #tabBar,
 body:has(#matchDataModal.open) #tabBar,
 body:has(#resetModal.open) #tabBar,
 body:has(#pantallaPerfiles:not([hidden])) #tabBar,
@@ -14806,55 +14393,16 @@ function loop(){
 
       $("#playerPhotoFile").addEventListener("change", async e => {
         const f = e.target.files[0]; if(!f) return;
-        
-        const first = $("#playerFirstField").value.trim();
-        const last = $("#playerLastField").value.trim();
-        const num = $("#playerNumberField").value.trim();
-        const pos = $("#playerPositionField").value;
-        const targetTeamId = currentTeamSheetId || (editingPlayerId && state.players[editingPlayerId]?.teamId);
-        const team = targetTeamId && state.teams[targetTeamId];
 
-        const playerContext = {
-          name: (first || last) ? (first + " " + last).trim() : "JUGADOR",
-          number: num || "10",
-          position: pos || "DEL",
-          teamName: team ? team.name : "EQUIPO",
-          color1: team?.colorPrimary || "#2f7ff0",
-          color2: team?.colorSecondary || "#0f3f96"
-        };
-
-        openPaniniCropper(f, playerContext, finalDataUrl => {
+        /* Ya no se leen nombre, numero, posicion ni equipo aca. Servian para
+           pintar el cromo de la vista previa del recortador —que se fue— y el
+           PNG horneado solo lleva la foto. */
+        adaptarFotoAlPanini(f, finalDataUrl => {
           $("#playerPhotoPreview").innerHTML = `<img src="${finalDataUrl}" alt="">`;
           pendingPlayerPhoto = finalDataUrl;
         });
       });
 
-      // Allow tapping on player photo preview to adjust or crop again
-      $("#playerPhotoPreview")?.addEventListener("click", () => {
-        if (pendingPlayerPhoto || (editingPlayerId && state.players[editingPlayerId]?.photoDataUrl)) {
-          const src = pendingPlayerPhoto || state.players[editingPlayerId].photoDataUrl;
-          const first = $("#playerFirstField").value.trim();
-          const last = $("#playerLastField").value.trim();
-          const num = $("#playerNumberField").value.trim();
-          const pos = $("#playerPositionField").value;
-          const targetTeamId = currentTeamSheetId || (editingPlayerId && state.players[editingPlayerId]?.teamId);
-          const team = targetTeamId && state.teams[targetTeamId];
-
-          const playerContext = {
-            name: (first || last) ? (first + " " + last).trim() : "JUGADOR",
-            number: num || "10",
-            position: pos || "DEL",
-            teamName: team ? team.name : "EQUIPO",
-            color1: team?.colorPrimary || "#2f7ff0",
-            color2: team?.colorSecondary || "#0f3f96"
-          };
-
-          openPaniniCropper(src, playerContext, finalDataUrl => {
-            $("#playerPhotoPreview").innerHTML = `<img src="${finalDataUrl}" alt="">`;
-            pendingPlayerPhoto = finalDataUrl;
-          });
-        }
-      });
       $("#playerForm").addEventListener("submit", async e=>{
         e.preventDefault();
         const id=editingPlayerId||uid("p");
