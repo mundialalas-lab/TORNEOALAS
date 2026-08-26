@@ -1014,6 +1014,19 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   box-shadow:0 3px 9px rgba(0,0,0,.5);
 }
 
+/* Durante el despliegue el desenfoque del dock se apaga del todo.
+   Es la operacion mas cara que hay en pantalla y ocurre justo cuando cada
+   milisegundo cuenta; apagarla por esos 300 ms devuelve los cuadros que
+   faltaban. El dock conserva su fondo, asi que no se ve un hueco: se ve un
+   instante menos translucido y nadie lo nota. */
+body.desplegando #tabBar,
+body.desplegando .topbar .tab-bar,
+body.desplegando .topbar-tabs{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  background:rgba(12,17,25,.97) !important;
+}
+
 /* ------------------------------------------------- el panel desplegado --- */
 /* Arranca cerrado. El alto lo maneja GSAP: aca solo se evita que asome algo
    mientras se anima.
@@ -7054,8 +7067,13 @@ body{background:transparent !important}
     border: none !important;
     border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 20px 20px 0 0 !important;
-    backdrop-filter: blur(35px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(35px) saturate(160%) !important;
+    /* 35px de desenfoque era carisimo. El dock esta FIJO sobre el contenido
+       que se mueve, asi que el navegador tiene que rehacer ese desenfoque en
+       CADA cuadro en que algo pasa por debajo: al scrollear y, sobre todo, al
+       desplegar un partido. El costo crece con el radio, y de 35 a 16 la
+       diferencia se ve poco y se siente mucho. */
+    backdrop-filter: blur(16px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
     z-index: 99999 !important;
     box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.4) !important;
     margin: 0 !important;
@@ -11271,7 +11289,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
            llega sola, por ejemplo— asi que se la despierta desde aca. */
         try{ window.dispatchEvent(new Event("alasRender")); }catch(e){}
         const {announce=false, preserveScroll=true}=opts;
-        const savedScrollY = (preserveScroll && typeof window !== "undefined") ? window.scrollY : 0;
+        /* Con un modal abierto el <body> esta en position:fixed y window.scrollY
+           vale CERO: la posicion real vive en su `top` negativo. Leer scrollY a
+           secas guardaba 0, y como el restaurador de abajo solo actua si el
+           valor es mayor que cero, la pagina se quedaba arriba de todo.
+
+           Cuando hay modal no se restaura desde aca: lo hace el desbloqueo al
+           cerrarlo, que es el unico que sabe cuando el body vuelve a scrollear.
+           Dos restauradores compitiendo es peor que uno. */
+        const hayModal = document.body.classList.contains("modal-open");
+        const savedScrollY = (preserveScroll && !hayModal && typeof window !== "undefined") ? window.scrollY : 0;
         const oldChampion=previousChampion,oldPlayed=lastPlayedCount;
         syncGroupsToFormat();
         regenerateAllGroupFixtures();
@@ -17534,6 +17561,18 @@ body.modal-open .topbar-tabs{
      delegado en el documento porque la lista se vuelve a dibujar entera en
      cada render, y un listener puesto sobre las filas moriria con ellas. */
 
+  /* Un CONTADOR y no una clase suelta. Con el acordeon corren dos
+     animaciones a la vez —la que se cierra y la que se abre— y la de cierre
+     dura menos: si cada una sacara la clase al terminar, la primera en
+     terminar le devolveria el desenfoque al dock con la otra todavia
+     corriendo, que es exactamente el cuadro en que no hay que gastar. La
+     clase se saca cuando termina la ULTIMA. */
+  var animando = 0;
+  function marcarAnimando(delta){
+    animando = Math.max(0, animando + delta);
+    document.body.classList.toggle('desplegando', animando > 0);
+  }
+
   function animarAcciones(duelo, panel, abrir){
     var g = window.gsap;
     var quieto = !g || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -17542,7 +17581,11 @@ body.modal-open .topbar-tabs{
     var fila = duelo.querySelector('.fx-fila');
     if (fila) fila.setAttribute('aria-expanded', abrir ? 'true' : 'false');
 
-    if (quieto){ panel.hidden = !abrir; return; }
+    if (quieto){
+      panel.hidden = !abrir;
+      marcarAnimando(-1);
+      return;
+    }
 
     /* Animar `height` obliga al navegador a recalcular el layout en CADA
        cuadro: es lo unico que hace que los partidos de abajo se corran en vez
@@ -17562,6 +17605,8 @@ body.modal-open .topbar-tabs{
        el transform sino el layout. */
     var dentro = panel.firstElementChild;
 
+    marcarAnimando(1);
+
     if (abrir){
       panel.hidden = false;
       panel.style.willChange = 'height';
@@ -17570,6 +17615,7 @@ body.modal-open .topbar-tabs{
         onComplete: function(){
           g.set(panel, {clearProps:'height'});
           panel.style.willChange = '';
+          marcarAnimando(-1);
         }
       });
       tl.fromTo(panel, {height:0}, {height:'auto', duration:.30, ease:'power2.out'}, 0);
@@ -17584,6 +17630,7 @@ body.modal-open .topbar-tabs{
           panel.hidden = true;
           g.set(panel, {clearProps:'height'});
           panel.style.willChange = '';
+          marcarAnimando(-1);
         }
       });
       if (dentro) tc.to(dentro, {y:-10, autoAlpha:0, duration:.16, ease:'power2.in'}, 0);
@@ -17660,13 +17707,33 @@ body.modal-open .topbar-tabs{
     } else {
       document.body.classList.remove('modal-open');
       document.body.style.top = '';
+
       /* El <html> de esta hoja declara scroll-behavior:smooth. Sin apagarlo
          acá, volver a la posición guardada se vería como un viaje animado
          por toda la página en vez de un regreso instantáneo. */
       var antes = document.documentElement.style.scrollBehavior;
       document.documentElement.style.scrollBehavior = 'auto';
-      window.scrollTo(0, scrollGuardado);
-      document.documentElement.style.scrollBehavior = antes;
+
+      /* Se pide la posicion TRES veces, y no por desconfianza: cerrar un
+         modal casi siempre viene con un renderAll detras —guardar un
+         resultado vuelve a dibujar la lista entera—. En el instante del
+         primer scrollTo la lista nueva todavia no esta medida, y si el
+         documento quedo mas corto que antes el navegador RECORTA la posicion
+         al maximo que existe en ese momento. Uno termina arriba de todo, que
+         es justo lo que se reportaba.
+
+         Las dos pasadas siguientes son despues de que el layout se asento, y
+         ahi la posicion ya existe. Pedir un scroll que ya esta puesto no
+         cuesta nada. */
+      var volver = function(){ window.scrollTo(0, scrollGuardado); };
+      volver();
+      requestAnimationFrame(function(){
+        volver();
+        requestAnimationFrame(function(){
+          volver();
+          document.documentElement.style.scrollBehavior = antes;
+        });
+      });
     }
   }
 
