@@ -824,6 +824,90 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
    al costado. Alineados en columna el ojo baja derecho y se escanean muchos
    partidos seguidos, en vez de leer en zigzag como en el formato enfrentado. */
 /* ==========================================================================
+   AJUSTE DE LA FOTO DEL PANINI
+   --------------------------------------------------------------------------
+   La carta de muestra copia la geometria de .pcard, no se le parece:
+
+       .pcard          aspect-ratio 3/4
+       .pcard-photo    top:3%  bottom:26%   -> banda del 71% del alto
+       object-fit      contain  ->  una imagen de 460x636 en esa banda entra
+                                    por altura y ocupa el 68.48% del ancho,
+                                    con 15.76% de margen a cada lado
+
+   Esos son los cuatro numeros del <canvas> de abajo. Salen del calculo.
+   ========================================================================== */
+.pj-carta{
+  position:relative;
+  width:min(230px,64vw);
+  aspect-ratio:3/4;
+  margin:2px auto 14px;
+  border-radius:var(--r-sm);
+  overflow:hidden;
+  background:var(--kit1,#2f7ff0);
+  container-type:inline-size;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.75);
+  cursor:grab;
+  touch-action:none;          /* el arrastre es nuestro, no del scroll */
+  user-select:none;
+}
+.pj-carta:active{cursor:grabbing}
+
+/* el "26" del fondo, con la misma medida en cqw que usa la figurita */
+.pj-26{
+  position:absolute;top:-6%;left:-4%;
+  font-family:'Anton',var(--font-display),sans-serif;
+  font-size:56cqw;line-height:.74;letter-spacing:-.06em;
+  color:var(--kit2,#0f3f96);opacity:.5;
+  z-index:0;pointer-events:none;
+}
+
+/* AQUI esta lo que hace que no mienta: el lienzo ocupa el mismo rectangulo
+   donde la figurita real deja la foto. */
+.pj-foto{
+  position:absolute;
+  top:3%;
+  left:15.76%;
+  width:68.48%;
+  height:71%;
+  z-index:1;
+  display:block;
+  pointer-events:none;        /* el gesto lo toma la carta entera */
+}
+
+/* la barra del nombre, como .pcard-info */
+.pj-info{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  padding:26px 8px 10px;
+  text-align:center;
+  background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.65) 60%,transparent 100%);
+  pointer-events:none;
+}
+.pj-nombre{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:13cqw;line-height:1;
+  text-transform:uppercase;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.pj-sub{
+  margin-top:3px;
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:700;font-size:7cqw;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--gold-bright,#f5b30e);
+}
+
+.pj-controles{
+  display:flex;align-items:center;gap:12px;
+  width:min(230px,64vw);margin:0 auto;
+}
+.pj-zoom{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.pj-zoom > span{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:700;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-mute);flex:none;
+}
+.pj-zoom input{flex:1;min-width:0}
+
+/* ==========================================================================
    VER DETALLES · el afiche de encuentros
    --------------------------------------------------------------------------
    Calcado del afiche que se cuelga antes de la fecha: banda con el dia, y
@@ -8649,6 +8733,43 @@ body{background:transparent !important}
   
   <!-- Modal: Monitor de Usuarios (Minimalista PRO) -->
   
+  <!-- Ajuste de la foto antes de guardarla. La carta de la izquierda NO es
+       una ilustracion: es la geometria medida de .pcard, y el <canvas> ocupa
+       exactamente el rectangulo donde la figurita real deja la foto. Lo que se
+       ve aca es lo que se guarda, porque los dos los dibuja la misma funcion. -->
+  <div class="modal-backdrop" id="paniniAjusteModal" role="dialog" aria-modal="true" aria-labelledby="pjTitulo">
+    <div class="modal" style="max-width:420px">
+      <header class="modal-head">
+        <div>
+          <h2 id="pjTitulo">Acomodá la foto</h2>
+          <p>Arrastrá para mover · pellizcá o usá el zoom</p>
+        </div>
+        <button class="close-btn" id="btnCerrarAjuste" type="button" aria-label="Cerrar">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="pj-carta" id="pjCarta">
+          <span class="pj-26" aria-hidden="true">26</span>
+          <canvas class="pj-foto" id="pjCanvas" width="460" height="636"></canvas>
+          <div class="pj-info">
+            <div class="pj-nombre" id="pjNombre">Jugador</div>
+            <div class="pj-sub" id="pjSub"></div>
+          </div>
+        </div>
+        <div class="pj-controles">
+          <label class="pj-zoom">
+            <span>Zoom</span>
+            <input type="range" id="pjZoom" min="0.76" max="2.6" step="0.02" value="1" aria-label="Acercar o alejar la foto">
+          </label>
+          <button type="button" class="btn secondary small" id="pjReset">Centrar</button>
+        </div>
+      </div>
+      <footer class="modal-actions">
+        <button class="btn secondary" id="pjCancelar" type="button">Cancelar</button>
+        <button class="btn" id="pjConfirmar" type="button">Usar esta foto</button>
+      </footer>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="usersMonitorModal" role="dialog" aria-modal="true" aria-labelledby="usersMonitorModalTitle">
     <div class="modal" style="max-width: 460px; max-height: 85dvh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; background: #0c1424; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
       
@@ -11806,68 +11927,203 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          ================================================================== */
       const PANINI_W = 460, PANINI_H = 636;
 
-      function adaptarFotoAlPanini(imgSource, onListo) {
+      /* ==================================================================
+         AJUSTE DE LA FOTO DEL PANINI
+         ------------------------------------------------------------------
+         La version anterior de esto mentia: previsualizaba con una geometria
+         y la figurita se dibujaba con otra, asi que lo que uno encuadraba no
+         era lo que salia. Por eso se habia sacado.
+
+         Ahora es fiel POR CONSTRUCCION y no por coincidencia: hay UNA sola
+         funcion que dibuja —dibujarEncuadre— y la usan las dos cosas, la
+         vista previa en pantalla y el PNG que se guarda. No hay forma de que
+         se separen, porque son el mismo codigo corriendo sobre el mismo
+         lienzo de 460x636.
+
+         Y la carta de la vista previa no es un dibujo parecido: es la
+         geometria medida de .pcard —relacion 3/4, la foto en la banda que va
+         del 3% al 74%, y ahi adentro contenida al 68.48% del ancho—. Los
+         numeros salen del calculo, no del ojo.
+         ================================================================== */
+      const ACERCAMIENTO = 1.32;   // cuanto se acerca respecto de "cubrir"
+      const RECORTE_Y    = 0.42;   // del sobrante vertical, cuanto sale de abajo
+
+      function cubrirDe(img){
+        return Math.max(PANINI_W / img.width, PANINI_H / img.height);
+      }
+
+      /* El encuadre con el que se abre: el mismo automatico de siempre. */
+      function encuadreInicial(img){
+        const alto = img.height * cubrirDe(img) * ACERCAMIENTO;
+        return { zoom: 1, x: 0, y: Math.max(0, alto - PANINI_H) * RECORTE_Y };
+      }
+
+      /* Que la foto no se pueda correr hasta dejar un borde vacio: se limita
+         al sobrante real en cada eje. Con zoom 1 el sobrante horizontal suele
+         ser cero, y entonces x queda clavado en 0, que es lo correcto. */
+      function limitarEncuadre(enc, img){
+        const esc = cubrirDe(img) * ACERCAMIENTO * enc.zoom;
+        const mx = Math.max(0, (img.width  * esc - PANINI_W) / 2);
+        const my = Math.max(0, (img.height * esc - PANINI_H) / 2);
+        enc.x = Math.min(mx, Math.max(-mx, enc.x));
+        enc.y = Math.min(my, Math.max(-my, enc.y));
+        return enc;
+      }
+
+      /* LA funcion. Vista previa y archivo final pasan por aca. */
+      function dibujarEncuadre(ctx, img, enc){
+        const esc = cubrirDe(img) * ACERCAMIENTO * enc.zoom;
+        const w = img.width * esc, h = img.height * esc;
+        ctx.clearRect(0, 0, PANINI_W, PANINI_H);
+        ctx.drawImage(img,
+          PANINI_W / 2 + enc.x - w / 2,
+          PANINI_H / 2 + enc.y - h / 2,
+          w, h);
+      }
+
+      function hornearEncuadre(img, enc){
+        const lienzo = document.createElement("canvas");
+        lienzo.width = PANINI_W; lienzo.height = PANINI_H;
+        dibujarEncuadre(lienzo.getContext("2d"), img, enc);
+        return lienzo.toDataURL("image/png");
+      }
+
+      /* --------------------------------------------------- el ajustador -- */
+      let ajImg = null, ajEnc = null, ajListo = null, ajUrlBlob = null;
+
+      function ajPintar(){
+        const c = $("#pjCanvas");
+        if (!c || !ajImg) return;
+        dibujarEncuadre(c.getContext("2d"), ajImg, limitarEncuadre(ajEnc, ajImg));
+      }
+
+      function abrirAjustePanini(archivo, ficha, onListo){
         const img = new Image();
 
+        img.onerror = () => showToast("No pude leer esa imagen. Probá con otra.");
+
         img.onload = () => {
-          const lienzo = document.createElement("canvas");
-          lienzo.width = PANINI_W;
-          lienzo.height = PANINI_H;
-          const ctx = lienzo.getContext("2d");
+          ajImg = img;
+          ajEnc = encuadreInicial(img);
+          ajListo = onListo;
 
-          /* ACERCAMIENTO
-             Con cobertura + 6% se mostraba casi la foto ENTERA: el 94% de su
-             alto en una foto de telefono. Y una figurita no es una foto
-             entera, es un retrato — cabeza y hombros—. Si el jugador esta de
-             cuerpo entero o parado lejos, mostrarlo completo hace que la cara
-             salga chiquita y con medio cuerpo de aire debajo, que es como se
-             lee "queda muy hacia abajo".
+          // el cromo de la carta, para que la vista previa sea la figurita real
+          const carta = $("#pjCarta");
+          if (carta && ficha) {
+            carta.style.setProperty("--kit1", ficha.color1 || "#2f7ff0");
+            carta.style.setProperty("--kit2", ficha.color2 || "#0f3f96");
+          }
+          const pon = (sel, txt) => { const el = $(sel); if (el) el.textContent = txt; };
+          pon("#pjNombre", (ficha && ficha.name) || "JUGADOR");
+          pon("#pjSub", [(ficha && ficha.position) || "", (ficha && ficha.number) ? "Nº " + ficha.number : ""]
+                          .filter(Boolean).join(" · "));
 
-             1.32 muestra alrededor de tres cuartos de la foto en vez de
-             enterita: acerca lo suficiente para que la cara pese, sin llegar
-             a cortar hombros en una foto de medio cuerpo.
+          const z = $("#pjZoom");
+          if (z) { z.min = (1 / ACERCAMIENTO).toFixed(2); z.value = 1; }
 
-             Es EL numero a mover si el encuadre no convence: mas alto acerca,
-             mas bajo aleja. */
-          const ACERCAMIENTO = 1.32;
-          const cubrir = Math.max(PANINI_W / img.width, PANINI_H / img.height);
-          const escala = cubrir * ACERCAMIENTO;
-          const anchoDib = img.width * escala;
-          const altoDib = img.height * escala;
-
-          /* ALTURA DEL RECORTE
-             De lo que sobra a lo alto, cuanto se recorta de ABAJO en vez de
-             arriba. El maximo util es la mitad del sobrante: ahi el borde de
-             arriba de la foto queda al ras del de la figurita y todo el
-             recorte sale de los pies.
-
-             0.42 de la sobra es el 84% de ese recorrido: casi todo el recorte
-             sale de abajo —que es donde estan las piernas y el piso— y queda
-             apenas un margen arriba para no comerse el pelo de alguien que
-             haya salido muy al borde de su foto. */
-          const sobra = Math.max(0, altoDib - PANINI_H);
-          const desplazamientoY = sobra * 0.42;
-
-          const centroX = PANINI_W / 2;
-          const centroY = PANINI_H / 2 + desplazamientoY;
-
-          ctx.drawImage(img,
-            centroX - anchoDib / 2, centroY - altoDib / 2,
-            anchoDib, altoDib);
-
-          if (typeof onListo === "function") onListo(lienzo.toDataURL("image/png"));
-          if (typeof URL !== "undefined" && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+          ajPintar();
+          $("#paniniAjusteModal")?.classList.add("open");
         };
 
-        /* Si la foto no se puede leer —un archivo roto, o un formato que el
-           navegador no abre— no se puede seguir en silencio: sin este aviso
-           el usuario elige la foto y no pasa nada visible. */
-        img.onerror = () => {
-          showToast("No pude leer esa imagen. Probá con otra.");
-        };
-
-        img.src = (typeof imgSource === "string") ? imgSource : URL.createObjectURL(imgSource);
+        if (typeof archivo === "string") img.src = archivo;
+        else { ajUrlBlob = URL.createObjectURL(archivo); img.src = ajUrlBlob; }
       }
+
+      function cerrarAjustePanini(){
+        $("#paniniAjusteModal")?.classList.remove("open");
+        if (ajUrlBlob) { try { URL.revokeObjectURL(ajUrlBlob); } catch(e){} ajUrlBlob = null; }
+        ajImg = null; ajEnc = null; ajListo = null;
+      }
+
+      /* ---- arrastrar ----
+         El factor convierte pixeles de PANTALLA en pixeles del LIENZO. El
+         lienzo mide 460 de ancho pero en pantalla se ve mucho mas chico, asi
+         que sin esta conversion la foto se movia mas lento que el dedo. Se
+         mide en cada gesto porque el tamaño en pantalla cambia con la
+         orientacion y con el tamaño de la ventana. */
+      (function(){
+        const c = () => $("#pjCanvas");
+        let arr = null, pinza = null;
+
+        const factor = () => {
+          const el = c(); if (!el) return 1;
+          const r = el.getBoundingClientRect();
+          return r.width ? PANINI_W / r.width : 1;
+        };
+        const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+        document.addEventListener("pointerdown", e => {
+          const el = c();
+          if (!el || !ajImg || !e.target.closest || !e.target.closest("#pjCarta")) return;
+          e.preventDefault();
+          arr = { id: e.pointerId, x: e.clientX, y: e.clientY, ex: ajEnc.x, ey: ajEnc.y, f: factor() };
+          try { el.setPointerCapture(e.pointerId); } catch(err){}
+        });
+
+        document.addEventListener("pointermove", e => {
+          if (!arr || e.pointerId !== arr.id || !ajImg) return;
+          ajEnc.x = arr.ex + (e.clientX - arr.x) * arr.f;
+          ajEnc.y = arr.ey + (e.clientY - arr.y) * arr.f;
+          ajPintar();
+        });
+
+        const soltar = e => { if (arr && e.pointerId === arr.id) arr = null; };
+        document.addEventListener("pointerup", soltar);
+        document.addEventListener("pointercancel", soltar);
+
+        /* ---- pellizcar para acercar ---- */
+        const tocando = new Map();
+        document.addEventListener("touchstart", e => {
+          if (!ajImg || !e.target.closest || !e.target.closest("#pjCarta")) return;
+          if (e.touches.length === 2) {
+            arr = null;
+            pinza = { d: dist(e.touches[0], e.touches[1]), z: ajEnc.zoom };
+          }
+        }, { passive: true });
+
+        document.addEventListener("touchmove", e => {
+          if (!pinza || !ajImg || e.touches.length !== 2) return;
+          const d = dist(e.touches[0], e.touches[1]);
+          if (!pinza.d) return;
+          const min = 1 / ACERCAMIENTO;
+          ajEnc.zoom = Math.min(2.6, Math.max(min, pinza.z * (d / pinza.d)));
+          const z = $("#pjZoom"); if (z) z.value = ajEnc.zoom;
+          ajPintar();
+        }, { passive: true });
+
+        document.addEventListener("touchend", () => { if (pinza) pinza = null; }, { passive: true });
+      })();
+
+      $("#pjZoom")?.addEventListener("input", e => {
+        if (!ajImg) return;
+        ajEnc.zoom = parseFloat(e.target.value) || 1;
+        ajPintar();
+      });
+
+      $("#pjReset")?.addEventListener("click", () => {
+        if (!ajImg) return;
+        ajEnc = encuadreInicial(ajImg);
+        const z = $("#pjZoom"); if (z) z.value = 1;
+        playClick();
+        ajPintar();
+      });
+
+      $("#pjConfirmar")?.addEventListener("click", () => {
+        if (!ajImg || typeof ajListo !== "function") return cerrarAjustePanini();
+        const url = hornearEncuadre(ajImg, limitarEncuadre(ajEnc, ajImg));
+        const cb = ajListo;
+        cerrarAjustePanini();
+        cb(url);
+        playAdvance();
+        showToast("Foto lista para la figurita");
+      });
+
+      $("#pjCancelar")?.addEventListener("click", cerrarAjustePanini);
+      $("#btnCerrarAjuste")?.addEventListener("click", cerrarAjustePanini);
+      $("#paniniAjusteModal")?.addEventListener("click", e => {
+        if (e.target === e.currentTarget) cerrarAjustePanini();
+      });
+
 
       function renderUsersPanel() {
         const grid = $("#usersActiveGrid");
@@ -15031,13 +15287,25 @@ function loop(){
       $("#playerPhotoFile").addEventListener("change", async e => {
         const f = e.target.files[0]; if(!f) return;
 
-        /* Ya no se leen nombre, numero, posicion ni equipo aca. Servian para
-           pintar el cromo de la vista previa del recortador —que se fue— y el
-           PNG horneado solo lleva la foto. */
-        adaptarFotoAlPanini(f, finalDataUrl => {
+        /* Los datos de la ficha son para el cromo de la vista previa: el
+           nombre y la posicion abajo, y los colores del equipo de fondo. Sin
+           eso la carta de muestra no seria la figurita de esta persona, y la
+           gracia es justamente encuadrar contra la figurita real. */
+        const eq = state.teams[currentTeamSheetId || (editingPlayerId && state.players[editingPlayerId]?.teamId)] || null;
+        const nom = [$("#playerFirstField").value.trim(), $("#playerLastField").value.trim()]
+                      .filter(Boolean).join(" ");
+        abrirAjustePanini(f, {
+          name: nom || "Jugador",
+          number: $("#playerNumberField").value.trim(),
+          position: $("#playerPositionField").value,
+          color1: eq?.colorPrimary,
+          color2: eq?.colorSecondary
+        }, finalDataUrl => {
           $("#playerPhotoPreview").innerHTML = `<img src="${finalDataUrl}" alt="">`;
           pendingPlayerPhoto = finalDataUrl;
         });
+        // el input se limpia para que elegir la MISMA foto otra vez vuelva a disparar
+        e.target.value = "";
       });
 
       $("#playerForm").addEventListener("submit", async e=>{
