@@ -10454,38 +10454,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const scoreHtml=played?esc(score):"–";
         return mtRow(t,nameHtml,scoreHtml,result,slot.isBye?"—":"?");
       }
-      function matchCard(m){
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        const winner=getWinner(m);
-        const isBye=home.isBye||away.isBye;
-        const played=matchScoreOk(m);
-        const live=m.status==="live";
-        const agg=aggregateScore(m);
-        const tied=home.id&&away.id&&played&&agg.h===agg.a&&!winner;
-        const status=isBye?(winner?"Bye":"Pendiente"):winner?"Definido":tied?"Penales":"Pendiente";
-        const statusClass=winner?"defined":tied?"tied":"";
-        // en una serie el marcador visible es el global; el detalle de cada
-        // partido va abajo para no confundirlo con el resultado de la llave
-        const when=m.twoLegs
-          ? [m.date?formatDateShort(m.date):"",m.dateLeg2?"y "+formatDateShort(m.dateLeg2):"",m.venue||""].filter(Boolean).join(" · ")
-          : [m.date?formatDateShort(m.date):"",m.time||"",m.venue||""].filter(Boolean).join(" · ");
-        const legLine=(m.twoLegs&&played)
-          ? `<div class="mc-legs"><span>Ida ${m.scoreHome}-${m.scoreAway}</span><span>Vuelta ${m.scoreHome2}-${m.scoreAway2}</span></div>`
-          : m.twoLegs?`<div class="mc-legs"><span class="mc-legs-pending">Serie ida y vuelta</span></div>`:"";
-        return `<article class="match-card${m.twoLegs?" is-series":""}" id="node-${m.id}">
-          <div class="mc-head">
-            <span class="mc-label">${esc(m.label||"")}</span>
-            <span class="match-status ${statusClass}">${status}</span>
-          </div>
-          <div class="mt ${live?"is-live":""}">
-            ${bracketRow(home,played?agg.h:m.scoreHome,winner,played,played?agg.a:m.scoreAway)}
-            ${bracketRow(away,played?agg.a:m.scoreAway,winner,played,played?agg.h:m.scoreHome)}
-            ${legLine}
-            ${mtFoot(m,played,live,esc(when))}
-          </div>
-          <button class="btn subtle small admin-only mc-action" type="button" data-open-match="${m.id}" ${(!home.id||!away.id||isBye)?"disabled":""}>${played?"Editar resultado":"Cargar resultado"}</button>
-        </article>`;
-      }
 
       /* ====================================================================
          LA LLAVE
@@ -11498,12 +11466,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         noise(.75,.05,.15);setTimeout(()=>noise(.85,.045),450);
       }
       // Cortina sonora de apertura: barrido ascendente + acorde de impacto.
-      function playIntroStinger(){
-        noise(.5,.05);
-        [196,261.6,392].forEach((f,i)=>tone(f,.5,"sawtooth",.05,i*.05));
-        [523.3,659.3,784,1046.5].forEach((f,i)=>tone(f,.55,"triangle",.075,.28+i*.06));
-        noise(.4,.035,.3);
-      }
       function launchConfetti(){
         const canvas=$("#confettiCanvas"),ctx=canvas.getContext("2d"),dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=innerWidth*dpr;canvas.height=innerHeight*dpr;canvas.style.width=innerWidth+"px";canvas.style.height=innerHeight+"px";ctx.scale(dpr,dpr);
         const colors=["#0879dd","#31b8ff","#24c77b","#ffbf3d","#ffffff","#ff6071"];
@@ -14561,7 +14523,6 @@ function loop(){
         $("#legendModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open");
         editingLegendId=null;pendingLegendPhoto=null;
       }
-      $("#btnNewLegend")?.addEventListener("click",()=>openLegendModal(null));
       $("#btnCloseLegendModal").addEventListener("click",closeLegendModal);
       $("#btnCancelLegendModal").addEventListener("click",closeLegendModal);
       $("#legendModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeLegendModal()});
@@ -14700,7 +14661,6 @@ function loop(){
       $("#btnAlbumTop").addEventListener("click",()=>{switchTab("album");playClick()});
       const moreMenu=document.querySelector(".more-menu");
       $("#btnConfigure").addEventListener("click",openConfig);
-      if($("#btnConfigureMob")) $("#btnConfigureMob").addEventListener("click",openConfig);
       if(moreMenu)moreMenu.addEventListener("toggle",()=>{if(moreMenu.open&&window.gsap)gsap.from(".more-menu .more-item",{y:10,autoAlpha:0,stagger:.05,duration:.32,ease:"power2.out"})});
 
       $("#volumeField").addEventListener("input",e=>$("#volumeValue").textContent=`${e.target.value}%`);
@@ -15675,7 +15635,6 @@ function loop(){
       }
 
       $("#btnCerrarSesion")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
-      $("#btnCambiarPerfil")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
       $("#btnConfigLogout")?.addEventListener("click", () => { playClick(); cerrarSesion(); showToast("Sesión cerrada"); });
 
       /* ====================================================================
@@ -15789,9 +15748,6 @@ function loop(){
         showToast(`¡Bienvenido, ${state.users[id].name}!`);
       });
       { const lg=$("#albumGateLogo"); if(lg&&typeof ALAS_LOGO==="string")lg.style.backgroundImage=`url('${ALAS_LOGO}')`; }
-      // El modo estadio quedó fijo (la clase va en el <body> del HTML), así que
-      // el botón ya no existe. Se conserva el enganche por si se lo repone.
-      $("#btnStadium")?.addEventListener("click",()=>{document.body.classList.toggle("presentation-mode");const active=document.body.classList.contains("presentation-mode");$("#btnStadium").classList.toggle("is-active",active);playWhistle();requestConnectors();showToast(active?"Modo estadio activado":"Modo estadio desactivado")});
       $("#btnFullscreen").addEventListener("click",async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();playClick()}catch{showToast("El navegador no permitió la pantalla completa")}});
       /* Reinicio del torneo. El confirm() del navegador salía como una barrita
          gris arriba de todo, fácil de aceptar sin leer; para algo irreversible
@@ -15851,7 +15807,6 @@ function loop(){
       })();
       // el mapa con scroll horizontal y capa SVG lo reemplazó la llave espejada,
       // que traza sus líneas con CSS; el nodo puede no existir
-      $("#mapScroller")?.addEventListener("scroll",requestConnectors,{passive:true});
 
       /* ====================================================================
          INDICADOR DESLIZANTE DE LA BARRA
@@ -16196,33 +16151,6 @@ function loop(){
         });
       }
 
-      // ===== intro / splash =====
-      (()=>{
-        const intro=$("#introScreen");if(!intro)return;
-        const subEl=document.getElementById("introSubtitle");if(subEl) subEl.textContent=state.tournament.subtitle;
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
-        let dismissed=false;
-        // fromGesture: sólo entonces el navegador habilita el audio, así que
-        // el stinger se reserva para la salida manual (click / tecla).
-        const dismiss=(fromGesture)=>{
-          if(dismissed)return;dismissed=true;
-          intro.classList.add("hide");
-          document.body.style.overflow="";document.body.classList.remove("modal-open");
-          if(fromGesture)playIntroStinger();
-          setTimeout(()=>intro.remove(),650);
-        };
-        $("#introSkip").addEventListener("click",()=>dismiss(true));
-        intro.addEventListener("click",e=>{if(e.target===intro)dismiss(true)});
-        document.addEventListener("keydown",e=>{if(e.key==="Escape")dismiss(true)},{once:true});
-        // la intro espera a que termine el splash de video y reinicia su coreografía
-        window.addEventListener("splashDone",()=>{
-          if(dismissed)return;
-          ["intro-progress-bar","intro-glint","intro-flash","intro-stripes i","intro-line-1","intro-line-2","intro-eyebrow","intro-logo","intro-sub","intro-hosts","intro-progress","intro-skip"].forEach(sel=>{
-            document.querySelectorAll(sel).forEach(el=>{el.style.animation="none";void el.offsetWidth;el.style.animation=""});
-          });
-          setTimeout(()=>dismiss(false),4200);
-        },{once:true});
-      })();
     })();
   </script>
 <script>
