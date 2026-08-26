@@ -11809,13 +11809,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         pills.forEach(p => p.classList.toggle("active", p.dataset.filter === "all"));
         renderUsersMonitorModal();
         $("#usersMonitorModal").classList.add("open");
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+        
         playClick();
       }
 
       function closeUsersMonitorModal() {
         $("#usersMonitorModal").classList.remove("open");
-        document.body.style.overflow="";document.body.classList.remove("modal-open");
+        
       }
 
       function renderUsersMonitorModal() {
@@ -12247,9 +12247,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#teamPhotoPreview").innerHTML=t?.photoDataUrl?`<img src="${t.photoDataUrl}" alt="">`:"Sin foto";
         $("#teamPhotoFile").value="";
         $("#btnDeleteTeam").style.display=t?"":"none";
-        $("#teamModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
+        $("#teamModal").classList.add("open");playClick();
       }
-      function closeTeamModal(){$("#teamModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
+      function closeTeamModal(){$("#teamModal").classList.remove("open");}
 
       // ===== modal: foto del plantel (capitán y admin) =====
       let pendingTeamQuickPhoto=null;
@@ -12263,9 +12263,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#teamPhotoQuickPreview").innerHTML=t.photoDataUrl?`<img src="${t.photoDataUrl}" alt="">`:"Sin foto";
         $("#teamPhotoQuickFile").value="";
         $("#btnDeleteQuickPhoto").style.display=t.photoDataUrl?"":"none";
-        $("#teamPhotoModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
+        $("#teamPhotoModal").classList.add("open");playClick();
       }
-      function closeTeamPhotoModal(){$("#teamPhotoModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
+      function closeTeamPhotoModal(){$("#teamPhotoModal").classList.remove("open");}
 
       // ===== modal: jugador =====
       function openPlayerModal(playerId){
@@ -12287,9 +12287,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#playerPhotoPreview").innerHTML=p?.photoDataUrl?'<img src="'+p.photoDataUrl+'" alt="">':"Sin foto";
         $("#playerPhotoFile").value="";
         $("#btnDeletePlayer").style.display=p?"":"none";
-        $("#playerModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
+        $("#playerModal").classList.add("open");playClick();
       }
-      function closePlayerModal(){$("#playerModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
+      function closePlayerModal(){$("#playerModal").classList.remove("open");}
 
       // ===== modal: ver resultados =====
       function tvHeroHtml(playerId,rotulo,valor){
@@ -12377,10 +12377,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         
         $("#viewResultsModalBody").innerHTML = html;
         $("#viewResultsModal").classList.add("open");
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+        
         playClick();
       }
-      function closeMatchResultModal(){$("#viewResultsModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open")}
+      function closeMatchResultModal(){$("#viewResultsModal").classList.remove("open");}
 
       /* ======================================================================
          CONSOLA DE REGISTRO DEL PARTIDO
@@ -12779,7 +12779,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         poblarSelectFigura(home,away,m.mvpPlayerId||"");
         mrTeamId=null; mrPlayerId=null; mrTipo=null; mrCant=1;
         renderEventEditor(home,away);
-        $("#matchModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
+        $("#matchModal").classList.add("open");playClick();
         animarModalPartido();
       }
       function animarModalPartido(){
@@ -12795,7 +12795,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         cerrarHojaEvento();
         cerrarHojaJugadores();
         $("#matchModal").classList.remove("open");
-        document.body.style.overflow="";document.body.classList.remove("modal-open");
+        
         editingMatchId=null;
         if(matchModalSavedScroll > 0){
           requestAnimationFrame(() => {
@@ -14934,10 +14934,10 @@ function loop(){
         prev.innerHTML=pendingLegendPhoto?`<img src="${pendingLegendPhoto}" alt="">`:"Sin foto";
         $("#btnDeleteLegend").style.display=l?"":"none";
         $("#legendPhotoFile").value="";
-        $("#legendModal").classList.add("open");document.body.style.overflow="hidden";document.body.classList.add("modal-open");playClick();
+        $("#legendModal").classList.add("open");playClick();
       }
       function closeLegendModal(){
-        $("#legendModal").classList.remove("open");document.body.style.overflow="";document.body.classList.remove("modal-open");
+        $("#legendModal").classList.remove("open");
         editingLegendId=null;pendingLegendPhoto=null;
       }
       $("#btnCloseLegendModal").addEventListener("click",closeLegendModal);
@@ -15638,11 +15638,11 @@ function loop(){
         $("#matchVenueField").value=m.venue||"";
         $("#matchStatusField").value=m.status;
         $("#matchDataModal").classList.add("open");
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+        
       }
       function closeMatchDataModal(){
         $("#matchDataModal").classList.remove("open");
-        document.body.style.overflow="";document.body.classList.remove("modal-open");
+        
       }
       
       $("#matchDataForm").addEventListener("submit", async e=>{
@@ -15752,7 +15752,12 @@ function loop(){
         const p=$("#pantallaPerfiles");
         if(!p)return;
         p.hidden=false;
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+        /* Clase propia, NO modal-open. La de los modales lleva
+           position:fixed y un `top` negativo que calcula el observador
+           central; la pantalla de perfiles no pasa por ahi, y usar la misma
+           clase la dejaba en position:fixed sin nadie que le pusiera el top.
+           Aca alcanza con que el fondo no scrollee. */
+        document.body.classList.add("perfil-abierto");
         $("#pfPaso").hidden=true;
         $("#pfGrid").style.display="";
         const lg=$("#pfLogo");
@@ -15771,7 +15776,7 @@ function loop(){
       function ocultarPerfiles(){
         const p=$("#pantallaPerfiles");
         if(!p)return;
-        const cerrar=()=>{ p.hidden=true; document.body.style.overflow="";document.body.classList.remove("modal-open"); };
+        const cerrar=()=>{ p.hidden=true; document.body.classList.remove("perfil-abierto"); };
         if(anim())gsap.to(p,{autoAlpha:0,duration:.35,ease:"power2.in",onComplete:cerrar});
         else cerrar();
       }
@@ -16190,7 +16195,7 @@ function loop(){
         $("#resetConfirmField").value="";
         $("#resetErr").classList.remove("show");
         $("#resetModal").classList.add("open");
-        document.body.style.overflow="hidden";document.body.classList.add("modal-open");
+        
         playClick();
         setTimeout(()=>$("#resetConfirmField").focus(),80);
         if(window.gsap&&!matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -16199,7 +16204,7 @@ function loop(){
       }
       function cerrarResetModal(){
         $("#resetModal").classList.remove("open");
-        document.body.style.overflow="";document.body.classList.remove("modal-open");
+        
       }
       function ejecutarReset(){
         if($("#resetConfirmField").value.trim().toUpperCase()!=="REINICIAR"){
@@ -17713,6 +17718,11 @@ body.instalada .min-h-pantalla{height:100dvh}
    en bloque contenedor de sus hijos position:fixed. El dock, la barra de
    arriba y los sheets siguen anclados a la ventana. Es el mismo pozo que
    documenta el comentario del .topbar más arriba, y por eso acá se evita. */
+/* La pantalla de perfiles solo necesita que el fondo no se mueva. No lleva
+   position:fixed porque no pasa por el observador de modales, que es el que
+   guarda y devuelve la posicion del scroll. */
+body.perfil-abierto{overflow:hidden}
+
 body.modal-open{
   position:fixed;
   left:0;right:0;
