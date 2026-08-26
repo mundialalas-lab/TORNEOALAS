@@ -829,10 +829,10 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
    La carta de muestra copia la geometria de .pcard, no se le parece:
 
        .pcard          aspect-ratio 3/4
-       .pcard-photo    top:3%  bottom:26%   -> banda del 71% del alto
+       .pcard-photo    top:2%  bottom:8%    -> banda del 90% del alto
        object-fit      contain  ->  una imagen de 460x636 en esa banda entra
-                                    por altura y ocupa el 68.48% del ancho,
-                                    con 15.76% de margen a cada lado
+                                    por altura y ocupa el 86.79% del ancho,
+                                    con 6.60% de margen a cada lado
 
    Esos son los cuatro numeros del <canvas> de abajo. Salen del calculo.
    ========================================================================== */
@@ -865,10 +865,10 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
    donde la figurita real deja la foto. */
 .pj-foto{
   position:absolute;
-  top:3%;
-  left:15.76%;
-  width:68.48%;
-  height:71%;
+  top:2%;
+  left:6.60%;
+  width:86.79%;
+  height:90%;
   z-index:1;
   display:block;
   pointer-events:none;        /* el gesto lo toma la carta entera */
@@ -3016,7 +3016,20 @@ body.desplegando .topbar-tabs{
 }
 /* foto recortada: apoyada sobre las barras, nunca centrada */
 .pcard-photo{
-  position:absolute;left:0;right:0;top:3%;bottom:26%;
+  /* La banda llegaba al 74% del alto y ahi se cortaba, dejando el 26% de
+     abajo para el nombre. Pero .pcard-info NO ocupa ese lugar: es una capa
+     con degradado, apoyada ENCIMA. O sea que la foto podia extenderse por
+     detras y no lo hacia.
+
+     Con la banda del 3%-74%, una imagen de 460x636 metida con contain entra
+     por altura y ocupa el 68.5% del ancho: casi un tercio de la figurita
+     quedaba de fondo liso a los costados, y en un telefono eso se lee como
+     "la foto salio chica".
+
+     Del 2% al 92% la misma imagen ocupa el 86.8%: un 27% mas grande, con el
+     cuerpo entrando detras de la barra del nombre, que es como se ve una
+     figurita de verdad. */
+  position:absolute;left:0;right:0;top:2%;bottom:8%;
   z-index:1;
   display:grid;place-items:end center;
 }
@@ -11942,7 +11955,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
          Y la carta de la vista previa no es un dibujo parecido: es la
          geometria medida de .pcard —relacion 3/4, la foto en la banda que va
-         del 3% al 74%, y ahi adentro contenida al 68.48% del ancho—. Los
+         del 2% al 92%, y ahi adentro contenida al 86.79% del ancho—. Los
          numeros salen del calculo, no del ojo.
          ================================================================== */
       const ACERCAMIENTO = 1.32;   // cuanto se acerca respecto de "cubrir"
