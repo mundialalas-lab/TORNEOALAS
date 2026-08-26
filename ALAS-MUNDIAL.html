@@ -3646,7 +3646,14 @@ body.album-fs .footer-strip{display:none}
 .grupos-shell .team-cell .crest img{width:100%;height:100%;object-fit:cover}
 /* el color dice si clasifica o queda afuera; es la misma semántica del afiche */
 .grupos-shell .standings tr.is-qualified .pos{background:rgba(61,220,139,.2);color:var(--ll-win)}
+/* La franja de color que marca quien clasifica y quien queda afuera vivia en
+   la celda del numero de posicion. Sacada esa columna, la primera celda pasa
+   a ser la del equipo: el selector sigue siendo td:first-child y sigue
+   funcionando, pero ahora necesita algo de sangria para que la franja no
+   quede pegada al escudo. */
 .grupos-shell .standings tr.is-qualified td:first-child{box-shadow:inset 3px 0 0 var(--ll-win)}
+.grupos-shell .standings td:first-child{padding-left:14px}
+.grupos-shell .standings th:first-child{padding-left:14px}
 .grupos-shell .standings tr.is-out{opacity:.5}
 .grupos-shell .standings .pts-cell{
   font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:800;
@@ -10486,7 +10493,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                es cual. El cero va sin signo. */
             const dg = r.dg > 0 ? "+" + r.dg : String(r.dg);
             const dgCls = r.dg > 0 ? " es-positiva" : r.dg < 0 ? " es-negativa" : "";
-            return `<tr class="${rowClass}" data-tid="${r.id}"><td><span class="pos">${pos+1}</span></td><td class="team-cell">${teamCrest(t,"crest-bracket")}<span class="team-cell-name">${esc(t?.name||"?")}</span></td><td data-v="${r.pj}">${r.pj}</td><td class="dg-cell${dgCls}" data-v="${r.dg}">${dg}</td><td class="pts-cell" data-v="${r.pts}">${r.pts}</td></tr>`;
+            return `<tr class="${rowClass}" data-tid="${r.id}"><td class="team-cell">${teamCrest(t,"crest-bracket")}<span class="team-cell-name">${esc(t?.name||"?")}</span></td><td data-v="${r.pj}">${r.pj}</td><td class="dg-cell${dgCls}" data-v="${r.dg}">${dg}</td><td class="pts-cell" data-v="${r.pts}">${r.pts}</td></tr>`;
           }).join("");
           const ms=groupMatches(g);
           /* Agrupados por jornada, en el orden en que se juegan. Antes salian
@@ -10510,7 +10517,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const safeName = String(groupDef?.name || g).toUpperCase();
           const finalName = safeName.startsWith("GRUPO") ? safeName : "GRUPO " + safeName;
           const isOpen = openGroups.has(`node-${g}`) ? "open" : "";
-          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th style="width:40px">#</th><th>Equipo</th><th style="width:38px">PJ</th><th style="width:46px">DG</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches" ${isOpen}><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
+          return `<section class="group-card" id="node-${g}"><div class="group-title"><span class="g-name" style="font-family:'Anton',var(--font-display),sans-serif;font-size:clamp(18px,1.5vw,26px);letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.6);">${esc(finalName)}</span><small>${done?"Cerrado":"En juego"}</small></div><table class="standings"><thead><tr><th>Equipo</th><th style="width:38px">PJ</th><th style="width:46px">DG</th><th style="width:48px">PTS</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="padding:16px;color:var(--text-mute)">Sin equipos asignados</td></tr>'}</tbody></table><details class="group-matches" ${isOpen}><summary><span class="gm-text">VER DETALLES</span><span class="gm-arr">▼</span></summary><div class="group-games">${matches||'<p style="color:var(--text-mute);font-size:11px;padding:8px 0">Asigná al menos 2 equipos a este grupo.</p>'}</div></details></section>`;
         }).join(""):`<div class="empty-state">Configurá al menos un grupo desde "Configurar".</div>`;
         document.querySelectorAll("#groupsContainer .group-card").forEach((el,i)=>{
           if(!revealedOnce.has(el.id)){revealedOnce.add(el.id);el.classList.add("reveal");el.style.transitionDelay=(i*70)+"ms"}
