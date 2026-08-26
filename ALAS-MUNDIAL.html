@@ -1016,8 +1016,18 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 
 /* ------------------------------------------------- el panel desplegado --- */
 /* Arranca cerrado. El alto lo maneja GSAP: aca solo se evita que asome algo
-   mientras se anima. */
-.fx-acciones{overflow:hidden}
+   mientras se anima.
+
+   `contain` es lo que acota el recalculo. Sin el, cambiar el alto del panel
+   obliga al navegador a repasar el layout de TODO lo que hay adentro de cada
+   uno de los doce partidos de la lista; con el, sabe que lo de adentro no
+   depende de lo de afuera y solo recoloca los bloques. Es la diferencia entre
+   recalcular cientos de nodos por cuadro y recalcular una docena. */
+.fx-acciones{
+  overflow:hidden;
+  contain:layout style;
+}
+.fx-duelo{contain:layout style}
 .fx-acciones .mt-foot{margin-top:6px !important;padding:0 9px 8px}
 
 /* -------------------------------------------------------- angosto -------- */
@@ -1037,6 +1047,18 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   .fx-jornada{padding:5px 12px}
   .fx-jornada > span{font-size:11.5px;letter-spacing:.12em}
   .fx-duelo{margin-bottom:8px}
+
+  /* Nombre COMPLETO, en dos renglones. Para que "DISTRIBUCIÓN INTERIOR"
+     entre hay que darle ancho, y el ancho sale de apretar todo lo demas:
+     el escudo, la insignia del centro y los espacios entre ellos. Con esto
+     quedan unos 110px por nombre en un telefono de 390px, que alcanzan para
+     "DISTRIBUCIÓN" arriba e "INTERIOR" abajo en condensada de 11px. */
+  .fx-nombre{
+    font-size:11px;
+    letter-spacing:0;
+    -webkit-line-clamp:2;
+    line-height:1.05;
+  }
   /* El grupo tenia 16px de aire a cada lado: en un telefono son 32px que le
      faltan a los nombres. */
   .grupos-shell .group-games{padding:0 8px 12px}
@@ -10370,11 +10392,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           <div class="fx-fila"${abrible ? ` role="button" tabindex="0" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}"` : ""}>
             <div class="fx-lado is-local${gano("h") ? " es-ganador" : ""}">
               ${teamCrest(home.id?home:null,"fx-escudo",home.name)}
-              <span class="fx-nombre">${teamName(home)}</span>
+              <span class="fx-nombre" title="${esc(home.name||"")}">${teamName(home)}</span>
             </div>
             ${centroDuelo(m, played, live, hs, as, inputsHtml)}
             <div class="fx-lado is-visita${gano("a") ? " es-ganador" : ""}">
-              <span class="fx-nombre">${teamName(away)}</span>
+              <span class="fx-nombre" title="${esc(away.name||"")}">${teamName(away)}</span>
               ${teamCrest(away.id?away:null,"fx-escudo",away.name)}
             </div>
           </div>
@@ -17484,34 +17506,49 @@ body.modal-open .topbar-tabs{
     if (quieto){ panel.hidden = !abrir; return; }
 
     /* Animar `height` obliga al navegador a recalcular el layout en CADA
-       cuadro, y debajo de este panel hay hasta doce partidos mas. Por eso el
-       despliegue se trababa. No se puede evitar del todo —el panel tiene que
-       empujar a los de abajo— pero si se puede abaratar:
+       cuadro: es lo unico que hace que los partidos de abajo se corran en vez
+       de saltar. No se puede evitar, pero si se puede hacer que la vista NO
+       dependa de que ese recalculo llegue a tiempo.
 
-         · UN solo tween. Antes eran dos en paralelo (el alto del panel y un
-           stagger sobre cada boton), o sea layout Y transform de tres
-           elementos compitiendo por los mismos 16 milisegundos.
-         · will-change solo mientras dura, para que el navegador prepare la
-           capa y la suelte al terminar. Dejarlo puesto seria peor.
-         · Duracion mas corta y easing sin rebote: back.out se pasa del valor
-           final y obliga a recalcular de mas al volver. */
+       El truco son dos capas:
+
+         · el ALTO, que hace el trabajo pesado y puede perder cuadros;
+         · el CONTENIDO, que entra con transform y opacidad —las dos cosas
+           que el navegador resuelve en la placa de video, sin tocar el
+           layout— y que es lo que el ojo mira.
+
+       Si el alto pega un tironcito, el contenido sigue deslizandose parejo y
+       el movimiento se lee suave igual. Es al reves de lo que hice antes:
+       saque el segundo tween creyendo que era el caro, y lo caro nunca fue
+       el transform sino el layout. */
+    var dentro = panel.firstElementChild;
+
     if (abrir){
       panel.hidden = false;
       panel.style.willChange = 'height';
-      g.fromTo(panel, {height:0, autoAlpha:0},
-        {height:'auto', autoAlpha:1, duration:.26, ease:'power2.out',
-         onComplete:function(){
-           g.set(panel,{clearProps:'height'});
-           panel.style.willChange = '';
-         }});
+
+      var tl = g.timeline({
+        onComplete: function(){
+          g.set(panel, {clearProps:'height'});
+          panel.style.willChange = '';
+        }
+      });
+      tl.fromTo(panel, {height:0}, {height:'auto', duration:.30, ease:'power2.out'}, 0);
+      if (dentro) tl.fromTo(dentro, {y:-14, autoAlpha:0},
+        {y:0, autoAlpha:1, duration:.34, ease:'power2.out',
+         clearProps:'transform,opacity,visibility'}, .04);
+
     } else {
       panel.style.willChange = 'height';
-      g.to(panel, {height:0, autoAlpha:0, duration:.2, ease:'power2.in',
-        onComplete:function(){
+      var tc = g.timeline({
+        onComplete: function(){
           panel.hidden = true;
-          g.set(panel,{clearProps:'height,opacity,visibility'});
+          g.set(panel, {clearProps:'height'});
           panel.style.willChange = '';
-        }});
+        }
+      });
+      if (dentro) tc.to(dentro, {y:-10, autoAlpha:0, duration:.16, ease:'power2.in'}, 0);
+      tc.to(panel, {height:0, duration:.20, ease:'power2.in'}, .04);
     }
   }
 
@@ -17520,7 +17557,22 @@ body.modal-open .topbar-tabs{
     if (!duelo) return;
     var panel = duelo.querySelector('.fx-acciones');
     if (!panel) return;
-    animarAcciones(duelo, panel, !duelo.classList.contains('es-abierto'));
+
+    var abrir = !duelo.classList.contains('es-abierto');
+
+    /* Uno por vez. Con varios abiertos la lista se estira, hay mas alto que
+       recalcular en cada cuadro, y ademas hay que scrollear para encontrar el
+       partido que uno estaba mirando. */
+    if (abrir) {
+      var otros = document.querySelectorAll('.fx-duelo.es-abierto');
+      for (var i = 0; i < otros.length; i++) {
+        if (otros[i] === duelo) continue;
+        var p = otros[i].querySelector('.fx-acciones');
+        if (p) animarAcciones(otros[i], p, false);
+      }
+    }
+
+    animarAcciones(duelo, panel, abrir);
   }
 
   document.addEventListener('click', function(e){
