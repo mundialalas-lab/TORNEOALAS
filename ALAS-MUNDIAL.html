@@ -13517,7 +13517,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .card .pos{position:absolute;top:8px;right:9px;z-index:3;font-family:'Saira Condensed',sans-serif;
   font-weight:800;font-size:11px;letter-spacing:.08em;background:rgba(0,0,0,.28);
   border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:7px}
-.card .photo{position:absolute;left:0;right:0;top:8%;height:60%;display:grid;place-items:end center}
+/* La figurita del album usa la MISMA geometria que .pcard, y no una propia.
+   Antes tenia banda del 8% al 68% —distinta— y, peor, la <img class="pf"> no
+   tenia NINGUNA regla: se dibujaba a su tamaño natural, 460px de ancho, dentro
+   de una tarjeta de unos 90px, alineada abajo y recortada por el overflow. Se
+   veia un pedazo enormemente ampliado del pecho del jugador en vez de la foto.
+
+   Los numeros son los de .pcard-photo: la banda del 2% al 92%, y la imagen
+   contenida adentro. Que sean los mismos es lo que hace que una figurita se
+   vea igual en la grilla del torneo y en el album. */
+.card .photo{position:absolute;left:0;right:0;top:2%;height:90%;display:grid;place-items:end center}
+.card .photo .pf{
+  max-width:100%;max-height:100%;
+  object-fit:contain;object-position:bottom center;
+  filter:drop-shadow(0 6px 12px rgba(3,12,20,.35));
+}
 .card .photo svg{height:96%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 .card .crest{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);width:54%;opacity:.12;z-index:0}
 .card .num-bg{position:absolute;right:6px;top:30%;font-family:'Anton',sans-serif;
