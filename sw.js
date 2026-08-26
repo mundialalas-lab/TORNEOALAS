@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alas-mundial-v44';
+const CACHE_NAME = 'alas-mundial-v45';
 
 // Lo que vive en esta carpeta.
 const ASSETS_PROPIOS = [

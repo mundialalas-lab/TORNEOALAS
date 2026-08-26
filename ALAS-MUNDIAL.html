@@ -11815,13 +11815,38 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           lienzo.height = PANINI_H;
           const ctx = lienzo.getContext("2d");
 
+          /* ACERCAMIENTO
+             Con cobertura + 6% se mostraba casi la foto ENTERA: el 94% de su
+             alto en una foto de telefono. Y una figurita no es una foto
+             entera, es un retrato — cabeza y hombros—. Si el jugador esta de
+             cuerpo entero o parado lejos, mostrarlo completo hace que la cara
+             salga chiquita y con medio cuerpo de aire debajo, que es como se
+             lee "queda muy hacia abajo".
+
+             1.32 muestra alrededor de tres cuartos de la foto en vez de
+             enterita: acerca lo suficiente para que la cara pese, sin llegar
+             a cortar hombros en una foto de medio cuerpo.
+
+             Es EL numero a mover si el encuadre no convence: mas alto acerca,
+             mas bajo aleja. */
+          const ACERCAMIENTO = 1.32;
           const cubrir = Math.max(PANINI_W / img.width, PANINI_H / img.height);
-          const escala = cubrir * 1.06;
+          const escala = cubrir * ACERCAMIENTO;
           const anchoDib = img.width * escala;
           const altoDib = img.height * escala;
 
+          /* ALTURA DEL RECORTE
+             De lo que sobra a lo alto, cuanto se recorta de ABAJO en vez de
+             arriba. El maximo util es la mitad del sobrante: ahi el borde de
+             arriba de la foto queda al ras del de la figurita y todo el
+             recorte sale de los pies.
+
+             0.42 de la sobra es el 84% de ese recorrido: casi todo el recorte
+             sale de abajo —que es donde estan las piernas y el piso— y queda
+             apenas un margen arriba para no comerse el pelo de alguien que
+             haya salido muy al borde de su foto. */
           const sobra = Math.max(0, altoDib - PANINI_H);
-          const desplazamientoY = sobra * 0.35;
+          const desplazamientoY = sobra * 0.42;
 
           const centroX = PANINI_W / 2;
           const centroY = PANINI_H / 2 + desplazamientoY;
