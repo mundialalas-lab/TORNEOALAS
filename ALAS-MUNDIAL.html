@@ -894,10 +894,18 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 /* Los dos lados. El nombre se estira y el escudo no: por eso las columnas
    1fr son las del nombre y las auto son las de los escudos. */
 .fx-lado{min-width:0;display:contents}
+/* Los nombres cortan SOLO entre palabras. Con overflow-wrap:anywhere
+   —que es lo que habia— "FÁBRICA" salia partido en "FÁBRIC / A" y
+   "DISTRIBUCIÓN" en "DISTRI / BUCI…": cortes a mitad de silaba que se leen
+   como un error de la app. Ahora parte donde hay espacio y, si aun asi no
+   entra, corta con puntos suspensivos. */
 .fx-nombre{
   min-width:0;
   overflow:hidden;
-  overflow-wrap:anywhere;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+  text-overflow:ellipsis;
   display:-webkit-box;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
@@ -929,9 +937,12 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
   align-self:stretch;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;
-  min-width:82px;
+  /* Sin min-width fijo: en un telefono esos 82px se los robaba a los
+     nombres, que son los que hay que poder leer. Mide lo que mide su
+     contenido y no crece. */
+  flex:none;
   margin:-9px 0;
-  padding:7px 13px;
+  padding:7px 11px;
   background:linear-gradient(180deg,#16202e,#0a1018);
   clip-path:polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
@@ -1010,15 +1021,25 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .fx-acciones .mt-foot{margin-top:6px !important;padding:0 9px 8px}
 
 /* -------------------------------------------------------- angosto -------- */
-@media (max-width:430px){
-  .fx-fila{gap:6px;padding:8px 10px}
-  .fx-escudo{width:28px;height:28px}
-  .fx-nombre{font-size:11.5px}
-  .fx-centro{min-width:70px;padding:6px 9px;margin:-8px 0}
-  .fx-centro-n{font-size:8.5px;letter-spacing:.06em}
-  .fx-vs-inputs .score-input{width:28px;height:26px}
+@media (max-width:480px){
+  /* Todo un escalon mas chico, para que el nombre gane los pixeles que
+     sueltan el escudo, el centro y los margenes. */
+  .fx-fila{gap:5px;padding:7px 8px}
+  .fx-escudo{width:26px;height:26px}
+  .fx-nombre{font-size:11px;letter-spacing:.01em;line-height:1.05}
+  .fx-centro{padding:5px 7px;margin:-7px 0}
+  .fx-centro-n{font-size:8px;letter-spacing:.04em}
+  .fx-vs-vs{font-size:13px}
+  .fx-vs-score{font-size:17px;gap:3px}
+  .fx-vs-inputs{gap:3px}
+  .fx-vs-inputs .score-input{width:26px;height:25px}
+  .fx-centro-hora{font-size:8px}
   .fx-jornada{padding:5px 12px}
   .fx-jornada > span{font-size:11.5px;letter-spacing:.12em}
+  .fx-duelo{margin-bottom:8px}
+  /* El grupo tenia 16px de aire a cada lado: en un telefono son 32px que le
+     faltan a los nombres. */
+  .grupos-shell .group-games{padding:0 8px 12px}
 }
 
 /* La cinta con el numero de partido. Va pegada arriba del bloque del
@@ -10248,7 +10269,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         return `<div class="fx-centro${live ? " es-vivo" : ""}">
           <span class="fx-centro-n">${rotulo}</span>
           ${marcador}
-          ${m.time ? `<span class="fx-centro-hora">${esc(m.time)}</span>` : ""}
+          ${m.time ? `<span class="fx-centro-hora">${esc(String(m.time).slice(0,5))}</span>` : ""}
         </div>`;
       }
 
@@ -16816,8 +16837,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pararRescate(); else arrancarRescate();
   });
-  // cualquier toque puede dibujar contenido nuevo: la red se reactiva
-  document.addEventListener("click", arrancarRescate, { passive: true });
+  /* NO se reactiva con cada clic. Eso lo puse yo y sale caro: cada toque
+     relanzaba el barrido, que hace getComputedStyle sobre decenas de
+     elementos, y encima justo mientras corre la animacion de despliegue. Se
+     notaba como tirones al abrir un partido.
+
+     El evento "alasRender" ya cubre lo que importa: cualquier toque que
+     dibuje contenido nuevo pasa por renderAll, y los que no dibujan nada no
+     necesitan barrido. */
   window.addEventListener("splashDone", arrancarRescate);
   // renderAll lo dispara: hay renders que no vienen de un toque
   window.addEventListener("alasRender", arrancarRescate);
@@ -17445,7 +17472,6 @@ body.modal-open .topbar-tabs{
      Ahora la cinta del encuentro se toca y el panel baja. El handler va
      delegado en el documento porque la lista se vuelve a dibujar entera en
      cada render, y un listener puesto sobre las filas moriria con ellas. */
-  var ACC_DUR = 0.34;
 
   function animarAcciones(duelo, panel, abrir){
     var g = window.gsap;
@@ -17457,26 +17483,34 @@ body.modal-open .topbar-tabs{
 
     if (quieto){ panel.hidden = !abrir; return; }
 
+    /* Animar `height` obliga al navegador a recalcular el layout en CADA
+       cuadro, y debajo de este panel hay hasta doce partidos mas. Por eso el
+       despliegue se trababa. No se puede evitar del todo —el panel tiene que
+       empujar a los de abajo— pero si se puede abaratar:
+
+         · UN solo tween. Antes eran dos en paralelo (el alto del panel y un
+           stagger sobre cada boton), o sea layout Y transform de tres
+           elementos compitiendo por los mismos 16 milisegundos.
+         · will-change solo mientras dura, para que el navegador prepare la
+           capa y la suelte al terminar. Dejarlo puesto seria peor.
+         · Duracion mas corta y easing sin rebote: back.out se pasa del valor
+           final y obliga a recalcular de mas al volver. */
     if (abrir){
       panel.hidden = false;
-      /* height:auto lo resuelve GSAP midiendo el contenido; clearProps al
-         final saca el alto fijo para que el panel siga acompañando si algo
-         adentro cambia de tamaño despues. */
+      panel.style.willChange = 'height';
       g.fromTo(panel, {height:0, autoAlpha:0},
-        {height:'auto', autoAlpha:1, duration:ACC_DUR, ease:'power3.out',
-         onComplete:function(){ g.set(panel,{clearProps:'height'}); }});
-      /* clearProps con la lista explicita, NUNCA 'all'. Estos botones llevan
-         TODO su estilo en el atributo style —ancho, alto, radio, colores— y
-         'all' se los lleva puestos: el boton queda a merced de cualquier
-         regla CSS que lo toque. */
-      g.fromTo(panel.querySelectorAll('.btn'), {y:12, autoAlpha:0},
-        {y:0, autoAlpha:1, duration:.3, stagger:.055, ease:'back.out(1.6)',
-         delay:.07, clearProps:'transform,opacity,visibility'});
+        {height:'auto', autoAlpha:1, duration:.26, ease:'power2.out',
+         onComplete:function(){
+           g.set(panel,{clearProps:'height'});
+           panel.style.willChange = '';
+         }});
     } else {
-      g.to(panel, {height:0, autoAlpha:0, duration:.24, ease:'power2.inOut',
+      panel.style.willChange = 'height';
+      g.to(panel, {height:0, autoAlpha:0, duration:.2, ease:'power2.in',
         onComplete:function(){
           panel.hidden = true;
           g.set(panel,{clearProps:'height,opacity,visibility'});
+          panel.style.willChange = '';
         }});
     }
   }
