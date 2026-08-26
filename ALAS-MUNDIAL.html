@@ -7750,6 +7750,22 @@ body{background:transparent !important}
   .llave-col-mob {
     display: flex; flex-direction: column; gap: 12px;
   }
+  /* La ronda —Repechaje, Semifinal, Final— usa la MISMA banda que la
+     jornada del fixture. Son la misma idea: el rotulo que encabeza un
+     grupo de encuentros. Que se vean igual es lo que hace que las dos
+     pantallas se lean como una sola cosa. */
+  .llave-col-mob .lc-head {
+    margin: 4px 0 2px !important;
+    padding: 6px 16px;
+    transform: skewX(-9deg);
+    background: linear-gradient(90deg, var(--azul-deep,#0f3f96), var(--azul,#2f7ff0));
+    box-shadow: 0 6px 16px -6px rgba(0,0,0,.7);
+    text-align: left;
+    color: #fff;
+    font-size: 13px;
+    letter-spacing: .16em;
+  }
+  .llave-col-mob .lc-head > * { display:inline-block; transform: skewX(9deg); }
   .llave-center-mob { position: relative; }
   .llave-center-mob::before {
     content: ""; position: absolute;
@@ -9796,13 +9812,27 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       // ===== render: header / groups / bracket =====
       // ===== marcador protagonista =====
       // Prioridad: partido en vivo > próximo programado > último jugado.
+      /* El unico orden de calendario de la app. Lo usan el cartel de
+         "Próximo partido" del marcador y la numeracion del fixture, y tienen
+         que usar el MISMO o terminan señalando partidos distintos.
+         Los sin fecha van al final; el id desempata para que no baile. */
+      const claveCalendario = m =>
+        (m.date || "9999-12-31") + "T" + (m.time || "23:59") + "|" + m.id;
+      const porCalendario = (a, b) =>
+        claveCalendario(a).localeCompare(claveCalendario(b));
+
       function featuredMatch(){
         const all=Object.values(state.matches).filter(m=>{
           const h=resolveSlot(m.homeSlot),a=resolveSlot(m.awaySlot);
           return h.id&&a.id;
         });
         if(!all.length)return null;
-        const byDate=(x,y)=>(x.date||"9999").localeCompare(y.date||"9999");
+        /* Ordena por fecha Y HORA. Antes comparaba solo la fecha, asi que
+           entre dos partidos del mismo dia elegia el que cayera primero en
+           Object.values(state.matches) — un orden arbitrario. Por eso el
+           cartel de "Próximo partido" y el "Siguiente" del fixture podian
+           señalar partidos distintos el mismo dia. */
+        const byDate=porCalendario;
         const live=all.filter(m=>m.status==="live").sort(byDate)[0];
         if(live)return{match:live,kind:"live"};
         const next=all.filter(m=>!matchScoreOk(m)&&m.status!=="suspended").sort(byDate)[0];
@@ -10019,7 +10049,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const regLabel = m.twoLegs ? (hasIda ? "CARGAR PARTIDO DE VUELTA" : "REGISTRAR SERIE (IDA Y VUELTA)") : "REGISTRAR RESULTADO";
         const registrarBtn = isAdmin && !played ? `<button type="button" class="btn btn-registrar-score" data-match="${m.id}" style="${primaryStyle}">${regLabel}</button>` : '';
         const verResultadosBtn = played ? `<button type="button" class="btn btn-ver-resultados" data-view-match="${m.id}" style="${secStyle}">VER RESULTADOS</button>` : '';
-        const editBtn = isAdmin ? `<button type="button" class="btn mt-open admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR DETALLES</button>` : '';
+        /* Sin la clase mt-open. Esa regla es la del boton-icono de 26x26 que se
+           usa en otra parte, y aca choca con un boton de texto a todo el
+           ancho: le fija width:26px. Venia tapado por el width:100% del estilo
+           inline, hasta que la animacion de despliegue limpio los inline y el
+           boton se desplomo a un cuadradito. El handler no la usa —engancha
+           por data-open-match— asi que sale. */
+        const editBtn = isAdmin ? `<button type="button" class="btn admin-only" data-open-match="${m.id}" style="${secStyle}">EDITAR DETALLES</button>` : '';
         const dataBtn = isAdmin ? `<button type="button" class="btn admin-only btn-edit-datos" data-open-match-data="${m.id}" style="${secStyle}">DATOS DEL PARTIDO</button>` : '';
 
         return `<div class="mt-foot" style="display:flex; flex-direction:column; align-items:center; width:100%; gap:5px; margin-top:8px;">
@@ -10132,14 +10168,18 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       const ordinalDe = n => ORDINAL[n] || (n + "º");
 
       function calcularOrdenPartidos(){
-        const todos = Object.values(state.matches).filter(m => m.phase === "group");
+        /* Todos los partidos, no solo los de grupos. La llave dibuja sus
+           cruces con la misma groupMatchRow, asi que si el repechaje, las
+           semis y la final quedaran afuera de esta cuenta, la insignia del
+           centro se quedaria sin rotulo justo en los partidos que mas
+           importan. */
+        const todos = Object.values(state.matches);
 
         /* Los partidos sin fecha van al final y no salteados en el medio: un
            partido sin programar todavia no tiene lugar en el calendario.
            El id desempata para que el orden no baile entre renders cuando
            dos comparten fecha y hora. */
-        const clave = m => (m.date || "9999-12-31") + "T" + (m.time || "23:59") + "|" + m.id;
-        todos.sort((a, b) => clave(a).localeCompare(clave(b)));
+        todos.sort(porCalendario);
 
         ordenPartidos = new Map(todos.map((m, i) => [m.id, i + 1]));
 
@@ -10156,10 +10196,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           ordenEnFecha.set(m.id, porFecha[f]);
         });
 
-        /* El proximo es el primero sin resultado. Los suspendidos no cuentan:
-           no se van a jugar en su turno y dejarian el cartel clavado ahi. */
-        const prox = todos.find(m => !matchScoreOk(m) && m.status !== "suspended");
-        idProximo = prox ? prox.id : null;
+        /* El "Siguiente" NO se calcula aparte: se le pregunta a la misma
+           funcion que alimenta el cartel de "Próximo partido" del marcador.
+           Calcularlo dos veces es como se llego a que uno señalara un partido
+           y el otro señalara otro.
+
+           Si hay un partido en vivo, featuredMatch devuelve ese con kind
+           "live" y aca no se marca ninguno como siguiente: el que se esta
+           jugando ya se distingue solo. */
+        const destacado = featuredMatch();
+        idProximo = (destacado && destacado.kind === "next") ? destacado.match.id : null;
       }
 
       /* Las series de ida y vuelta tienen su propio bloque, con dos
@@ -10579,13 +10625,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         sortedRounds.forEach(r => {
           const ms = roundsByLevel[r].matches.sort((a,b)=>(a.order||0)-(b.order||0));
           mobileHtml += `<div class="llave-col-mob">
-            <div class="lc-head" style="margin-bottom:4px;">${esc(roundsByLevel[r].title)}</div>`;
+            <div class="lc-head" style="margin-bottom:4px;"><span>${esc(roundsByLevel[r].title)}</span></div>`;
           mobileHtml += ms.map(m => groupMatchRow(m)).join("");
           mobileHtml += `</div>`;
         });
         if(tercero) {
           mobileHtml += `<div class="llave-col-mob">
-            <div class="lc-head" style="margin-bottom:4px;">Tercer puesto</div>`;
+            <div class="lc-head" style="margin-bottom:4px;"><span>Tercer puesto</span></div>`;
           mobileHtml += groupMatchRow(tercero);
           mobileHtml += `</div>`;
         }
@@ -17384,9 +17430,13 @@ body.modal-open .topbar-tabs{
       g.fromTo(panel, {height:0, autoAlpha:0},
         {height:'auto', autoAlpha:1, duration:ACC_DUR, ease:'power3.out',
          onComplete:function(){ g.set(panel,{clearProps:'height'}); }});
+      /* clearProps con la lista explicita, NUNCA 'all'. Estos botones llevan
+         TODO su estilo en el atributo style —ancho, alto, radio, colores— y
+         'all' se los lleva puestos: el boton queda a merced de cualquier
+         regla CSS que lo toque. */
       g.fromTo(panel.querySelectorAll('.btn'), {y:12, autoAlpha:0},
         {y:0, autoAlpha:1, duration:.3, stagger:.055, ease:'back.out(1.6)',
-         delay:.07, clearProps:'all'});
+         delay:.07, clearProps:'transform,opacity,visibility'});
     } else {
       g.to(panel, {height:0, autoAlpha:0, duration:.24, ease:'power2.inOut',
         onComplete:function(){
