@@ -11215,6 +11215,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       // ===== render orchestrator =====
       function renderAll(opts={}){
+        /* La red de seguridad de las animaciones se apaga sola cuando pasa un
+           rato sin encontrar nada roto. Un render puede traer tarjetas nuevas
+           sin que haya habido un clic —una sincronizacion de Supabase que
+           llega sola, por ejemplo— asi que se la despierta desde aca. */
+        try{ window.dispatchEvent(new Event("alasRender")); }catch(e){}
         const {announce=false, preserveScroll=true}=opts;
         const savedScrollY = (preserveScroll && typeof window !== "undefined") ? window.scrollY : 0;
         const oldChampion=previousChampion,oldPlayed=lastPlayedCount;
@@ -11255,11 +11260,16 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         document.querySelectorAll(".reveal:not(.reveal-in)").forEach(el=>revealObs.observe(el));
       }
       let pRaf=null;
+      /* La consulta se hace UNA vez y no en cada cuadro. Estaba adentro del
+         requestAnimationFrame, o sea unas sesenta veces por segundo mientras
+         se scrollea, creando un MediaQueryList nuevo cada vez para tirarlo
+         enseguida. */
+      const mmQuieto = matchMedia("(prefers-reduced-motion: reduce)");
       window.addEventListener("scroll",()=>{
         if(pRaf)return;
         pRaf=requestAnimationFrame(()=>{
           pRaf=null;
-          if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+          if(mmQuieto.matches)return;
           const y=scrollY,layer=document.querySelector(".parallax-layer");
           if(layer){layer.style.setProperty("--p1",(y*-.06).toFixed(1)+"px");layer.style.setProperty("--p2",(y*-.11).toFixed(1)+"px")}
         });
@@ -11338,6 +11348,12 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          sonido no se escuchaba nada: quedaba prendido pero mudo. */
       let pistaGuardada = null;
 
+      /* Lo que tiene que sonar CUANDO TERMINE lo que esta sonando.
+         Antes la pista de entrada cortaba la de la intro en seco: se llamaba
+         a sonarMusica, que arranca parando lo anterior. La intro quedaba a la
+         mitad justo en el momento en que uno entra al torneo. */
+      let enCola = null;
+
       /* `recordar` sólo lo usa el silencio. Cuando una pista corta a otra
          —la de entrada a la de la intro— no hay nada que retomar despues. */
       function pararMusica(recordar){
@@ -11365,10 +11381,27 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function retomarMusica(){
         const p = pistaGuardada;
         pistaGuardada = null;
-        if(!p || state.settings.sound === false) return null;
+        if(state.settings.sound === false) return null;
+
+        /* sonarMusica no toca la cola, pero si la pista guardada ya vencio hay
+           que consumirla a mano. Se la guarda de este lado para no perderla en
+           ninguno de los caminos. */
+        const cola = enCola;
+        const seguirConLaCola = () => {
+          if(!cola) return null;
+          enCola = null;
+          return sonarMusica(cola.archivo, cola.volumen);
+        };
+
+        // Silenciado sin nada sonando, pero con un plan pendiente: se cumple.
+        if(!p) return seguirConLaCola();
+
         if(p.duracion){
           const pasado = (Date.now() - p.cuando) / 1000;
-          if(p.tiempo + pasado >= p.duracion) return null;
+          /* La pista ya habria terminado sola durante el silencio. No se la
+             revive: se pasa a la que venia despues, que es lo que estaria
+             sonando ahora si nunca se hubiera silenciado. */
+          if(p.tiempo + pasado >= p.duracion) return seguirConLaCola();
         }
         const a = sonarMusica(p.archivo, p.volumen);
         if(a && p.tiempo > 0){
@@ -11378,6 +11411,24 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           else a.addEventListener("loadedmetadata", ubicar, {once:true});
         }
         return a;
+      }
+
+      /* Pone una pista EN COLA: suena cuando termine la actual, no encima.
+         Si no hay nada sonando arranca en el momento.
+
+         Con el sonido apagado igual se anota el plan, para que al reactivarlo
+         la musica siga donde iba en vez de quedarse muda hasta la proxima
+         pantalla. */
+      function encolarMusica(archivo, volumen){
+        if(state.settings.sound === false){
+          enCola = { archivo: archivo, volumen: volumen };
+          return null;
+        }
+        if(!pistaActual || pistaActual.paused || pistaActual.ended){
+          return sonarMusica(archivo, volumen);
+        }
+        enCola = { archivo: archivo, volumen: volumen };
+        return pistaActual;
       }
 
       /* Devuelve el reproductor, o null si el sonido está apagado o el
@@ -11393,7 +11444,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
                navegador esperando un gesto. El de la intro llega enseguida. */
           });
           // una pista que termina sola no deja nada que retomar
-          a.addEventListener("ended", () => { if(pistaActual === a) pistaActual = null; }, {once:true});
+          a.addEventListener("ended", () => {
+            if(pistaActual === a) pistaActual = null;
+            /* Se saca de la cola ANTES de arrancarla: sonarMusica vuelve a
+               pasar por aca y con la cola todavia puesta se llamaria a si
+               misma para siempre. */
+            const sig = enCola;
+            enCola = null;
+            if(sig) sonarMusica(sig.archivo, sig.volumen);
+          }, {once:true});
           pistaActual = a;
           return a;
         }catch(e){ return null; }
@@ -11403,6 +11462,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         INTRO: MUSICA.intro,
         ENTRADA: MUSICA.entrada,
         sonar: sonarMusica,
+        encolar: encolarMusica,
         parar: pararMusica,
         retomar: retomarMusica,
         permitido: function(){ return state.settings.sound !== false; },
@@ -15573,7 +15633,7 @@ function loop(){
             aplicarRolAlBody();
             ocultarPerfiles();
             renderAll();
-            sonarMusica(MUSICA.entrada, 0.7);
+            encolarMusica(MUSICA.entrada, 0.7);
             playWhistle();
             showToast("Bienvenido, Administrador");
           };
@@ -15594,8 +15654,9 @@ function loop(){
         aplicarRolAlBody();
         ocultarPerfiles();
         renderAll();
-        // la pista de entrada reemplaza a la de la intro, no se le encima
-        sonarMusica(MUSICA.entrada, 0.7);
+        /* En cola, no encima ni cortando: la intro se deja terminar y la
+           pista de entrada arranca sola cuando aquella se apaga. */
+        encolarMusica(MUSICA.entrada, 0.7);
         playAdvance();
         const u=currentUser();
         if(u)showToast(`¡Hola, ${u.name}!`);
@@ -16776,16 +16837,62 @@ document.addEventListener("DOMContentLoaded", () => {
   const RESCUE_SEL = ".app-tab.active, .stage, .champion-ribbon, .group-card, .team-card, " +
                      ".match-card, .fx-card, .kpi-tile, .sup-card, .bar-panel, " +
                      ".app-tab.active .panel, #scoreboard";
+  /* Esta red se pagaba cara. Corria cada 1,2 s PARA SIEMPRE, y en cada vuelta
+     hacia getComputedStyle sobre cada elemento que matchea once selectores.
+     Leer opacity y display de esa forma obliga al navegador a recalcular
+     estilo ahi mismo: unas cuarenta lecturas forzadas por segundo, sin parar,
+     tambien con la pestaña en segundo plano y con la app quieta.
+
+     Sigue siendo la misma red —ningun contenido puede quedar invisible por una
+     animacion que no disparo— pero ahora se apaga cuando ya no hace falta:
+
+       · con la pestaña oculta no revisa nada (no hay nada que mirar);
+       · si pasa ocho vueltas seguidas sin encontrar nada roto, se detiene;
+       · vuelve a encenderse ante cualquier cosa que dibuje contenido nuevo:
+         un toque del usuario, volver a la pestaña, o el fin de la intro. */
+  var IDLE_MAX = 8;
+  var idle = 0, timerRescate = null;
+
   const rescue = () => {
+    if (document.hidden) return;
     window.__rescueRuns = (window.__rescueRuns || 0) + 1;
-    $$(".reveal:not(.reveal-in)").forEach(el => el.classList.add("reveal-in"));
-    if (!g) return;
-    $$(RESCUE_SEL).forEach(el => {
-      const cs = getComputedStyle(el);
-      if (cs.display !== "none" && parseFloat(cs.opacity) < .05) g.set(el, {autoAlpha:1, y:0});
-    });
+
+    var algo = false;
+    var esperando = $$(".reveal:not(.reveal-in)");
+    if (esperando.length) { algo = true; esperando.forEach(el => el.classList.add("reveal-in")); }
+
+    if (g) {
+      $$(RESCUE_SEL).forEach(el => {
+        const cs = getComputedStyle(el);
+        if (cs.display !== "none" && parseFloat(cs.opacity) < .05) {
+          g.set(el, {autoAlpha:1, y:0});
+          algo = true;
+        }
+      });
+    }
+
+    idle = algo ? 0 : idle + 1;
+    if (idle >= IDLE_MAX) pararRescate();
   };
-  setInterval(rescue, 1200);
+
+  function pararRescate(){
+    if (timerRescate) { clearInterval(timerRescate); timerRescate = null; }
+  }
+  function arrancarRescate(){
+    idle = 0;
+    if (timerRescate) return;
+    timerRescate = setInterval(rescue, 1200);
+  }
+
+  arrancarRescate();
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pararRescate(); else arrancarRescate();
+  });
+  // cualquier toque puede dibujar contenido nuevo: la red se reactiva
+  document.addEventListener("click", arrancarRescate, { passive: true });
+  window.addEventListener("splashDone", arrancarRescate);
+  // renderAll lo dispara: hay renders que no vienen de un toque
+  window.addEventListener("alasRender", arrancarRescate);
 
   // primer barrido cuando la app ya pintó
   window.addEventListener("load", () => setTimeout(batchReveal, 120));
