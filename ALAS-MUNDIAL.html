@@ -10264,6 +10264,38 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         </div>`;
       }
 
+      /* El nombre como va en la cinta del afiche.
+
+         La regla es por PALABRA, no por nombre: se abrevia la palabra que no
+         entra, no el nombre que no entra. Cualquier palabra de mas de ocho
+         letras que no sea la ultima queda en cuatro letras y un punto.
+
+             Distribución Local     ->  Dist. Local
+             Distribución Interior  ->  Dist. Interior
+             Picking / Empaque      ->  sin cambios
+             Ventas Externas        ->  sin cambios
+             Producción             ->  sin cambios (es la ultima palabra)
+
+         Que sea por palabra es lo que hace que los dos "Distribución" se
+         abrevien igual. Con un umbral sobre el largo TOTAL, "Distribución
+         Interior" (21) se abreviaba y "Distribución Local" (18) no, y los dos
+         hermanos quedaban escritos distinto en la misma pantalla.
+
+         La ULTIMA palabra nunca se toca, y esa es la parte importante: es la
+         que distingue a un equipo de su hermano. Abreviandola, "Dist. Local" y
+         "Dist. Interior" terminarian los dos en "Dist. ..." — el mismo cartel
+         para dos equipos distintos. */
+      const LARGO_PALABRA = 8;
+      function nombreAfiche(t){
+        const n = String((t && t.name) || "?");
+        const pal = n.split(/\s+/);
+        if (pal.length < 2) return n;
+        return pal.slice(0, -1)
+                  .map(p => p.length > LARGO_PALABRA ? p.slice(0, 4) + "." : p)
+                  .concat(pal[pal.length - 1])
+                  .join(" ");
+      }
+
       /* La cabecera de cada jornada: "SÁBADO 27 DE JUNIO". */
       function cintaFecha(fecha){
         let texto = "Sin fecha asignada";
@@ -10392,11 +10424,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           <div class="fx-fila"${abrible ? ` role="button" tabindex="0" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}"` : ""}>
             <div class="fx-lado is-local${gano("h") ? " es-ganador" : ""}">
               ${teamCrest(home.id?home:null,"fx-escudo",home.name)}
-              <span class="fx-nombre" title="${esc(home.name||"")}">${teamName(home)}</span>
+              <span class="fx-nombre" title="${esc(home.name||"")}">${esc(nombreAfiche(home))}</span>
             </div>
             ${centroDuelo(m, played, live, hs, as, inputsHtml)}
             <div class="fx-lado is-visita${gano("a") ? " es-ganador" : ""}">
-              <span class="fx-nombre" title="${esc(away.name||"")}">${teamName(away)}</span>
+              <span class="fx-nombre" title="${esc(away.name||"")}">${esc(nombreAfiche(away))}</span>
               ${teamCrest(away.id?away:null,"fx-escudo",away.name)}
             </div>
           </div>
