@@ -818,6 +818,133 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 /* Los dos equipos apilados, el marcador a la derecha y una barra de resultado
    al costado. Alineados en columna el ojo baja derecho y se escanean muchos
    partidos seguidos, en vez de leer en zigzag como en el formato enfrentado. */
+/* ==========================================================================
+   VER DETALLES · el afiche de encuentros
+   --------------------------------------------------------------------------
+   La lista de partidos de cada grupo se lee como el afiche que se cuelga
+   antes de la fecha: los duelos agrupados por jornada, cada uno en UNA linea
+   —escudo, equipo, centro, equipo, escudo— y el centro diciendo que lugar
+   ocupa ese partido en el dia.
+   ========================================================================== */
+
+/* La jornada. Una linea de cal con el dia al medio, como el renglon que
+   separa las fechas en una planilla. */
+.fx-jornada{
+  display:flex;align-items:center;gap:10px;
+  margin:16px 0 9px;
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:11.5px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold-bright,#66c3ff);
+  white-space:nowrap;
+}
+.fx-jornada::before,.fx-jornada::after{
+  content:"";flex:1;height:1px;
+  background:rgba(255,255,255,.16);
+}
+.grupos-shell .group-games > .fx-jornada:first-child{margin-top:4px}
+
+/* El duelo. */
+.fx-duelo{
+  position:relative;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:var(--r-md);
+  background:rgba(255,255,255,.035);
+  padding:11px 12px 10px;
+  margin-bottom:9px;
+  transition:border-color var(--t-fast),background var(--t-fast);
+}
+.fx-duelo.es-proximo{
+  border-color:var(--azul);
+  background:rgba(47,127,240,.10);
+}
+.fx-duelo.es-vivo{border-color:rgba(232,112,95,.55)}
+
+/* El cartel de "siguiente" monta el borde de arriba, como una etiqueta
+   pegada sobre la tarjeta y no como una fila mas adentro. */
+.fx-chip-proximo{
+  position:absolute;top:-8px;left:12px;
+  padding:2px 9px;border-radius:var(--r-pill);
+  background:var(--azul);color:#fff;
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* Tres columnas: local, centro, visitante. El centro NO crece —mide lo que
+   mide su contenido— y los dos lados se reparten el resto por igual, asi el
+   eje del "VS" queda en el medio aunque un nombre sea mas largo que el otro. */
+.fx-fila{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:8px;
+}
+.fx-lado{
+  display:flex;align-items:center;gap:9px;min-width:0;
+}
+.fx-lado.is-visita{flex-direction:row-reverse}
+.fx-nombre{
+  min-width:0;
+  font-weight:700;font-size:13px;line-height:1.2;
+  color:var(--on-dark,#eef2f7);
+}
+.fx-lado.is-visita .fx-nombre{text-align:right}
+.fx-lado.es-ganador .fx-nombre{color:#fff}
+.fx-escudo{
+  flex:none;width:30px;height:30px;border-radius:7px;
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+}
+
+/* El centro. */
+.fx-centro{
+  flex:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  min-width:78px;padding:5px 10px;
+  border-radius:var(--r-sm);
+  background:rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.10);
+}
+.fx-centro.es-vivo{border-color:rgba(232,112,95,.6)}
+.fx-centro-n{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-weight:800;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--azul-hi,#5aa2ff);
+  white-space:nowrap;
+}
+.fx-vs-vs{
+  font-family:'Anton',var(--font-display),sans-serif;
+  font-size:15px;letter-spacing:.04em;
+  color:rgba(255,255,255,.42);
+}
+.fx-vs-score{
+  display:flex;align-items:center;gap:5px;
+  font-family:'Anton',var(--font-display),sans-serif;
+  font-size:19px;line-height:1;color:#fff;
+  font-variant-numeric:tabular-nums;
+}
+.fx-vs-score i{font-style:normal;opacity:.4;font-size:.7em}
+.fx-vs-inputs{display:flex;align-items:center;gap:5px}
+.fx-vs-inputs .score-input{width:34px;height:30px;text-align:center}
+.fx-centro-hora{
+  font-size:9.5px;letter-spacing:.06em;
+  color:rgba(255,255,255,.45);
+  font-variant-numeric:tabular-nums;
+}
+
+/* En un telefono angosto los nombres largos no entran al lado del centro.
+   Se achica todo un escalon antes de romper la linea en tres renglones. */
+@media (max-width:420px){
+  .fx-duelo{padding:10px 9px 9px}
+  .fx-fila{gap:6px}
+  .fx-escudo{width:26px;height:26px}
+  .fx-nombre{font-size:12px}
+  .fx-centro{min-width:66px;padding:4px 7px}
+  .fx-centro-n{font-size:8.5px;letter-spacing:.08em}
+  .fx-vs-inputs .score-input{width:30px;height:28px}
+}
+
 /* La cinta con el numero de partido. Va pegada arriba del bloque del
    partido —de ahi el radio solo en las esquinas de arriba y el margen
    negativo del .mt de abajo— para que se lean como una sola pieza. */
@@ -9915,7 +10042,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          adentro seria cuadratico.
          ================================================================== */
       let ordenPartidos = new Map();
+      let ordenEnFecha = new Map();
       let idProximo = null;
+
+      /* "1er partido", "2do partido". Los ordinales en castellano no salen de
+         una regla sola —1º es "primer", 3º es "tercer"— asi que van escritos.
+         Mas alla de doce, el numero pelado. */
+      const ORDINAL = ["", "1er", "2do", "3er", "4to", "5to", "6to",
+                       "7mo", "8vo", "9no", "10mo", "11vo", "12mo"];
+      const ordinalDe = n => ORDINAL[n] || (n + "º");
 
       function calcularOrdenPartidos(){
         const todos = Object.values(state.matches).filter(m => m.phase === "group");
@@ -9929,20 +10064,66 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         ordenPartidos = new Map(todos.map((m, i) => [m.id, i + 1]));
 
+        /* Y ademas el orden DENTRO de cada dia, que es lo que se muestra en
+           el centro de cada duelo. Se cuenta sobre todo el torneo y no por
+           grupo: "2do partido" tiene que querer decir el segundo de la
+           jornada, no el segundo de este grupo en esa jornada, o dos
+           partidos distintos llevarian el mismo cartel. */
+        ordenEnFecha = new Map();
+        const porFecha = {};
+        todos.forEach(m => {
+          const f = m.date || "";
+          porFecha[f] = (porFecha[f] || 0) + 1;
+          ordenEnFecha.set(m.id, porFecha[f]);
+        });
+
         /* El proximo es el primero sin resultado. Los suspendidos no cuentan:
            no se van a jugar en su turno y dejarian el cartel clavado ahi. */
         const prox = todos.find(m => !matchScoreOk(m) && m.status !== "suspended");
         idProximo = prox ? prox.id : null;
       }
 
-      /* La cinta con el numero, arriba de cada partido. */
-      function cintaNumero(m){
-        const n = ordenPartidos.get(m.id);
+      /* Las series de ida y vuelta tienen su propio bloque, con dos
+         marcadores y dos fechas: no entran en el formato de una linea del
+         afiche. Se les deja el rotulo del orden arriba y nada mas. */
+      function cintaFechaSerie(m){
+        const n = ordenEnFecha.get(m.id);
         if (!n) return "";
         const esProximo = m.id === idProximo;
         return `<div class="mt-orden${esProximo ? " es-proximo" : ""}">
-          <span class="mt-orden-n">Partido ${n}</span>
+          <span class="mt-orden-n">${ordinalDe(n)} partido</span>
           ${esProximo ? '<span class="mt-orden-chip">Siguiente</span>' : ""}
+        </div>`;
+      }
+
+      /* La cabecera de cada jornada: "SÁBADO 27 DE JUNIO". */
+      function cintaFecha(fecha){
+        let texto = "Sin fecha asignada";
+        if (fecha) {
+          try {
+            texto = new Date(fecha + "T00:00:00").toLocaleDateString("es-AR",
+              { weekday: "long", day: "numeric", month: "long" });
+          } catch (e) { texto = fecha; }
+        }
+        return `<div class="fx-jornada"><span>${esc(texto)}</span></div>`;
+      }
+
+      /* El centro del duelo. En el afiche ahi va la hora; aca va el orden del
+         dia, que es lo que se pidio: dice cual se juega primero sin obligar a
+         nadie a leer relojes. La hora, si esta cargada, queda debajo en chico
+         —sigue haciendo falta para saber a que hora ir. */
+      function centroDuelo(m, played, live, hs, as, inputsHtml){
+        const n = ordenEnFecha.get(m.id);
+        const rotulo = n ? ordinalDe(n) + " partido" : "Partido";
+        const marcador = inputsHtml
+          ? `<span class="fx-vs-inputs">${inputsHtml}</span>`
+          : played
+            ? `<span class="fx-vs-score">${hs}<i>-</i>${as}</span>`
+            : `<span class="fx-vs-vs">VS</span>`;
+        return `<div class="fx-centro${live ? " es-vivo" : ""}">
+          <span class="fx-centro-n">${rotulo}</span>
+          ${marcador}
+          ${m.time ? `<span class="fx-centro-hora">${esc(m.time)}</span>` : ""}
         </div>`;
       }
 
@@ -9978,7 +10159,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               </select>
             </div>` : "";
 
-          return `${cintaNumero(m)}<div class="mt ${live?"is-live":""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}" style="padding:0;background:none;border:none;box-shadow:none;">
+          return `${cintaFechaSerie(m)}<div class="mt ${live?"is-live":""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}" style="padding:0;background:none;border:none;box-shadow:none;">
             <div class="twolegs-card-wrap">
               <div class="twolegs-header-row">
                 <span class="twolegs-col-title">IDA</span>
@@ -10019,9 +10200,29 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           return `<input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="${side}" data-leg="1" value="${esc(val??"")}" aria-label="Goles de ${esc(t.name)}">`;
         };
         
-        return `${cintaNumero(m)}<div class="mt ${live?"is-live":""}">
-          ${mtRow(home.id?home:null, teamName(home), inp("home",home,m.scoreHome), outcome(hs,as,played), home.name)}
-          ${mtRow(away.id?away:null, teamName(away), inp("away",away,m.scoreAway), outcome(as,hs,played), away.name)}
+        /* Los inputs solo para quien puede cargar resultados. Al resto le
+           mostramos el marcador, o VS si todavia no se jugo. */
+        const puedeCargar = document.body.classList.contains("admin-mode");
+        const inputsHtml = (puedeCargar && home.id && away.id)
+          ? inp("home", home, m.scoreHome) + inp("away", away, m.scoreAway)
+          : "";
+
+        const esProximo = m.id === idProximo;
+        const gano = lado => played && (lado === "h" ? hs > as : as > hs);
+
+        return `<div class="fx-duelo${esProximo ? " es-proximo" : ""}${live ? " es-vivo" : ""}">
+          ${esProximo ? '<span class="fx-chip-proximo">Siguiente</span>' : ""}
+          <div class="fx-fila">
+            <div class="fx-lado is-local${gano("h") ? " es-ganador" : ""}">
+              ${teamCrest(home.id?home:null,"fx-escudo",home.name)}
+              <span class="fx-nombre">${teamName(home)}</span>
+            </div>
+            ${centroDuelo(m, played, live, hs, as, inputsHtml)}
+            <div class="fx-lado is-visita${gano("a") ? " es-ganador" : ""}">
+              <span class="fx-nombre">${teamName(away)}</span>
+              ${teamCrest(away.id?away:null,"fx-escudo",away.name)}
+            </div>
+          </div>
           ${home.id && away.id ? mtFoot(m,played,live,"") : `<div class="mt-foot" style="text-align:center; color:var(--text-mute); font-size:11px;">Por definir</div>`}
         </div>`;
       }
@@ -10072,7 +10273,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             return `<tr class="${rowClass}" data-tid="${r.id}"><td><span class="pos">${pos+1}</span></td><td class="team-cell">${teamCrest(t,"crest-bracket")}<span class="team-cell-name">${esc(t?.name||"?")}</span></td><td data-v="${r.pj}">${r.pj}</td><td class="dg-cell${dgCls}" data-v="${r.dg}">${dg}</td><td class="pts-cell" data-v="${r.pts}">${r.pts}</td></tr>`;
           }).join("");
           const ms=groupMatches(g);
-          const matches=ms.map(groupMatchRow).join("");
+          /* Agrupados por jornada, en el orden en que se juegan. Antes salian
+             en una lista corrida y no se veia que dos partidos eran del mismo
+             dia. Los sin fecha caen juntos al final, bajo su propio rotulo. */
+          const porDia = [];
+          ms.slice()
+            .sort((a,b) => (ordenPartidos.get(a.id)||0) - (ordenPartidos.get(b.id)||0))
+            .forEach(m => {
+              const f = m.date || "";
+              const ult = porDia[porDia.length-1];
+              if (ult && ult.fecha === f) ult.lista.push(m);
+              else porDia.push({ fecha:f, lista:[m] });
+            });
+          const matches = porDia
+            .map(d => cintaFecha(d.fecha) + d.lista.map(groupMatchRow).join(""))
+            .join("");
           const done=groupComplete(g);
           const gLetter=String(groupDef?.name||g).replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]/g,"").slice(-1).toUpperCase()||g;
           
