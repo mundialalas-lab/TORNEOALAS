@@ -3515,98 +3515,14 @@ body.album-fs .footer-strip{display:none}
   width:min(1680px,100%);margin:0 auto;
 }
 .llave-shell{--ll-gap:clamp(10px,2.2vw,46px)}
-.llave-side{display:flex;align-items:center;gap:var(--ll-gap);flex:1 1 0;min-width:0}
-.llave-col{display:flex;flex-direction:column;min-width:0;flex:1 1 0}
+
 .lc-head{
   text-align:center;margin-bottom:12px;
   font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:700;
   letter-spacing:.2em;text-transform:uppercase;
   font-size:clamp(10.5px,.78vw,13px);color:var(--ll-dim);
 }
-.lc-body{display:flex;flex-direction:column;justify-content:center;gap:18px;flex:1}
 
-/* --- enfrentamiento --- */
-.llave-tie{
-  position:relative;
-  background:var(--ll-card);
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:12px;
-  padding:10px;
-  min-width:0;
-}
-.llave-tie.is-live{border-color:rgba(61,220,139,.55);box-shadow:0 0 0 3px rgba(61,220,139,.12)}
-.llave-tie.is-tied{border-color:rgba(245,179,14,.5)}
-.lt-head{display:flex;align-items:center;gap:6px;padding:0 3px 5px}
-.lt-label{
-  font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;
-  font-size:clamp(9px,.68vw,11.5px);color:var(--ll-dim);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.lt-live{
-  margin-left:auto;font-size:8px;font-weight:800;letter-spacing:.1em;
-  color:#04120a;background:var(--ll-win);padding:2px 5px;border-radius:4px;
-}
-/* cada equipo es una pastilla, como los rectángulos grises del afiche */
-.lt-slot{
-  display:flex;align-items:center;gap:9px;
-  background:var(--ll-card-2);
-  border-radius:9px;
-  padding:9px 11px;
-  min-width:0;
-}
-.lt-slot+.lt-slot{margin-top:6px}
-.lt-seed{
-  flex:none;font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:800;
-  font-size:clamp(9px,.66vw,11px);letter-spacing:.06em;color:var(--ll-gold);
-  background:rgba(245,179,14,.12);border-radius:5px;padding:3px 6px;
-}
-.lt-crest{flex:none;display:flex}
-.lt-crest:empty{display:none}
-.lt-name{
-  flex:1;min-width:0;font-size:clamp(12px,.86vw,15px);font-weight:600;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.lt-score{
-  flex:none;font-family:'Saira Condensed',var(--font-ui),sans-serif;font-weight:800;
-  font-size:clamp(14px,1.1vw,19px);font-variant-numeric:tabular-nums;
-  min-width:16px;text-align:right;
-}
-.lt-slot.is-empty .lt-name{color:var(--ll-dim);font-style:italic;font-weight:500}
-.lt-slot.is-win{background:rgba(61,220,139,.14);box-shadow:inset 3px 0 0 var(--ll-win)}
-.lt-slot.is-win .lt-name{font-weight:800}
-.lt-slot.is-out{opacity:.45}
-.lt-foot{
-  display:flex;flex-wrap:wrap;gap:4px 9px;justify-content:center;
-  padding:7px 3px 1px;font-size:clamp(9.5px,.7vw,12px);color:var(--ll-dim);
-}
-.lt-legs{color:rgba(255,255,255,.42)}
-.lt-edit{
-  position:absolute;top:5px;right:5px;
-  width:22px;height:22px;display:grid;place-items:center;
-  border:0;border-radius:6px;cursor:pointer;
-  background:rgba(255,255,255,.07);color:#cfd7e2;
-}
-.lt-edit:hover{background:rgba(255,255,255,.16)}
-.lt-edit svg{width:12px;height:12px}
-
-/* --- líneas del cuadro: un tramo horizontal que sale hacia el centro --- */
-.llave-tie.side-left::after,
-.llave-tie.side-right::after{
-  content:"";position:absolute;top:50%;
-  width:var(--ll-gap);height:2px;
-  background:var(--ll-line);
-}
-.llave-tie.side-left::after{left:100%}
-.llave-tie.side-right::after{right:100%}
-
-/* --- centro: trofeo, final y campeón --- */
-.llave-center{
-  position:relative;
-  display:flex;flex-direction:column;align-items:center;
-  flex:0 0 clamp(210px,21vw,340px);
-  padding:0 4px;
-}
 .llave-trophy {
   position: relative;
   width: clamp(150px, 20vw, 240px);
@@ -3617,31 +3533,6 @@ body.album-fs .footer-strip{display:none}
   background-color: transparent;
   filter: drop-shadow(0 16px 32px rgba(0,0,0,0.5));
   margin-bottom: 24px;
-}
-/* el resplandor dorado detrás del logo, separado para no filtrar al logo */
-.llave-center::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: clamp(220px, 28vw, 360px);
-  aspect-ratio: 1;
-  transform: translate(-50%, -15%);
-  background: radial-gradient(circle, rgba(255, 217, 102, 0.35) 0%, rgba(245, 179, 14, 0.25) 30%, transparent 70%);
-  filter: blur(12px);
-  pointer-events: none;
-  z-index: -1 !important; /* Send bloom behind the logo explicitly */
-}
-.lf-kicker{
-  font-family:'Anton',var(--font-display),sans-serif;
-  font-size:clamp(15px,2.2vw,22px);text-transform:uppercase;line-height:1;
-  color:var(--ll-gold-hi);margin-bottom:9px;text-align:center;
-}
-.llave-center .llave-tie{
-  width:100%;
-  border-color:rgba(245,179,14,.42);
-  background:linear-gradient(180deg,#1d2130,#12151d);
-  box-shadow:0 12px 34px -14px rgba(245,179,14,.5);
 }
 .llave-champ{
   margin-top:12px;width:100%;text-align:center;
@@ -3661,8 +3552,13 @@ body.album-fs .footer-strip{display:none}
   background:linear-gradient(180deg,rgba(245,179,14,.16),transparent);
 }
 .llave-champ.is-crowned .lch-name{color:var(--ll-gold-hi)}
-.llave-third{margin-top:16px;width:100%}
-.llave-third .lc-head{margin-bottom:7px}
+/* El escudo y el nombre del campeon, apilados. Estaba escrito como style=""
+   repetido en las dos ramas del render; con una sola rama es una clase. */
+.lch-ganador{
+  display:flex;flex-direction:column;align-items:center;
+  gap:8px;margin-top:8px;
+}
+
 
 .llave-foot{
   position:relative;
@@ -3794,10 +3690,6 @@ body.album-fs .footer-strip{display:none}
   .llave-side{flex-direction:column;align-items:stretch;gap:16px;flex:0 0 auto}
   .llave-side.is-right{flex-direction:column-reverse}
   .llave-col{flex:0 0 auto}
-  .llave-center{flex:0 0 auto;width:100%;order:0}
-  .llave-tie.side-left::after,.llave-tie.side-right::after{
-    top:100%;left:50%;right:auto;width:2px;height:16px;
-  }
   .lc-body{gap:10px}
 }
 
@@ -5058,27 +4950,8 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
   margin-bottom: 12px;
 }
 
-.llave-tie {
-  background: rgba(14, 25, 46, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--r-lg, 16px);
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 220px;
-}
 
-.llave-tie:hover {
-  transform: scale(1.03);
-  border-color: var(--azul-hi);
-  box-shadow: 0 12px 32px rgba(47, 127, 240, 0.45);
-}
 
-.llave-center .llave-tie {
-  border: 2px solid var(--gold);
-  box-shadow: 0 0 32px rgba(245, 179, 14, 0.45);
-  background: linear-gradient(135deg, rgba(245, 179, 14, 0.12), rgba(14, 25, 46, 0.95));
-}
 
 .llave-slot {
   display: flex;
@@ -5547,8 +5420,6 @@ body.presentation-mode .champion-logo{width:92px;height:92px}
 
   .roster-card { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .roster-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
-  .llave-tie { cursor: pointer !important; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-  .llave-tie:hover { transform: scale(1.02); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 
   /* PRO TWO-LEGS CARD DESIGN */
   .twolegs-card-wrap {
@@ -7350,10 +7221,7 @@ body{background:transparent !important}
   }
   
   /* GRAN FINAL - Layout épico vertical en móvil */
-  .llave-center { display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important; margin: 32px auto 0 !important; gap: 16px !important; }
   .llave-trophy { width: 140px !important; height: 140px !important; margin: 0 auto !important; background-color: transparent !important; filter: drop-shadow(0 12px 24px rgba(0,0,0,0.6)); background-size: contain !important; background-position: center !important; background-repeat: no-repeat !important; }
-  .lf-kicker { text-align: center !important; margin: 8px 0 0 0 !important; font-size: 16px !important; font-weight: 800 !important; color: var(--gold, #f5b30e) !important; letter-spacing: 0.1em !important; }
-  .llave-center > .llave-tie.is-final { width: 100% !important; max-width: 400px !important; margin: 0 auto !important; padding: 14px !important; }
   .llave-champ { width: 100% !important; margin-top: 24px !important; }
 }
 
@@ -7901,86 +7769,95 @@ body{background:transparent !important}
   background: linear-gradient(145deg, color-mix(in srgb, var(--tv-acc, #10b981) 15%, #182845) 0%, #0d1627 100%) !important;
 }
 
-/* LLAVE MOBILE */
-.llave-board-mobile { display: none; }
-@media (max-width: 860px) {
-  .llave-board-desktop { display: none !important; }
-  .llave-board-mobile { 
-    display: flex !important; 
-    flex-direction: column; 
-    gap: 24px; 
-    width: 100%; 
-    padding: 0 4px 32px;
-  }
-  .llave-col-mob {
-    display: flex; flex-direction: column; gap: 12px;
-  }
-  /* La ronda —Repechaje, Semifinal, Final— usa la MISMA banda que la
-     jornada del fixture. Son la misma idea: el rotulo que encabeza un
-     grupo de encuentros. Que se vean igual es lo que hace que las dos
-     pantallas se lean como una sola cosa. */
-  .llave-col-mob .lc-head {
-    margin: 4px 0 2px !important;
-    padding: 6px 16px;
-    transform: skewX(-9deg);
-    background: linear-gradient(90deg, var(--azul-deep,#0f3f96), var(--azul,#2f7ff0));
-    box-shadow: 0 6px 16px -6px rgba(0,0,0,.7);
-    text-align: left;
-    color: #fff;
-    font-size: 13px;
-    letter-spacing: .16em;
-  }
-  .llave-col-mob .lc-head > * { display:inline-block; transform: skewX(9deg); }
-  .llave-center-mob { position: relative; }
-  .llave-center-mob::before {
-    content: ""; position: absolute;
-    top: -20px; left: 50%; transform: translateX(-50%);
-    width: 200px; aspect-ratio: 1;
-    background: radial-gradient(circle, rgba(255, 217, 102, 0.35) 0%, rgba(245, 179, 14, 0.25) 30%, transparent 70%);
-    filter: blur(12px); pointer-events: none; z-index: -1;
-  }
-  .llave-center-mob .llave-trophy {
-    position: relative;
-    width: 140px; height: 140px; margin: 0 auto 12px !important;
-    background-size: 80%; background-repeat: no-repeat; background-position: center;
-    background-color: #ffffff; border-radius: 28px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.05);
-  }
-  
-  /* Celda PRO del Campeón en Móvil */
-  .llave-center-mob .llave-champ {
-    margin: 16px auto 0; width: 100%; max-width: 320px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
-    border: 1px dashed rgba(255,255,255,0.2);
-    border-radius: 20px; padding: 18px 16px;
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .llave-center-mob .llave-champ.is-crowned {
-    border-style: solid; border-color: rgba(245, 179, 14, 0.8);
-    background: linear-gradient(180deg, rgba(245, 179, 14, 0.2) 0%, rgba(245, 179, 14, 0.05) 100%);
-    box-shadow: 0 12px 32px rgba(245, 179, 14, 0.15), inset 0 2px 10px rgba(245, 179, 14, 0.2);
-    transform: scale(1.02);
-  }
-  .llave-center-mob .lch-lab {
-    font-family: var(--font-ui); font-size: 11px; font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ll-dim);
-  }
-  .llave-center-mob .is-crowned .lch-lab { color: var(--ll-gold); }
-  .llave-center-mob .lch-name {
-    font-family: var(--font-display); font-size: 26px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 6px; text-transform: uppercase;
-  }
-  .llave-center-mob .is-crowned .lch-name { font-size: 32px; color: var(--ll-gold-hi); text-shadow: 0 2px 10px rgba(245,179,14,0.4); }
+/* ----------------------------------------------------------------- LLAVE --
+   La llave se dibuja como una lista por ronda, con la MISMA fila que la fase
+   de grupos (groupMatchRow). Antes habia dos tableros: el afiche con las dos
+   ramas espejadas para pantalla grande, y esta lista para el telefono — y los
+   DOS se inyectaban siempre en #llaveBoard, con el CSS decidiendo cual se
+   veia. O sea que cada cruce se dibujaba dos veces, y quedaban dos inputs de
+   marcador distintos con el mismo data-match y data-side: se cargaba un gol
+   en uno y el otro seguia mostrando lo viejo hasta el siguiente render.
 
-  /* Flechas Animadas */
-  .llave-arrow-down {
-    display: flex; justify-content: center; align-items: center;
-    color: rgba(255,255,255,0.2); margin: 0;
-  }
-  .llave-arrow-down svg { width: 32px; height: 42px; }
-  .arrow-line { stroke-dasharray: 6 6; animation: march-ants 1.2s linear infinite; }
-  @keyframes march-ants { to { stroke-dashoffset: -12; } }
-  .arrow-head { animation: bounce-arrow 2s infinite ease-in-out; }
-  @keyframes bounce-arrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+   Queda una sola, y es la que ya se sabe cargar de memoria porque es la
+   misma de la fase de grupos. Estas reglas vivian dentro de un
+   @media (max-width:860px); salieron de ahi para aplicar a todo ancho.
+   -------------------------------------------------------------------------- */
+.llave-lista { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 24px; 
+  width: 100%; 
+  padding: 0 4px 32px;
 }
+.llave-ronda {
+  display: flex; flex-direction: column; gap: 12px;
+}
+/* La ronda —Repechaje, Semifinal, Final— usa la MISMA banda que la
+   jornada del fixture. Son la misma idea: el rotulo que encabeza un
+   grupo de encuentros. Que se vean igual es lo que hace que las dos
+   pantallas se lean como una sola cosa. */
+.llave-ronda .lc-head {
+  margin: 4px 0 2px !important;
+  padding: 6px 16px;
+  transform: skewX(-9deg);
+  background: linear-gradient(90deg, var(--azul-deep,#0f3f96), var(--azul,#2f7ff0));
+  box-shadow: 0 6px 16px -6px rgba(0,0,0,.7);
+  text-align: left;
+  color: #fff;
+  font-size: 13px;
+  letter-spacing: .16em;
+}
+.llave-ronda .lc-head > * { display:inline-block; transform: skewX(9deg); }
+.llave-coronacion { position: relative; }
+.llave-coronacion::before {
+  content: ""; position: absolute;
+  top: -20px; left: 50%; transform: translateX(-50%);
+  width: 200px; aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(255, 217, 102, 0.35) 0%, rgba(245, 179, 14, 0.25) 30%, transparent 70%);
+  filter: blur(12px); pointer-events: none; z-index: -1;
+}
+.llave-coronacion .llave-trophy {
+  position: relative;
+  width: 140px; height: 140px; margin: 0 auto 12px !important;
+  background-size: 80%; background-repeat: no-repeat; background-position: center;
+  background-color: #ffffff; border-radius: 28px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+/* Celda PRO del Campeón en Móvil */
+.llave-coronacion .llave-champ {
+  margin: 16px auto 0; width: 100%; max-width: 320px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 20px; padding: 18px 16px;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.llave-coronacion .llave-champ.is-crowned {
+  border-style: solid; border-color: rgba(245, 179, 14, 0.8);
+  background: linear-gradient(180deg, rgba(245, 179, 14, 0.2) 0%, rgba(245, 179, 14, 0.05) 100%);
+  box-shadow: 0 12px 32px rgba(245, 179, 14, 0.15), inset 0 2px 10px rgba(245, 179, 14, 0.2);
+  transform: scale(1.02);
+}
+.llave-coronacion .lch-lab {
+  font-family: var(--font-ui); font-size: 11px; font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ll-dim);
+}
+.llave-coronacion .is-crowned .lch-lab { color: var(--ll-gold); }
+.llave-coronacion .lch-name {
+  font-family: var(--font-display); font-size: 26px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 6px; text-transform: uppercase;
+}
+.llave-coronacion .is-crowned .lch-name { font-size: 32px; color: var(--ll-gold-hi); text-shadow: 0 2px 10px rgba(245,179,14,0.4); }
+
+/* Flechas Animadas */
+.llave-arrow-down {
+  display: flex; justify-content: center; align-items: center;
+  color: rgba(255,255,255,0.2); margin: 0;
+}
+.llave-arrow-down svg { width: 32px; height: 42px; }
+.arrow-line { stroke-dasharray: 6 6; animation: march-ants 1.2s linear infinite; }
+@keyframes march-ants { to { stroke-dashoffset: -12; } }
+.arrow-head { animation: bounce-arrow 2s infinite ease-in-out; }
+@keyframes bounce-arrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
 
   .recently-registered {
     animation: gold-bloom 3.5s ease-out forwards !important;
@@ -8042,32 +7919,147 @@ body{background:transparent !important}
 }
 
 </style>
-<!-- SPLASH VIDEO -->
-  
-<!-- ==========================================
-     PRO LOADER ALAS 2026
-     ========================================== -->
-<div id="proLoader" style="position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;background:#ffffff;z-index:9999999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.6s ease-out, visibility 0.6s ease-out;">
-  <div style="position:relative;width:140px;height:140px;margin-bottom:32px;">
-    <!-- Anillos de fondo y animación -->
-    <div style="position:absolute;top:0;left:0;right:0;bottom:0;border:4px solid rgba(15,56,122,0.06);border-radius:50%;"></div>
-    <div style="position:absolute;top:0;left:0;right:0;bottom:0;border:4px solid transparent;border-top-color:#0f387a;border-right-color:rgba(15,56,122,0.2);border-radius:50%;animation:pro-spin 1.2s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;box-shadow:0 0 20px rgba(15,56,122,0.15);"></div>
-    <div style="position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:3px solid transparent;border-bottom-color:#4b8cff;border-left-color:rgba(75,140,255,0.3);border-radius:50%;animation:pro-spin 1.8s linear infinite reverse;"></div>
-    <!-- Logo central -->
-    <img src="ALAS.png" alt="ALAS" style="position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;width:84px;height:84px;object-fit:contain;animation:pro-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;">
+<!-- ==========================================================================
+     LOADER · el primer segundo de la app
+
+     Fondo oscuro, no blanco. Lo que viene inmediatamente despues es el video
+     del splash, que es oscuro, y el <body> de la app tambien: el loader blanco
+     metia un flash de blanco a negro en cada arranque. Este color es el mismo
+     `background_color` que declara el manifest, asi que instalada como app el
+     arranque del sistema y el loader son el mismo color y no se ve la costura.
+
+     La copa es un SVG de trazo, no una imagen: COPA.jpg es una foto de estadio
+     con fondo, pesa 64 KB y no se puede teñir. Esto pesa nada, es nitido en
+     cualquier pantalla y usa el mismo lenguaje de linea que los iconos de la
+     app (ICO.trophy).
+
+     Cada trazo se dibuja solo. El truco para que eso no dependa del largo real
+     de cada path es pathLength="100": normaliza todos a la misma longitud, asi
+     un solo par dasharray/dashoffset sirve para el rectangulo de la base y
+     para la curva del cuenco.
+     ========================================================================== -->
+<div id="proLoader" role="status" aria-label="Cargando el torneo">
+  <div class="ld-marca">
+    <svg class="ld-copa" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <!-- el orden de los trazos es el orden en que se dibujan: primero la
+           boca, despues el cuenco, las asas, el pie y por ultimo la base -->
+      <path class="ld-t1" pathLength="100" d="M18.5 11.5h27"/>
+      <path class="ld-t2" pathLength="100" d="M21.5 11.5v7c0 7.2 4.7 13 10.5 13s10.5-5.8 10.5-13v-7"/>
+      <path class="ld-t3" pathLength="100" d="M21.5 14h-5.5a7 7 0 0 0 6.6 9.5"/>
+      <path class="ld-t3" pathLength="100" d="M42.5 14h5.5a7 7 0 0 1-6.6 9.5"/>
+      <path class="ld-t4" pathLength="100" d="M32 31.5v9.5"/>
+      <path class="ld-t5" pathLength="100" d="M25 41h14l1.5 5h-17z"/>
+      <rect class="ld-t5" pathLength="100" x="21" y="46" width="22" height="6" rx="1.6"/>
+    </svg>
   </div>
-  <div style="font-family:'Saira Condensed', sans-serif;font-weight:900;font-size:clamp(22px, 5vw, 28px);letter-spacing:0.15em;text-transform:uppercase;color:#0f387a;text-shadow:0px 2px 12px rgba(15,56,122,0.1);">
-    Mundial ALAS 2026
-  </div>
-  <div style="margin-top:8px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:rgba(15,56,122,0.5);letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
-    <span style="display:inline-block;width:6px;height:6px;background:#4b8cff;border-radius:50%;animation:pro-pulse 1s infinite alternate;"></span>
-    Preparando torneo...
-  </div>
+
+  <div class="ld-titulo">Mundial ALAS <span>2026</span></div>
+
+  <!-- La barra es indeterminada a proposito: no hay ningun progreso real que
+       informar, y una barra que finge porcentajes miente. Esto solo dice
+       "sigue trabajando", que es todo lo que se sabe. -->
+  <div class="ld-barra"><i></i></div>
+
+  <img class="ld-alas" src="ALAS_blanco.png" alt="ALAS">
 </div>
+
 <style>
-  @keyframes pro-spin { to { transform: rotate(360deg); } }
-  @keyframes pro-pulse { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.05); opacity: 1; } }
+  /* Las animaciones van con !important porque `body.booting *` las apaga
+     todas, tambien con !important, durante los primeros frames — que es
+     justo cuando el loader esta en pantalla. Al ir calificadas por #id le
+     ganan en especificidad. */
+
+  #proLoader{
+    position:fixed; inset:0; z-index:9999999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    /* El realce del centro evita que un fondo plano se lea como pantalla
+       apagada. Es un solo paso de luminosidad, apenas perceptible. */
+    background:radial-gradient(115% 75% at 50% 42%, #15263a 0%, #0b1420 60%);
+    transition:opacity .6s ease-out, visibility .6s ease-out;
+  }
+
+  /* ---- la copa ---- */
+  .ld-marca{ position:relative; }
+  .ld-copa{
+    width:clamp(84px, 22vw, 104px); height:auto; display:block;
+    stroke:#eef2f7; stroke-width:2.1;
+    stroke-linecap:round; stroke-linejoin:round;
+    /* El resplandor es lo unico que le da materia al trazo. Sin el, sobre
+       fondo oscuro la copa se lee como un wireframe. */
+    filter:drop-shadow(0 0 14px rgba(90,162,255,.28));
+    animation:ld-respira 3.6s ease-in-out 1.5s infinite !important;
+  }
+  .ld-copa path, .ld-copa rect{
+    stroke-dasharray:100; stroke-dashoffset:100;
+    animation:ld-traza .75s cubic-bezier(.65,0,.35,1) forwards !important;
+  }
+  .ld-t1{ animation-delay:.05s !important }
+  .ld-t2{ animation-delay:.20s !important }
+  .ld-t3{ animation-delay:.42s !important }
+  .ld-t4{ animation-delay:.62s !important }
+  .ld-t5{ animation-delay:.74s !important }
+
+  @keyframes ld-traza{ to{ stroke-dashoffset:0 } }
+  @keyframes ld-respira{
+    0%,100%{ transform:translateY(0)     }
+    50%    { transform:translateY(-3px)  }
+  }
+
+  /* ---- el rotulo ---- */
+  .ld-titulo{
+    margin-top:26px;
+    font-family:'Saira Condensed','Oswald','Arial Narrow',system-ui,sans-serif;
+    font-weight:800; font-size:clamp(19px, 4.6vw, 24px);
+    letter-spacing:.26em; text-transform:uppercase;
+    /* El interletrado empuja todo a la izquierda: el ultimo espacio queda
+       colgando a la derecha y el bloque se ve descentrado. Se compensa. */
+    text-indent:.26em;
+    color:#eef2f7;
+    opacity:0; animation:ld-entra .7s ease-out .55s forwards !important;
+  }
+  .ld-titulo span{ color:#5aa2ff }
+
+  @keyframes ld-entra{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+  /* ---- la barra ---- */
+  .ld-barra{
+    margin-top:22px; width:clamp(130px, 34vw, 168px); height:2px;
+    background:rgba(238,242,247,.10); border-radius:2px; overflow:hidden;
+    opacity:0; animation:ld-entra .7s ease-out .8s forwards !important;
+  }
+  .ld-barra i{
+    display:block; width:42%; height:100%; border-radius:2px;
+    background:linear-gradient(90deg, transparent, #2f7ff0 35%, #5aa2ff 65%, transparent);
+    animation:ld-barre 1.5s cubic-bezier(.55,0,.45,1) infinite !important;
+  }
+  @keyframes ld-barre{
+    from{ transform:translateX(-110%) }
+    to  { transform:translateX(348%)  }
+  }
+
+  /* ---- la firma ---- */
+  .ld-alas{
+    position:absolute; bottom:clamp(28px, 7vh, 46px);
+    width:52px; height:auto; opacity:0;
+    animation:ld-firma .9s ease-out 1.05s forwards !important;
+  }
+  @keyframes ld-firma{ to{ opacity:.34 } }
+
+  /* Quien pidio menos movimiento ve la marca entera, quieta, desde el frame
+     uno. No se le esconde nada: se le saca el movimiento. */
+  @media (prefers-reduced-motion:reduce){
+    #proLoader .ld-copa, #proLoader .ld-copa path, #proLoader .ld-copa rect,
+    #proLoader .ld-titulo, #proLoader .ld-barra, #proLoader .ld-alas{
+      animation:none !important;
+    }
+    #proLoader .ld-copa path, #proLoader .ld-copa rect{ stroke-dashoffset:0 }
+    #proLoader .ld-titulo, #proLoader .ld-barra{ opacity:1 }
+    #proLoader .ld-alas{ opacity:.34 }
+    #proLoader .ld-barra i{ width:100%; background:#2f7ff0 }
+  }
 </style>
+
+<!-- SPLASH VIDEO -->
 
   <div id="splash" class="splash" aria-label="Bienvenida" role="dialog">
     <video class="splash-video" id="splashVideo" autoplay loop muted playsinline preload="auto">
@@ -10705,80 +10697,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
            derecha    Repechaje 1 → Semifinal 2  (el 1º del grupo B entra acá)
            centro     Gran Final
          ==================================================================== */
-      function feedsOf(m){
-        return [m.homeSlot,m.awaySlot]
-          .filter(s=>s&&s.type==="matchWinner")
-          .map(s=>state.matches[s.matchId])
-          .filter(Boolean);
-      }
-      function subtreeOf(m){
-        const acc=[m];
-        feedsOf(m).forEach(f=>acc.push(...subtreeOf(f)));
-        return acc;
-      }
-      /* "Grupo A" -> "A". El afiche rotula los slots por procedencia (1ºA, 3ºB)
-         y es lo que deja leer el cuadro antes de que haya equipos definidos. */
-      function groupLetter(gid){
-        const n=String(state.groups[gid]?.name||gid);
-        const m=n.match(/([A-Za-z0-9])\s*$/);
-        return m?m[1].toUpperCase():n.slice(0,1).toUpperCase();
-      }
-      function llaveSlot(spec,slot,score,winner,played){
-        const t=slot.id?state.teams[slot.id]:null;
-        const seed=spec&&spec.type==="groupPos"?`${spec.pos+1}º${groupLetter(spec.groupId)}`:"";
-        const esGanador=winner&&slot.id&&winner.id===slot.id;
-        const cls=!slot.id?"is-empty":esGanador?"is-win":winner?"is-out":"";
-        return `<div class="lt-slot ${cls}">
-          ${seed?`<span class="lt-seed">${esc(seed)}</span>`:""}
-          <span class="lt-crest">${t?teamCrest(t,"crest-bracket"):""}</span>
-          <span class="lt-name">${esc(t?t.name:slot.name)}</span>
-          <span class="lt-score">${played&&score!=null?score:""}</span>
-        </div>`;
-      }
-      function llaveTie(m,extraCls){
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        const winner=getWinner(m);
-        const played=matchScoreOk(m);
-        const agg=aggregateScore(m);
-        const tied=home.id&&away.id&&played&&agg.h===agg.a;
-        const cuando=m.twoLegs
-          ? [m.date?formatDateShort(m.date):"",m.dateLeg2?"y "+formatDateShort(m.dateLeg2):""].filter(Boolean).join(" ")
-          : [m.date?formatDateShort(m.date):"",m.time||""].filter(Boolean).join(" · ");
-        const legs=(m.twoLegs&&played)
-          ? `<span class="lt-legs">Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}</span>`
-          : (m.twoLegs&&hasScore(m.scoreHome)&&hasScore(m.scoreAway))
-          ? `<span class="lt-legs">Ida: ${m.scoreHome}-${m.scoreAway} · Vuelta pendiente</span>`
-          : m.twoLegs?`<span class="lt-legs">Serie de ida y vuelta</span>`:"";
-        return `<article class="llave-tie ${extraCls||""}${tied?" is-tied":""}${m.status==="live"?" is-live":""}" id="node-${m.id}" data-open-match="${m.id}" style="cursor: pointer;">
-          <div class="lt-head"><span class="lt-label">${esc(m.label||m.roundTitle||"")}</span>${m.status==="live"?'<span class="lt-live">EN VIVO</span>':""}</div>
-          ${llaveSlot(m.homeSlot,home,agg.h,winner,played)}
-          ${llaveSlot(m.awaySlot,away,agg.a,winner,played)}
-          <div class="lt-foot">${esc(cuando)}${legs}</div>
-          <div class="lt-actions admin-only" style="position:absolute; top:4px; right:4px; display:flex; flex-direction:column; gap:4px; z-index:10;">
-            <button class="lt-edit" type="button" data-open-match="${m.id}" aria-label="Cargar resultado" style="position:relative; top:auto; right:auto;">${ICO.edit}</button>
-            <button class="lt-edit btn-edit-datos" type="button" data-open-match-data="${m.id}" aria-label="Datos" style="position:relative; top:auto; right:auto; font-size:9px; font-weight:bold; width:22px; height:22px;">DAT</button>
-          </div>
-        </article>`;
-      }
-      /* Una columna por ronda. side "left" apila de afuera hacia adentro y
-         "right" al revés, que es lo que produce el espejo del afiche. */
-      function llaveSide(matches,side){
-        const porRonda=new Map();
-        matches.forEach(m=>{
-          if(!porRonda.has(m.bracketRound))porRonda.set(m.bracketRound,[]);
-          porRonda.get(m.bracketRound).push(m);
-        });
-        let rondas=[...porRonda.keys()].sort((a,b)=>a-b); // 1 = la más lejana
-        if(side==="right")rondas.reverse();
-        return `<div class="llave-side is-${side}">${rondas.map(r=>{
-          const ms=porRonda.get(r).sort((a,b)=>(a.order||0)-(b.order||0));
-          const titulo=ms[0].roundTitle||roundName(ms.length);
-          return `<div class="llave-col">
-            <div class="lc-head">${esc(titulo)}</div>
-            <div class="lc-body">${ms.map(m=>llaveTie(m,"side-"+side)).join("")}</div>
-          </div>`;
-        }).join("")}</div>`;
-      }
+      /* Aca vivian feedsOf, subtreeOf, llaveSlot, llaveTie y llaveSide: las
+         cinco funciones que armaban el afiche de dos ramas espejadas. La
+         llave pasó a dibujarse como una lista por ronda con la misma fila de
+         la fase de grupos, asi que se quedaron sin un solo llamador desde
+         afuera —solo se llamaban entre ellas— y salieron. Con ellas se fue
+         el boton "DAT", que era "DATOS" recortado para entrar en 22 px: en
+         la fila desplegable el boton se llama "Datos del partido", entero. */
 
       function renderLlave(){
         const board=$("#llaveBoard");
@@ -10805,79 +10730,57 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         }
         const maxRound=Math.max(...ko.map(m=>m.bracketRound));
         const final=ko.find(m=>m.bracketRound===maxRound);
-        const semis=final?feedsOf(final):[];
         const champ=final?getWinner(final):null;
-
-        // con dos ramas se espeja; si el formato no llegara a tenerlas (una sola
-        // ronda, por ejemplo) se muestra todo de un lado antes que romperse
-        const izq=semis[0]?subtreeOf(semis[0]):[];
-        const der=semis[1]?subtreeOf(semis[1]):[];
-        const sueltos=ko.filter(m=>m!==final&&!izq.includes(m)&&!der.includes(m));
-
         const tercero=Object.values(state.matches).find(m=>m.isThirdPlace);
-        // MÓVIL: Layout lineal ordenado por rondas, usando groupMatchRow para tener
-        // la misma dinámica de carga/inputs que la fase de grupos.
-        const roundsByLevel = {};
+
+        /* Una columna por ronda, en orden, y cada cruce dibujado con la MISMA
+           groupMatchRow de la fase de grupos: el mismo escudo, el mismo
+           marcador editable y el mismo cajon desplegable con "Datos del
+           partido" rotulado entero.
+
+           Antes esto conveivia con un tablero de afiche —dos ramas espejadas
+           hacia una copa al centro— y los dos se inyectaban SIEMPRE, con el
+           CSS eligiendo cual mostrar segun el ancho. Cada cruce existia dos
+           veces en el DOM, con dos inputs con el mismo data-match: cargabas
+           un gol en el que veias y el otro se quedaba con el valor viejo. */
+        const porRonda = {};
         ko.forEach(m => {
-          if(!roundsByLevel[m.bracketRound]) roundsByLevel[m.bracketRound] = { title: m.roundTitle || "Ronda", matches: [] };
-          roundsByLevel[m.bracketRound].matches.push(m);
+          if(!porRonda[m.bracketRound]) porRonda[m.bracketRound] = { title: m.roundTitle || "Ronda", matches: [] };
+          porRonda[m.bracketRound].matches.push(m);
         });
-        const sortedRounds = Object.keys(roundsByLevel).sort((a,b)=>a-b);
-        let mobileHtml = `<div class="llave-board-mobile">`;
-        sortedRounds.forEach(r => {
-          const ms = roundsByLevel[r].matches.sort((a,b)=>(a.order||0)-(b.order||0));
-          mobileHtml += `<div class="llave-col-mob">
-            <div class="lc-head" style="margin-bottom:4px;"><span>${esc(roundsByLevel[r].title)}</span></div>`;
-          mobileHtml += ms.map(m => groupMatchRow(m)).join("");
-          mobileHtml += `</div>`;
+        const rondas = Object.keys(porRonda).sort((a,b)=>a-b);
+
+        let html = `<div class="llave-lista">`;
+        rondas.forEach(r => {
+          const ms = porRonda[r].matches.sort((a,b)=>(a.order||0)-(b.order||0));
+          html += `<div class="llave-ronda">
+            <div class="lc-head" style="margin-bottom:4px;"><span>${esc(porRonda[r].title)}</span></div>`;
+          html += ms.map(m => groupMatchRow(m)).join("");
+          html += `</div>`;
         });
-        if(tercero) {
-          mobileHtml += `<div class="llave-col-mob">
+        if(tercero){
+          html += `<div class="llave-ronda">
             <div class="lc-head" style="margin-bottom:4px;"><span>Tercer puesto</span></div>`;
-          mobileHtml += groupMatchRow(tercero);
-          mobileHtml += `</div>`;
+          html += groupMatchRow(tercero);
+          html += `</div>`;
         }
-        mobileHtml += `<div class="llave-center-mob" style="margin-top: 24px; text-align:center;">
-            <div class="llave-trophy" aria-hidden="true" style="background-image:url('${LOGO_LIMPIO}'); margin: 0 auto 12px;"></div>
-            <div class="llave-champ${champ?" is-crowned":""}">
+        html += `<div class="llave-coronacion">
+            <div class="llave-trophy" aria-hidden="true" style="background-image:url('${LOGO_LIMPIO}');"></div>
+            <div class="llave-champ${champ?" is-crowned":""}" id="championZone">
               <div class="lch-lab">Campeón</div>
               ${champ ? `
-                <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:8px;">
+                <div class="lch-ganador">
                   ${teamCrest(champ, "crest-champion")}
-                  <div class="lch-name">${esc(champ.name)}</div>
+                  <div class="lch-name" id="championName">${esc(champ.name)}</div>
                 </div>
               ` : `
-                <div class="lch-name">Por definir</div>
+                <div class="lch-name" id="championName">Por definir</div>
               `}
             </div>
           </div>`;
-        mobileHtml += `</div>`;
+        html += `</div>`;
 
-        board.innerHTML=`
-          <div class="llave-board-desktop" style="display:flex; width:100%; justify-content:center; align-items:flex-start; gap:24px;">
-            ${izq.length?llaveSide(izq,"left"):""}
-            <div class="llave-center">
-              <div class="llave-trophy" aria-hidden="true" style="background-image:url('${LOGO_LIMPIO}')"></div>
-              <div class="lf-kicker">${esc(final?.roundTitle||"Gran Final")}</div>
-              ${final?llaveTie(final,"is-final"):""}
-              <div class="llave-champ${champ?" is-crowned":""}" id="championZone">
-                <div class="lch-lab">Campeón</div>
-                ${champ ? `
-                  <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:8px;">
-                    ${teamCrest(champ, "crest-champion")}
-                    <div class="lch-name" id="championName">${esc(champ.name)}</div>
-                  </div>
-                ` : `
-                  <div class="lch-name" id="championName">Por definir</div>
-                `}
-              </div>
-              ${tercero?`<div class="llave-third"><div class="lc-head">Tercer puesto</div>${llaveTie(tercero,"is-third")}</div>`:""}
-            </div>
-            ${der.length?llaveSide(der,"right"):""}
-            ${sueltos.length?`<div class="llave-side is-left">${llaveSide(sueltos,"left")}</div>`:""}
-          </div>
-          ${mobileHtml}
-        `;
+        board.innerHTML = html;
 
         const sub=$("#llaveSub");
         if(sub)sub.textContent=champ?`${champ.name} levantó la copa`:(final?.date?"Gran Final · "+formatDateShort(final.date):"El camino a la copa");
@@ -10893,13 +10796,18 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const shape=ko.length+"|"+(ko.length?Math.max(...ko.map(m=>m.bracketRound)):0)+"|"+groupIds().length;
         if(window.gsap&&shape!==lastBracketShape){
           lastBracketShape=shape;
-          // las alas entran desde su propio costado y la final desde el centro
-          gsap.fromTo("#llaveBoard .is-left .llave-tie",
-            {autoAlpha:0,x:-26},{autoAlpha:1,x:0,duration:.5,ease:"power3.out",stagger:.07,delay:.05,clearProps:"opacity,visibility,transform"});
-          gsap.fromTo("#llaveBoard .is-right .llave-tie",
-            {autoAlpha:0,x:26},{autoAlpha:1,x:0,duration:.5,ease:"power3.out",stagger:.07,delay:.05,clearProps:"opacity,visibility,transform"});
-          gsap.fromTo("#llaveBoard .llave-center",
-            {autoAlpha:0,scale:.9},{autoAlpha:1,scale:1,duration:.6,ease:"back.out(1.7)",delay:.2,clearProps:"opacity,visibility,transform"});
+          /* Los cruces bajan en cascada, en el orden en que se juegan, y la
+             coronacion entra al final. Antes esto animaba ".is-left
+             .llave-tie" y ".llave-center", que eran las piezas del afiche:
+             al pasar la llave a lista esos selectores dejaron de encontrar
+             nada y la llave aparecia de golpe.
+
+             La serie de ida y vuelta devuelve .mt en lugar de .fx-duelo, asi
+             que van los dos: si falta uno, la semifinal entra sin animar. */
+          gsap.fromTo("#llaveBoard .llave-ronda .fx-duelo, #llaveBoard .llave-ronda .mt",
+            {autoAlpha:0,y:16},{autoAlpha:1,y:0,duration:.45,ease:"power3.out",stagger:.06,delay:.05,clearProps:"opacity,visibility,transform"});
+          gsap.fromTo("#llaveBoard .llave-coronacion",
+            {autoAlpha:0,scale:.92},{autoAlpha:1,scale:1,duration:.6,ease:"back.out(1.7)",delay:.24,clearProps:"opacity,visibility,transform"});
         }
         return champ;
       }
@@ -15047,11 +14955,18 @@ function loop(){
         }
       });
       document.addEventListener("click",e=>{
+        /* El orden y el return importan. Los dos closest() se evaluaban
+           siempre, y el boton de datos vive DENTRO de la tarjeta del cruce
+           —que lleva data-open-match en el <article> entero—. O sea que un
+           solo click subia por los dos caminos y abria los DOS modales, uno
+           tapando al otro. Gana el mas especifico y se corta ahi. */
+        const openDataBtn=e.target.closest("[data-open-match-data]");
+        if(openDataBtn){
+          openMatchDataModal(openDataBtn.getAttribute("data-open-match-data"));
+          return;
+        }
         const openBtn=e.target.closest("[data-open-match]");
         if(openBtn)openMatchModal(openBtn.getAttribute("data-open-match"));
-        
-        const openDataBtn=e.target.closest("[data-open-match-data]");
-        if(openDataBtn)openMatchDataModal(openDataBtn.getAttribute("data-open-match-data"));
       });
       document.addEventListener("keydown",e=>{
         if(e.key!=="Enter"&&e.key!==" ")return;
@@ -15684,8 +15599,15 @@ function loop(){
       $("#matchDataModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeMatchDataModal()});
 
       $("#btnOpenMatchDataFromEditor")?.addEventListener("click",()=>{
+        /* El id se guarda ANTES de cerrar. closeMatchModal() pone
+           editingMatchId en null, asi que lo que llegaba a
+           openMatchDataModal era null, state.matches[null] es undefined y la
+           funcion salia por su propia guarda `if(!m)return`. Resultado: el
+           boton no abria nada, nunca, y desde el editor no habia forma de
+           llegar a la fecha, la hora ni la sede. */
+        const id = editingMatchId;
         closeMatchModal();
-        openMatchDataModal(editingMatchId);
+        openMatchDataModal(id);
       });
 
       $("#btnCloseMatchModal").addEventListener("click",closeMatchModal);
@@ -16520,7 +16442,8 @@ function loop(){
            infinitamente mejor que quedarse mirando una pantalla a medio pintar. */
         const ALWAYS_ON="#topbar,.topbar-brand,.topbar-copy,.topbar-actions,#topbarLogo,#tabBar,"+
                         "#tab-mapa .llave-shell,.alas-schedule,.alas-schedule .sched-item,"+
-                        "#llaveBoard .llave-tie,#llaveBoard .llave-center,.app-tab.active .panel,"+
+                        "#llaveBoard .llave-ronda .fx-duelo,#llaveBoard .llave-ronda .mt,"+
+                        "#llaveBoard .llave-coronacion,.app-tab.active .panel,"+
                         ".group-card,.match-card,.topbar .ibtn,.tab-btn,.scoreboard";
         const unstick=force=>{
           document.querySelectorAll(".reveal:not(.reveal-in)").forEach(el=>el.classList.add("reveal-in"));
