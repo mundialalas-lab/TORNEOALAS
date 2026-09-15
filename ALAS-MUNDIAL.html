@@ -7808,20 +7808,78 @@ body{background:transparent !important}
   letter-spacing: .16em;
 }
 .llave-ronda .lc-head > * { display:inline-block; transform: skewX(9deg); }
+
+/* Los cruces de una ronda, lado a lado cuando entran. El repechaje son dos
+   y las semis son dos: uno debajo del otro desperdiciaba media pantalla y
+   estiraba cada fila hasta que el nombre y el marcador quedaban en puntas
+   opuestas. La final es una sola y se queda con el ancho entero de la
+   ronda.
+
+   auto-fit + minmax resuelve los tres casos sin preguntar cuantos son, y
+   baja solo a una columna cuando no entran dos de 360 px —o sea que el
+   telefono sigue viendo la lista de antes, sin una media query nueva. */
+.llave-cruces{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+  gap:14px 16px;
+  align-items:start;
+}
+.llave-cruce{min-width:0}
+
+/* --- LA FINAL ---
+   El oro esta reservado al campeon en todo el sistema de diseno. La final
+   es el unico otro lugar donde se gana, porque es el partido que lo
+   decide: la banda de la ronda pasa a dorada y el cruce se apoya sobre una
+   base con marco y resplandor del mismo color, para que se lea distinto de
+   las rondas que vienen antes sin tener que rotularlo. */
+.llave-ronda.es-final .lc-head{
+  background:linear-gradient(90deg,#8a6a1f,var(--ll-gold,#f5b30e));
+  box-shadow:0 8px 22px -8px rgba(245,179,14,.6);
+  color:#1a1205;
+}
+/* Sola en su ronda, la final se estiraria a todo el tablero. Se le pone
+   techo y se centra: un solo partido no necesita 1.100 px. */
+.llave-ronda.es-final .llave-cruces{
+  max-width:640px;margin:0 auto;width:100%;
+}
+.llave-ronda.es-final .llave-cruce{
+  padding:14px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(245,179,14,.10),rgba(245,179,14,.02));
+  border:1px solid rgba(245,179,14,.42);
+  box-shadow:0 18px 44px -20px rgba(245,179,14,.55);
+}
 .llave-coronacion { position: relative; }
 .llave-coronacion::before {
   content: ""; position: absolute;
-  top: -20px; left: 50%; transform: translateX(-50%);
-  width: 200px; aspect-ratio: 1;
+  top: 0; left: 50%; transform: translate(-50%, -15%);
+  width: clamp(220px, 28vw, 360px); aspect-ratio: 1;
   background: radial-gradient(circle, rgba(255, 217, 102, 0.35) 0%, rgba(245, 179, 14, 0.25) 30%, transparent 70%);
   filter: blur(12px); pointer-events: none; z-index: -1;
 }
+/* El logo de la copa, como estaba en el afiche: grande, recortado contra el
+   fondo y con el resplandor dorado detras.
+
+   Lo que se veia hasta recien era el tratamiento que tenia SOLO en el
+   telefono —una teja blanca de 140 px con esquinas redondeadas, como un
+   icono de app—. Al pasar la llave a una sola vista, esa regla salio de su
+   @media y se aplico tambien en pantalla grande, donde el logo quedaba
+   metido adentro de un cuadrado blanco.
+
+   Los !important no son capricho: hay dos reglas `.llave-trophy` sueltas
+   con !important en las capas de pulido de mas abajo. Esta las gana por
+   especificidad, pero solo si compite en las mismas condiciones. */
 .llave-coronacion .llave-trophy {
   position: relative;
-  width: 140px; height: 140px; margin: 0 auto 12px !important;
-  background-size: 80%; background-repeat: no-repeat; background-position: center;
-  background-color: #ffffff; border-radius: 28px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.05);
+  width: clamp(150px, 20vw, 240px) !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  margin: 0 auto 24px !important;
+  background-size: contain !important;
+  background-repeat: no-repeat; background-position: center !important;
+  background-color: transparent !important;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,.5));
 }
 
 /* Celda PRO del Campeón en Móvil */
@@ -10610,19 +10668,31 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         });
         const rondas = Object.keys(porRonda).sort((a,b)=>a-b);
 
+        /* Cada cruce va envuelto en su propia celda, y no suelto en la
+           grilla. Es necesario: groupMatchRow devuelve UN elemento para el
+           partido simple, pero DOS para la serie de ida y vuelta —la cinta
+           de fechas y la tarjeta—. Sueltos, la grilla los tomaria como dos
+           celdas y partiria la semifinal al medio en cuanto se resuelvan
+           los cruces y pase a mostrarse como serie. */
+        const celda = m => `<div class="llave-cruce">${groupMatchRow(m)}</div>`;
+
         let html = `<div class="llave-lista">`;
-        rondas.forEach(r => {
+        rondas.forEach((r, i) => {
           const ms = porRonda[r].matches.sort((a,b)=>(a.order||0)-(b.order||0));
-          html += `<div class="llave-ronda">
-            <div class="lc-head" style="margin-bottom:4px;"><span>${esc(porRonda[r].title)}</span></div>`;
-          html += ms.map(m => groupMatchRow(m)).join("");
-          html += `</div>`;
+          /* La ultima ronda es la final: se lleva el dorado. Se deduce de la
+             posicion y no del titulo, asi que sigue siendo la final aunque
+             manana se agreguen cuartos o se le cambie el nombre. */
+          const esFinal = i === rondas.length - 1;
+          html += `<div class="llave-ronda${esFinal ? " es-final" : ""}">
+            <div class="lc-head"><span>${esc(porRonda[r].title)}</span></div>
+            <div class="llave-cruces">${ms.map(celda).join("")}</div>
+          </div>`;
         });
         if(tercero){
           html += `<div class="llave-ronda">
-            <div class="lc-head" style="margin-bottom:4px;"><span>Tercer puesto</span></div>`;
-          html += groupMatchRow(tercero);
-          html += `</div>`;
+            <div class="lc-head"><span>Tercer puesto</span></div>
+            <div class="llave-cruces">${celda(tercero)}</div>
+          </div>`;
         }
         html += `<div class="llave-coronacion">
             <div class="llave-trophy" aria-hidden="true" style="background-image:url('${LOGO_LIMPIO}');"></div>
