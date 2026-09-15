@@ -10900,8 +10900,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         board.innerHTML = html;
 
+        /* Sale la fecha de la final del subtitulo. Mostraba "Gran Final ·
+           25-sept" leyendo final.date, que hoy es la fecha SEMILLA con la que
+           nace el fixture, no una fecha confirmada: anunciaba como definido
+           algo que todavia no se decidio.
+
+           Quedan los otros dos estados de la linea, que si dicen algo cierto:
+           el campeon cuando ya hay, y el rotulo de siempre mientras no. */
         const sub=$("#llaveSub");
-        if(sub)sub.textContent=champ?`${champ.name} levantó la copa`:(final?.date?"Gran Final · "+formatDateShort(final.date):"El camino a la copa");
+        if(sub)sub.textContent=champ?`${champ.name} levantó la copa`:"El camino a la copa";
         return champ;
       }
 
