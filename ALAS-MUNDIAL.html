@@ -2256,6 +2256,31 @@ body.desplegando .topbar-tabs{
 /* Sola en la grilla, la ventana de sanciones se queda con el ancho entero
    igual que la de goleadores: se ve una por vez. */
 .tv-tarjetas{grid-column:1/-1}
+
+/* --- el filtro por partido de Sanciones ---
+   Va adentro de la ventana y no arriba junto a las pestanas, porque filtra
+   SOLO esta tabla: los goleadores son siempre del torneo entero. Puesto
+   afuera daria a entender que manda sobre las dos. */
+.tv-filtro{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding-bottom:2px;
+}
+.tv-filtro label{
+  font-family:var(--font-ui);font-size:10px;font-weight:800;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+}
+.tv-filtro select{
+  flex:1;min-width:0;max-width:420px;
+  height:38px;padding:0 12px;
+  border-radius:10px;
+  border:1px solid var(--line-strong,rgba(255,255,255,.14));
+  background:rgba(8,16,32,.9);color:#eef2f7;
+  font-family:var(--font-ui);font-size:13px;font-weight:600;
+}
+.tv-filtro select:focus-visible{
+  outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:2px;
+}
 .tv-win[hidden]{display:none}
 
 /* --- el filtro de Stats ---
@@ -9871,9 +9896,14 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         return "Torneo finalizado";
       }
 
-      function aggregateEvents(){
+      /* Con soloPartido se cuenta un partido solo; sin el, todo el torneo.
+         El parametro es opcional a proposito: los tres llamadores que ya
+         existian —el valor de la figurita, las leyendas y los rankings— no
+         se enteran de que esto cambio. */
+      function aggregateEvents(soloPartido){
         const agg={};
         Object.values(state.matches).forEach(m=>{
+          if(soloPartido && m.id!==soloPartido)return;
           (m.events||[]).forEach(ev=>{
             if(!state.players[ev.playerId])return;
             agg[ev.playerId]=agg[ev.playerId]||{playerId:ev.playerId,goals:0,assists:0,yellow:0,red:0};
@@ -11121,6 +11151,12 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         });
       }
       function formatDateShort(d){try{return new Date(d+"T00:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}catch{return d}}
+      /* Que partido se esta mirando en Sanciones. Vacio = todo el torneo.
+         Vive fuera del render porque renderAll reescribe el panel entero en
+         cada gol que se carga: si el filtro viviera en el <select>, cargar
+         una tarjeta te devolvia a "todo el torneo" solo. */
+      let sancionesPartido = "";
+
       function renderFixtureFilters(){
         $("#fixtureFilters").innerHTML=`
           <select id="filterTeam"><option value="">Todos los equipos</option>${Object.values(state.teams).sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${t.id}" ${fixtureFilterState.teamId===t.id?"selected":""}>${esc(t.name)}</option>`).join("")}</select>
@@ -11296,6 +11332,42 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
              + `<span class="tv-card-rj${rj?"":" off"}" title="${plural(rj,"roja","rojas")}">${rj}</span>`;
       }
 
+      /* El desplegable de partidos de Sanciones.
+
+         Solo lista los partidos que TIENEN alguna tarjeta. Ofrecer los doce
+         del fixture obligaria a probarlos de a uno para descubrir cuales
+         tienen algo; asi, cada opcion garantiza que hay algo para ver.
+
+         Se usa el nombre plano y no teamName(), que devuelve markup: adentro
+         de un <option> el navegador lo muestra como texto crudo con las
+         etiquetas a la vista. */
+      function nombrePlanoSlot(spec){
+        const r = resolveSlot(spec);
+        return r.id ? (state.teams[r.id]?.name || "?") : (r.name || "?");
+      }
+
+      function sancionesSelectorHtml(){
+        const conTarjetas = Object.values(state.matches)
+          .filter(m => (m.events||[]).some(ev =>
+            (ev.type==="yellow"||ev.type==="red") && state.players[ev.playerId]))
+          .sort(porCalendario);
+        if(!conTarjetas.length) return "";
+
+        const opcion = m => {
+          const txt = `${nombrePlanoSlot(m.homeSlot)} vs ${nombrePlanoSlot(m.awaySlot)}`
+                    + (m.date ? ` · ${formatDateShort(m.date)}` : "");
+          return `<option value="${esc(m.id)}"${m.id===sancionesPartido?" selected":""}>${esc(txt)}</option>`;
+        };
+
+        return `<div class="tv-filtro">
+          <label for="sancionesPartido">Partido</label>
+          <select id="sancionesPartido">
+            <option value=""${sancionesPartido?"":" selected"}>Todo el torneo</option>
+            ${conTarjetas.map(opcion).join("")}
+          </select>
+        </div>`;
+      }
+
       function tvVacio(txt){return `<div class="tv-empty">${esc(txt)}</div>`}
 
       function renderVentanasTV(scorers,fair){
@@ -11311,13 +11383,23 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
            no existía. El CSS sí seguía acá entero —.tv-tarjetas, .tv-card-am,
            .tv-card-rj y la leyenda—, esperando un markup que nadie escribía. */
         const disc=$("#tvFair");
-        if(disc)disc.innerHTML=fair.length
-          ? `<div class="tv-rows tv-rows-full">${fair.map((r,i)=>tvRowHtml(r,i,tvTarjetasHtml(r))).join("")}</div>
-             <div class="tv-leyenda">
-               <span><i class="tv-chip-am"></i>Amarillas</span>
-               <span><i class="tv-chip-rj"></i>Rojas</span>
-             </div>`
-          : tvVacio("Todavía no hay amarillas ni rojas cargadas. Se completa sola al registrar las tarjetas de cada partido.");
+        if(disc){
+          /* El selector va FUERA de la rama vacia, y no adentro del else.
+             Si solo se dibujara cuando hay filas, elegir un partido sin
+             tarjetas se llevaria puesto el propio desplegable y no habria
+             con que volver a "todo el torneo": el filtro se comeria a si
+             mismo y habria que recargar. */
+          const cuerpo = fair.length
+            ? `<div class="tv-rows tv-rows-full">${fair.map((r,i)=>tvRowHtml(r,i,tvTarjetasHtml(r))).join("")}</div>
+               <div class="tv-leyenda">
+                 <span><i class="tv-chip-am"></i>Amarillas</span>
+                 <span><i class="tv-chip-rj"></i>Rojas</span>
+               </div>`
+            : tvVacio(sancionesPartido
+                ? "En este partido no se cargó ninguna amarilla ni roja."
+                : "Todavía no hay amarillas ni rojas cargadas. Se completa sola al registrar las tarjetas de cada partido.");
+          disc.innerHTML = sancionesSelectorHtml() + cuerpo;
+        }
 
         // el logo del Mundial en cada ventana
         const logo=(typeof LOGO_LIMPIO==="string"&&LOGO_LIMPIO.startsWith("data:image/png"))?LOGO_LIMPIO
@@ -11345,7 +11427,20 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
            arriba), pero como tabla de tarjetas eso confunde: quien la mira busca
            quién está al borde de la suspensión, no quién nunca vio una amarilla.
            La roja pesa 3 para que no quede debajo de alguien con 2 amarillas. */
-        const fair=agg.filter(r=>r.yellow>0||r.red>0)
+        /* Si el partido elegido dejo de existir —se borro, o cambio el
+           formato y se regeneraron los cruces— el filtro apuntaria a la nada
+           y la tabla quedaria vacia para siempre, sin decir por que. Se
+           vuelve solo a todo el torneo. */
+        if(sancionesPartido && !state.matches[sancionesPartido]) sancionesPartido = "";
+
+        /* Los goleadores son siempre del torneo entero; el filtro es solo de
+           sanciones. Cuando no hay filtro se reusa el agg de arriba en vez de
+           recorrer los eventos dos veces. */
+        const aggSanciones = sancionesPartido
+          ? Object.values(aggregateEvents(sancionesPartido))
+          : agg;
+
+        const fair=aggSanciones.filter(r=>r.yellow>0||r.red>0)
           .sort((a,b)=>(b.yellow+b.red*3)-(a.yellow+a.red*3)||b.red-a.red)
           .slice(0,25);
         renderVentanasTV(scorers,fair);
@@ -11382,6 +11477,19 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const b = e.target.closest("[data-stats-vista]");
         if(!b) return;
         mostrarVistaStats(b.getAttribute("data-stats-vista"));
+      });
+
+      /* Delegado, como el filtro de vistas y por la misma razon: renderStatsTab
+         reescribe el <select> entero, asi que un listener atado al nodo se iria
+         con el nodo viejo en el primer cambio. Se le devuelve el foco despues
+         de redibujar para poder seguir eligiendo con el teclado. */
+      document.addEventListener("change", e=>{
+        const sel = e.target.closest && e.target.closest("#sancionesPartido");
+        if(!sel) return;
+        sancionesPartido = sel.value;
+        renderStatsTab();
+        const nuevo = document.getElementById("sancionesPartido");
+        if(nuevo) nuevo.focus();
       });
 
       document.addEventListener("keydown", e=>{
