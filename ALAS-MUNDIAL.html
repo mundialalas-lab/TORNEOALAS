@@ -10737,7 +10737,22 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
         let html = `<div class="llave-lista">`;
         rondas.forEach((r, i) => {
-          const ms = porRonda[r].matches.sort((a,b)=>(a.order||0)-(b.order||0));
+          /* Se ordena por porCalendario, que es el MISMO orden del que sale
+             el numero de la insignia ("1er partido", "2do partido"). Asi el
+             1ro cae a la izquierda por construccion y la ronda se lee en el
+             orden en que se juega.
+
+             Antes ordenaba por m.order y el 1ro podia salir a la derecha,
+             porque ese campo no existe: el sync de Supabase guarda el valor
+             en `bracketOrder` —que despues no lee nadie— y nunca escribe
+             `order`. O sea que apenas sincronizaba, order quedaba undefined
+             en TODOS los cruces, el comparador devolvia 0 para cada par y la
+             grilla terminaba en el orden arbitrario de Object.values.
+
+             Lo dice el comentario de claveCalendario: es el unico orden de
+             calendario de la app, y el que no lo use termina senalando un
+             partido distinto del que senala el resto. */
+          const ms = porRonda[r].matches.slice().sort(porCalendario);
           /* La ultima ronda es la final: se lleva el dorado. Se deduce de la
              posicion y no del titulo, asi que sigue siendo la final aunque
              manana se agreguen cuartos o se le cambie el nombre. */
