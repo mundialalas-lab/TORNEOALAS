@@ -2253,6 +2253,43 @@ body.desplegando .topbar-tabs{
   box-shadow:var(--shadow);
 }
 .tv-goles{--tv-acc:#00d17a;grid-column:1/-1}
+/* Sola en la grilla, la ventana de incidencias se queda con el ancho entero
+   igual que la de goleadores: se ve una por vez. */
+.tv-tarjetas{grid-column:1/-1}
+.tv-win[hidden]{display:none}
+
+/* --- el filtro de Stats ---
+   Dos pestanas sobre el mismo juego de datos. Se leen como un interruptor de
+   dos posiciones —un riel, la activa encendida— y no como dos botones
+   sueltos, porque elegir una apaga la otra y eso tiene que verse antes de
+   leer los rotulos. */
+.stats-filtro{
+  display:inline-flex;gap:4px;margin-top:var(--gap);
+  padding:4px;border-radius:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line-strong,rgba(255,255,255,.12));
+}
+.sf-btn{
+  appearance:none;border:0;cursor:pointer;
+  padding:8px 18px;border-radius:9px;
+  background:transparent;color:var(--text-mute,#94a3b8);
+  font-family:var(--font-ui);font-size:12px;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;
+  transition:background .18s ease,color .18s ease;
+}
+.sf-btn:hover{color:#dbe3ee;background:rgba(255,255,255,.06)}
+.sf-btn.is-on{
+  background:linear-gradient(180deg,var(--azul,#2f7ff0),var(--azul-lo,#1657c4));
+  color:#fff;box-shadow:0 6px 16px -8px rgba(47,127,240,.9);
+}
+.sf-btn:focus-visible{outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:2px}
+
+/* En el telefono el riel ocupa el ancho y las dos mitades se reparten igual:
+   dos pastillas chicas pegadas al margen izquierdo se fallan con el pulgar. */
+@media (max-width:560px){
+  .stats-filtro{display:flex;width:100%}
+  .sf-btn{flex:1;padding:10px 8px;letter-spacing:.08em}
+}
 .tv-tarjetas{--tv-acc:#f5c518}
 .tv-figuras{--tv-acc:#e8b93b}
 
@@ -8174,14 +8211,36 @@ body{background:transparent !important}
         <!-- Ventanas de transmisión: cada ranking se lee como un gráfico de TV
              (barra de color, título en mayúsculas, logo del Mundial al costado)
              en vez de como una tabla de planilla. -->
+        <!-- Los dos rankings salen de los MISMOS eventos de partido, asi que
+             no hay nada que recalcular al cambiar de vista: los dos se
+             dibujan en el mismo render y el filtro solo decide cual se mira.
+             Va como role="tablist" y no como dos botones sueltos para que la
+             flecha del teclado cambie de vista y el lector de pantalla
+             anuncie que son dos pestanas y cual esta activa. -->
+        <div class="stats-filtro" role="tablist" aria-label="Ranking que se muestra">
+          <button class="sf-btn is-on" type="button" role="tab" aria-selected="true"
+                  aria-controls="tvWinGoles" data-stats-vista="goles">Goleadores</button>
+          <button class="sf-btn" type="button" role="tab" aria-selected="false"
+                  aria-controls="tvWinTarjetas" data-stats-vista="tarjetas">Incidencias</button>
+        </div>
+
         <div class="tv-grid">
-          <article class="tv-win tv-goles reveal">
+          <article class="tv-win tv-goles reveal" id="tvWinGoles" role="tabpanel" data-stats-panel="goles">
             <header class="tv-head">
               <span class="tv-kick">Mundial ALAS 2026</span>
               <h3>Goleadores</h3>
               <img class="tv-logo" alt="" data-mundial-logo>
             </header>
             <div class="tv-body" id="tvScorers"></div>
+          </article>
+
+          <article class="tv-win tv-tarjetas reveal" id="tvWinTarjetas" role="tabpanel" data-stats-panel="tarjetas" hidden>
+            <header class="tv-head">
+              <span class="tv-kick">Mundial ALAS 2026</span>
+              <h3>Incidencias</h3>
+              <img class="tv-logo" alt="" data-mundial-logo>
+            </header>
+            <div class="tv-body" id="tvFair"></div>
           </article>
         </div>
       </section>
@@ -11211,6 +11270,17 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         </div>`;
       }
 
+      /* En esta tabla el "valor" son DOS numeros, no uno. La tarjeta que el
+         jugador no tiene se dibuja igual pero apagada, en vez de omitirse:
+         asi las dos columnas caen siempre en el mismo lugar y la fila se
+         puede barrer con la vista de arriba a abajo sin releer cada una. */
+      function tvTarjetasHtml(r){
+        const am=r.yellow||0, rj=r.red||0;
+        const plural=(n,s1,s2)=>`${n} ${n===1?s1:s2}`;
+        return `<span class="tv-card-am${am?"":" off"}" title="${plural(am,"amarilla","amarillas")}">${am}</span>`
+             + `<span class="tv-card-rj${rj?"":" off"}" title="${plural(rj,"roja","rojas")}">${rj}</span>`;
+      }
+
       function tvVacio(txt){return `<div class="tv-empty">${esc(txt)}</div>`}
 
       function renderVentanasTV(scorers,fair){
@@ -11220,6 +11290,19 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         if(gol)gol.innerHTML=scorers.length
           ? `<div class="tv-rows tv-rows-full">${scorers.map((r,i)=>tvRowHtml(r,i,r.goals)).join("")}</div>`
           : tvVacio("Todavía no hay goles cargados. Se completa sola al registrar los goles de cada partido.");
+
+        /* El ranking de tarjetas ya se calculaba en renderStatsTab y se pasaba
+           hasta acá, pero esta función lo ignoraba: la ventana que lo mostraba
+           no existía. El CSS sí seguía acá entero —.tv-tarjetas, .tv-card-am,
+           .tv-card-rj y la leyenda—, esperando un markup que nadie escribía. */
+        const disc=$("#tvFair");
+        if(disc)disc.innerHTML=fair.length
+          ? `<div class="tv-rows tv-rows-full">${fair.map((r,i)=>tvRowHtml(r,i,tvTarjetasHtml(r))).join("")}</div>
+             <div class="tv-leyenda">
+               <span><i class="tv-chip-am"></i>Amarillas</span>
+               <span><i class="tv-chip-rj"></i>Rojas</span>
+             </div>`
+          : tvVacio("Todavía no hay amarillas ni rojas cargadas. Se completa sola al registrar las tarjetas de cada partido.");
 
         // el logo del Mundial en cada ventana
         const logo=(typeof LOGO_LIMPIO==="string"&&LOGO_LIMPIO.startsWith("data:image/png"))?LOGO_LIMPIO
@@ -11252,6 +11335,52 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           .slice(0,25);
         renderVentanasTV(scorers,fair);
       }
+
+      /* ----------------------------------------------------------------- 
+         El filtro de Stats.
+
+         No vuelve a calcular ni a dibujar nada: las dos ventanas ya estan
+         renderizadas —salen del mismo aggregateEvents en el mismo pase— y
+         esto solo decide cual se ve. Por eso cambiar de vista es instantaneo
+         y no pierde el scroll.
+
+         Va delegado en document y no atado a los botones, porque renderAll
+         puede reescribir el panel entero: un listener puesto sobre el boton
+         se iria con el nodo viejo y el filtro dejaria de responder despues
+         del primer gol cargado. */
+      function mostrarVistaStats(vista){
+        $$("[data-stats-vista]").forEach(b=>{
+          const on = b.getAttribute("data-stats-vista")===vista;
+          b.classList.toggle("is-on", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+          /* Solo la pestana activa es tabulable: dentro de un tablist la
+             navegacion entre pestanas se hace con las flechas, no con Tab. */
+          b.tabIndex = on ? 0 : -1;
+        });
+        $$("[data-stats-panel]").forEach(p=>{
+          p.hidden = p.getAttribute("data-stats-panel")!==vista;
+        });
+        animarVentanasTV();
+      }
+
+      document.addEventListener("click", e=>{
+        const b = e.target.closest("[data-stats-vista]");
+        if(!b) return;
+        mostrarVistaStats(b.getAttribute("data-stats-vista"));
+      });
+
+      document.addEventListener("keydown", e=>{
+        if(e.key!=="ArrowLeft" && e.key!=="ArrowRight") return;
+        const b = e.target.closest && e.target.closest("[data-stats-vista]");
+        if(!b) return;
+        e.preventDefault();
+        const btns = $$("[data-stats-vista]");
+        const i = btns.indexOf(b);
+        const sig = btns[(i + (e.key==="ArrowRight" ? 1 : btns.length-1)) % btns.length];
+        if(!sig) return;
+        mostrarVistaStats(sig.getAttribute("data-stats-vista"));
+        sig.focus();
+      });
 
       // ===== render orchestrator =====
       function renderAll(opts={}){
