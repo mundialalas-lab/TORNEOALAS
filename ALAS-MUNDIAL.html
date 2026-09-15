@@ -8451,13 +8451,23 @@ body{background:transparent !important}
                 <div id="onlineUsersCount" style="margin-top:4px;color:var(--text);">Cargando...</div>
               </div>
             </div>
-            <div class="toggle-row" style="align-items:flex-start; margin-top:12px;">
-              <div class="toggle-copy" style="width: 100%;">
-                <strong>Resetear puntos y resultados</strong>
-                <small style="display:block;margin-bottom:8px">Borra todos los resultados de los partidos (grupos y llaves). Esta acción no se puede deshacer.</small>
-                <button type="button" class="btn" style="background:var(--elimina, #dc2626);color:#fff;border:none" onclick="resetearPuntosTorneo()">RESETEAR PUNTOS Y RESULTADOS</button>
-              </div>
-            </div>
+            <!-- Aca habia un boton "RESETEAR PUNTOS Y RESULTADOS", en rojo y
+                 pegado arriba de "Guardar configuracion". Se saco por pedido,
+                 y habia dos razones para hacerlo:
+
+                 Una, no funcionaba. Llamaba por onclick a
+                 resetearPuntosTorneo(), que no esta definida en ningun lado
+                 del archivo: el click tiraba ReferenceError contra la consola
+                 y no pasaba nada. Llevaba tiempo asi.
+
+                 Dos, aunque hubiera funcionado no tenia confirmacion de
+                 ninguna clase. Un solo toque y se borraban los resultados de
+                 los doce partidos, sin vuelta atras, con el boton de guardar
+                 a un centimetro. Al costado de la cancha, con el telefono en
+                 la mano, eso es cuestion de tiempo.
+
+                 El reinicio del torneo sigue existiendo por el otro camino:
+                 #btnReset, que abre #resetModal y pide confirmar. -->
           </section>
         
           </div>
