@@ -2261,27 +2261,101 @@ body.desplegando .topbar-tabs{
    Va adentro de la ventana y no arriba junto a las pestanas, porque filtra
    SOLO esta tabla: los goleadores son siempre del torneo entero. Puesto
    afuera daria a entender que manda sobre las dos. */
-.tv-filtro{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding-bottom:2px;
+.tvf{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+/* el boton que muestra lo elegido */
+.tvf-trigger{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;
+  width:100%;min-width:0;padding:11px 14px;
+  border:1px solid var(--line-strong,rgba(255,255,255,.14));border-radius:12px;
+  background:rgba(8,16,32,.72);color:#eef2f7;cursor:pointer;text-align:left;
+  transition:border-color .18s ease,background .18s ease;
 }
-.tv-filtro label{
+.tvf-trigger:hover{border-color:rgba(255,255,255,.26);background:rgba(12,22,40,.85)}
+.tvf-trigger.is-open{border-color:var(--tv-acc);background:rgba(12,22,40,.95)}
+.tvf-trigger:focus-visible{outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:2px}
+
+.tvf-lab{
   font-family:var(--font-ui);font-size:10px;font-weight:800;
-  letter-spacing:.2em;text-transform:uppercase;
-  color:rgba(255,255,255,.5);
+  letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.42);
 }
-.tv-filtro select{
-  flex:1;min-width:0;max-width:420px;
-  height:38px;padding:0 12px;
-  border-radius:10px;
-  border:1px solid var(--line-strong,rgba(255,255,255,.14));
-  background:rgba(8,16,32,.9);color:#eef2f7;
-  font-family:var(--font-ui);font-size:13px;font-weight:600;
+/* El nombre elegido no parte el layout si es largo: se recorta con puntos.
+   Sin esto "Distribución Interior vs Fábrica" empuja la flecha fuera del
+   boton en pantalla angosta. */
+.tvf-actual{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--font-ui);font-size:14px;font-weight:700;color:#fff;
 }
-.tv-filtro select:focus-visible{
-  outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:2px;
+.tvf-chev{width:18px;height:18px;color:rgba(255,255,255,.5);transition:transform .22s ease}
+.tvf-trigger.is-open .tvf-chev{transform:rotate(180deg);color:var(--tv-acc)}
+
+/* la lista, en linea: empuja las filas en vez de flotar sobre ellas */
+.tvf-lista{
+  display:flex;flex-direction:column;
+  max-height:min(44vh,340px);overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  background:rgba(5,11,22,.96);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  padding:5px;
+  animation:tvf-abre .18s ease-out;
 }
-.tv-win[hidden]{display:none}
+/* Sin esto la lista queda SIEMPRE abierta: el display:none que el navegador
+   le pone a [hidden] es una regla de agente de usuario, y cualquier regla de
+   autor le gana —aunque tenga la misma especificidad—. El display:flex de
+   arriba pisaba el ocultamiento y el atributo hidden no hacia nada. */
+.tvf-lista[hidden]{display:none}
+
+@keyframes tvf-abre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tvf-lista{animation:none}}
+
+/* la cabecera de cada dia, con la misma idea que la jornada del fixture */
+.tvf-dia{
+  padding:10px 10px 5px;
+  font-family:var(--font-ui);font-size:10px;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.34);
+}
+.tvf-dia:first-child{padding-top:5px}
+
+.tvf-opt{
+  display:flex;align-items:center;gap:12px;
+  width:100%;padding:9px 10px;
+  border:0;border-radius:9px;background:transparent;cursor:pointer;text-align:left;
+  color:#dbe3ee;transition:background .14s ease,color .14s ease;
+}
+.tvf-opt:hover{background:rgba(255,255,255,.07);color:#fff}
+.tvf-opt:focus-visible{outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:-2px}
+.tvf-opt.is-on{background:color-mix(in srgb,var(--tv-acc) 20%,transparent);color:#fff}
+/* La marca de "esta es la elegida" es una barra al costado y no un tilde:
+   se reconoce de reojo, que es como se lee una lista. */
+.tvf-opt.is-on{box-shadow:inset 3px 0 0 var(--tv-acc)}
+.tvf-todos{margin-bottom:2px}
+
+.tvf-nom{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--font-ui);font-size:13.5px;font-weight:700;
+}
+.tvf-meta{
+  flex:none;font-family:var(--font-ui);font-size:11px;font-weight:700;
+  color:rgba(255,255,255,.4);
+}
+
+/* Las tarjetas de cada partido, con la misma forma que las de la tabla pero
+   en chico. La que esta en cero se apaga en vez de esconderse, para que las
+   dos columnas caigan siempre en el mismo lugar. */
+.tvf-cards{flex:none;display:flex;align-items:center;gap:4px}
+.tvf-am,.tvf-rj{
+  width:17px;height:22px;border-radius:2.5px;
+  display:grid;place-items:center;font-style:normal;
+  font-family:var(--font-ui);font-size:10.5px;font-weight:900;
+}
+.tvf-am{background:#f5c518;color:#3a2c00}
+.tvf-rj{background:#e0342c;color:#fff}
+.tvf-am.off,.tvf-rj.off{opacity:.18}
+
+@media (max-width:560px){
+  .tvf-trigger{grid-template-columns:1fr auto;row-gap:2px}
+  .tvf-lab{grid-column:1/-1}
+}
 
 /* --- el filtro de Stats ---
    Dos pestanas sobre el mismo juego de datos. Se leen como un interruptor de
@@ -11156,6 +11230,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          cada gol que se carga: si el filtro viviera en el <select>, cargar
          una tarjeta te devolvia a "todo el torneo" solo. */
       let sancionesPartido = "";
+      /* Si el desplegable esta abierto. Vive aca y no en el DOM por la misma
+         razon que el partido elegido: renderStatsTab reescribe la ventana
+         entera, asi que el estado tiene que sobrevivir al redibujado. */
+      let sancionesAbierto = false;
 
       function renderFixtureFilters(){
         $("#fixtureFilters").innerHTML=`
@@ -11353,18 +11431,74 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           .sort(porCalendario);
         if(!conTarjetas.length) return "";
 
-        const opcion = m => {
-          const txt = `${nombrePlanoSlot(m.homeSlot)} vs ${nombrePlanoSlot(m.awaySlot)}`
-                    + (m.date ? ` · ${formatDateShort(m.date)}` : "");
-          return `<option value="${esc(m.id)}"${m.id===sancionesPartido?" selected":""}>${esc(txt)}</option>`;
+        /* Cuantas tarjetas tiene cada partido. Es el dato que convierte al
+           desplegable en algo util antes de abrirlo: se ve DONDE hubo lio sin
+           tener que entrar partido por partido a averiguarlo. */
+        const conteo = m => {
+          let am=0, rj=0;
+          (m.events||[]).forEach(ev=>{
+            if(!state.players[ev.playerId])return;
+            if(ev.type==="yellow")am++;
+            if(ev.type==="red")rj++;
+          });
+          return {am,rj};
         };
 
-        return `<div class="tv-filtro">
-          <label for="sancionesPartido">Partido</label>
-          <select id="sancionesPartido">
-            <option value=""${sancionesPartido?"":" selected"}>Todo el torneo</option>
-            ${conTarjetas.map(opcion).join("")}
-          </select>
+        const nombreDe = m => `${nombrePlanoSlot(m.homeSlot)} vs ${nombrePlanoSlot(m.awaySlot)}`;
+        const elegido = sancionesPartido ? state.matches[sancionesPartido] : null;
+        const rotulo = elegido ? nombreDe(elegido) : "Todo el torneo";
+
+        const opcion = m => {
+          const {am,rj} = conteo(m);
+          const on = m.id===sancionesPartido;
+          return `<button class="tvf-opt${on?" is-on":""}" type="button" role="option"
+                    aria-selected="${on?"true":"false"}" data-sancion-partido="${esc(m.id)}">
+            <span class="tvf-nom">${esc(nombreDe(m))}</span>
+            <span class="tvf-cards">
+              <i class="tvf-am${am?"":" off"}">${am}</i><i class="tvf-rj${rj?"":" off"}">${rj}</i>
+            </span>
+          </button>`;
+        };
+
+        /* Agrupadas por dia, con la misma cabecera que las jornadas del
+           fixture. Doce nombres seguidos son una lista; partidos bajo su
+           fecha es un calendario, y ubicarse en un calendario cuesta menos. */
+        let filas = "", diaAnterior = null;
+        conTarjetas.forEach(m => {
+          const dia = m.date || "";
+          if(dia !== diaAnterior){
+            diaAnterior = dia;
+            let txt = "Sin fecha asignada";
+            if(dia){
+              try{ txt = new Date(dia+"T00:00:00")
+                     .toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}); }
+              catch(e){ txt = dia; }
+            }
+            filas += `<div class="tvf-dia">${esc(txt)}</div>`;
+          }
+          filas += opcion(m);
+        });
+
+        const todos = !sancionesPartido;
+        return `<div class="tvf">
+          <button class="tvf-trigger${sancionesAbierto?" is-open":""}" type="button"
+                  aria-expanded="${sancionesAbierto?"true":"false"}" aria-controls="tvfLista"
+                  aria-haspopup="listbox" data-tvf-toggle>
+            <span class="tvf-lab">Partido</span>
+            <span class="tvf-actual">${esc(rotulo)}</span>
+            <svg class="tvf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="tvf-lista" id="tvfLista" role="listbox" aria-label="Elegir partido"${sancionesAbierto?"":" hidden"}>
+            <button class="tvf-opt tvf-todos${todos?" is-on":""}" type="button" role="option"
+                    aria-selected="${todos?"true":"false"}" data-sancion-partido="">
+              <span class="tvf-nom">Todo el torneo</span>
+              <span class="tvf-meta">${conTarjetas.length} ${conTarjetas.length===1?"partido":"partidos"}</span>
+            </button>
+            ${filas}
+          </div>
         </div>`;
       }
 
@@ -11479,17 +11613,58 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         mostrarVistaStats(b.getAttribute("data-stats-vista"));
       });
 
-      /* Delegado, como el filtro de vistas y por la misma razon: renderStatsTab
-         reescribe el <select> entero, asi que un listener atado al nodo se iria
-         con el nodo viejo en el primer cambio. Se le devuelve el foco despues
-         de redibujar para poder seguir eligiendo con el teclado. */
-      document.addEventListener("change", e=>{
-        const sel = e.target.closest && e.target.closest("#sancionesPartido");
-        if(!sel) return;
-        sancionesPartido = sel.value;
+      /* El desplegable de partidos.
+
+         Es propio y no un <select> porque el popup del <select> lo dibuja el
+         sistema operativo, no la pagina: no se puede tenir, ni redondear, ni
+         meterle las tarjetas de cada partido al costado. Sobre fondo oscuro
+         se abria una lista blanca de Windows, que era justo lo que rompia.
+
+         Se abre EN LINEA, empujando las filas hacia abajo, y no flotando por
+         encima. No es una preferencia: .tv-win tiene overflow:hidden y
+         container-type:inline-size —que aplica contencion de layout y lo
+         vuelve bloque contenedor hasta de los position:fixed—, asi que un
+         panel flotante quedaria recortado contra el borde de la ventana.
+
+         Todo delegado en document: renderStatsTab reescribe estos nodos en
+         cada render, y un listener atado a ellos se iria con el nodo viejo. */
+      function redibujarFiltroSanciones(volverAlBoton){
         renderStatsTab();
-        const nuevo = document.getElementById("sancionesPartido");
-        if(nuevo) nuevo.focus();
+        if(!volverAlBoton) return;
+        const b = document.querySelector("[data-tvf-toggle]");
+        if(b) b.focus();
+      }
+
+      document.addEventListener("click", e=>{
+        if(!e.target.closest) return;
+
+        const boton = e.target.closest("[data-tvf-toggle]");
+        if(boton){
+          sancionesAbierto = !sancionesAbierto;
+          redibujarFiltroSanciones(true);
+          return;
+        }
+
+        const opcion = e.target.closest("[data-sancion-partido]");
+        if(opcion){
+          sancionesPartido = opcion.getAttribute("data-sancion-partido");
+          sancionesAbierto = false;
+          redibujarFiltroSanciones(true);
+          return;
+        }
+
+        /* Un click en cualquier otro lado cierra. Solo se pregunta cuando ya
+           esta abierto, asi que no cuesta nada el resto del tiempo. */
+        if(sancionesAbierto && !e.target.closest(".tvf")){
+          sancionesAbierto = false;
+          redibujarFiltroSanciones(false);
+        }
+      });
+
+      document.addEventListener("keydown", e=>{
+        if(e.key!=="Escape" || !sancionesAbierto) return;
+        sancionesAbierto = false;
+        redibujarFiltroSanciones(true);
       });
 
       document.addEventListener("keydown", e=>{
