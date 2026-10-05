@@ -10725,7 +10725,17 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             ${filaPierna(2,h2,a2,vueltaOk)}
             <div class="fx-serie-resumen${isComplete ? " esta-completa" : ""}">
               <span class="fx-serie-resumen-label">Partidos ganados</span>
-              <span class="fx-serie-pg${winH||winA ? " hay-clasificado" : ""}"><b class="${winH?"es-clasificado":""}">${hasPlayedLeg?totH:"–"}</b><i>–</i><b class="${winA?"es-clasificado":""}">${hasPlayedLeg?totA:"–"}</b></span>
+              <span class="fx-serie-pg${winH||winA ? " hay-clasificado" : ""}">
+                <span class="fx-serie-pg-equipo" title="${esc(home.name)}: ${hasPlayedLeg?totH:0} partido${totH===1?"":"s"} ganado${totH===1?"":"s"}">
+                  ${teamCrest(home,"fx-serie-pg-escudo",home.name)}
+                  <b class="${winH?"es-clasificado":""}">${hasPlayedLeg?totH:"–"}</b>
+                </span>
+                <i>–</i>
+                <span class="fx-serie-pg-equipo" title="${esc(away.name)}: ${hasPlayedLeg?totA:0} partido${totA===1?"":"s"} ganado${totA===1?"":"s"}">
+                  ${teamCrest(away,"fx-serie-pg-escudo",away.name)}
+                  <b class="${winA?"es-clasificado":""}">${hasPlayedLeg?totA:"–"}</b>
+                </span>
+              </span>
               <small>Si igualan en PG, se define por penales</small>
             </div>
             ${penalesHtml}
@@ -18209,10 +18219,16 @@ body.modal-open .topbar-tabs{
   font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
 }
 .fx-serie-pg{
-  display:flex;align-items:center;gap:5px;
+  display:flex;align-items:center;gap:4px;
   font-family:'Anton',var(--font-display),sans-serif;
   font-size:19px;line-height:1;font-variant-numeric:tabular-nums;
 }
+.fx-serie-pg-equipo{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.fx-serie-pg-escudo{
+  width:22px;height:22px;flex:none;border-radius:50%;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 2px 6px rgba(0,0,0,.5);
+}
+.fx-serie-pg-escudo img{border-radius:50%}
 .fx-serie-pg b{min-width:17px;text-align:center;font-weight:400}
 .fx-serie-pg i{font-style:normal;font-size:.65em;color:rgba(255,255,255,.42)}
 .fx-serie-pg .es-clasificado{color:#4ade80;text-shadow:0 0 12px rgba(74,222,128,.36)}
