@@ -8678,7 +8678,7 @@ body{background:transparent !important}
                  dos partidos. -->
             <div class="leg2-wrap" id="matchLeg2Wrap">
               <h3 id="matchLeg2Heading">Vuelta</h3>
-              <p class="leg2-hint">Cargá los goles de cada equipo en el partido de vuelta. El global define quién pasa.</p>
+              <p class="leg2-hint" id="matchLeg2Hint">Cada partido cuenta por separado. Si igualan en partidos ganados, la serie se define por penales directos.</p>
               <div class="mr-equipos mr-equipos-leg2">
                 <div class="mr-lado">
                   <span class="mr-nombre" id="matchHomeLabel2">Local</span>
@@ -8692,7 +8692,7 @@ body{background:transparent !important}
               </div>
               <div class="agg-readout" id="matchAggReadout"></div>
             </div>
-            <div class="tie-break" id="matchTieWrap"><label for="matchTieField">Ganador por penales / desempate</label><select id="matchTieField"><option value="">Seleccionar ganador…</option></select></div>
+            <div class="tie-break" id="matchTieWrap"><label for="matchTieField">Ganador por penales directos</label><select id="matchTieField"><option value="">Seleccionar ganador…</option></select></div>
           </section>
 
           <!-- Incidencias: el historial de lo que se fue cargando. Se llena
@@ -9720,6 +9720,27 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         if(m&&m.twoLegs)return{h:n(m.scoreHome)+n(m.scoreHome2),a:n(m.scoreAway)+n(m.scoreAway2)};
         return{h:n(m.scoreHome),a:n(m.scoreAway)};
       }
+      /* En las semifinales oficiales cada partido vale por sí mismo. La
+         diferencia de goles de la serie no desempata: se cuentan victorias y,
+         si ambos equipos terminan con la misma cantidad, se define por
+         penales. Por ejemplo, 5-0 en la ida y 0-1 en la vuelta es 1-1 en
+         partidos ganados, no 5-1 global. */
+      function seriesWins(m){
+        const leg=(h,a)=>{
+          if(!hasScore(h)||!hasScore(a))return{h:0,a:0};
+          const hn=Number(h),an=Number(a);
+          return{h:Number(hn>an),a:Number(an>hn)};
+        };
+        const ida=leg(m?.scoreHome,m?.scoreAway);
+        const vuelta=leg(m?.scoreHome2,m?.scoreAway2);
+        return{
+          h:ida.h+vuelta.h,
+          a:ida.a+vuelta.a
+        };
+      }
+      function qualificationScore(m){
+        return m&&m.twoLegs&&m.decideByMatches?seriesWins(m):aggregateScore(m);
+      }
       function groupMatches(groupId){return Object.values(state.matches).filter(m=>m.phase==="group"&&m.groupId===groupId)}
       function groupComplete(groupId){const ms=groupMatches(groupId);return ms.length>0&&ms.every(matchScoreOk)}
 
@@ -9837,7 +9858,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         if(away.isBye)return home.id?home:null;
         if(!home.id||!away.id)return null;
         if(!matchScoreOk(m))return null;
-        const {h,a}=aggregateScore(m);
+        const {h,a}=qualificationScore(m);
         if(h>a)return home;if(a>h)return away;
         return m.tieBreakWinner==="home"?home:m.tieBreakWinner==="away"?away:null;
       }
@@ -9900,10 +9921,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         mk("k-rep-2",{bracketRound:1,order:1,roundTitle:"Repechaje",label:"Repechaje 2",date:"2026-09-04",
           homeSlot:{type:"groupPos",groupId:gB,pos:1},awaySlot:{type:"groupPos",groupId:gA,pos:2}});
         // Semifinales ida y vuelta (11/9 y 18/9): el 1º de cada grupo ya está adentro
-        mk("k-sf-1",{bracketRound:2,order:0,roundTitle:"Semifinales",label:"Semifinal 1",twoLegs:true,
+        mk("k-sf-1",{bracketRound:2,order:0,roundTitle:"Semifinales",label:"Semifinal 1",twoLegs:true,decideByMatches:true,
           date:"2026-09-11",dateLeg2:"2026-09-18",scoreHome2:null,scoreAway2:null,
           homeSlot:{type:"groupPos",groupId:gA,pos:0},awaySlot:{type:"matchWinner",matchId:"k-rep-2"}});
-        mk("k-sf-2",{bracketRound:2,order:1,roundTitle:"Semifinales",label:"Semifinal 2",twoLegs:true,
+        mk("k-sf-2",{bracketRound:2,order:1,roundTitle:"Semifinales",label:"Semifinal 2",twoLegs:true,decideByMatches:true,
           date:"2026-09-11",dateLeg2:"2026-09-18",scoreHome2:null,scoreAway2:null,
           homeSlot:{type:"groupPos",groupId:gB,pos:0},awaySlot:{type:"matchWinner",matchId:"k-rep-1"}});
         // Gran Final (25/9)
@@ -9959,6 +9980,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       function ensureBracketIfNeeded(){
         const fp=bracketFingerprint();
         const hasKnockout=Object.values(state.matches).some(m=>m.phase==="knockout");
+        /* Actualiza también llaves guardadas por versiones anteriores sin
+           reconstruirlas ni perder resultados ya cargados. */
+        if(state.format.alasBracket){
+          ["k-sf-1","k-sf-2"].forEach(id=>{
+            if(state.matches[id])state.matches[id].decideByMatches=true;
+          });
+        }
         if(state.meta.bracketFingerprint===fp&&(hasKnockout||buildBracketSlots().length<2))return;
         buildBracket();
         state.meta.bracketFingerprint=fp;
@@ -10314,8 +10342,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
          repetirlo adentro del panel desplegado seria decirlo dos veces. */
       function mtFoot(m,played,live,extra,sinEstado){
         const hasIda = m.twoLegs && hasScore(m.scoreHome) && hasScore(m.scoreAway);
+        const marcadorSerie=played?qualificationScore(m):null;
+        const penalesPendientes=Boolean(played&&marcadorSerie&&marcadorSerie.h===marcadorSerie.a&&!m.tieBreakWinner);
         const label = live ? `<span class="mt-live"><span class="live-dot"></span>En vivo</span>`
           : m.status === "suspended" ? "<span class='chip-status chip-red'>Suspendido</span>"
+          : penalesPendientes ? "<span class='chip-status chip-yellow'>Penales pendientes</span>"
           : played ? "<span class='chip-status chip-green'>Finalizado</span>"
           : hasIda ? "<span class='chip-status chip-yellow' style='background:rgba(234,179,8,0.2);color:#fde047;border:1px solid rgba(234,179,8,0.4);font-size:10px;'>Ida jugada · Vuelta pendiente</span>"
           : "<span class='chip-status chip-blue'>A jugar</span>";
@@ -10381,15 +10412,19 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           }
         });
 
+        const isOk = matchScoreOk(m);
+        const marcadorSerie = isOk ? qualificationScore(m) : null;
+        const serieEmpatada = Boolean(marcadorSerie && marcadorSerie.h === marcadorSerie.a);
         const tieSelect = document.querySelector(`.tie-penal-quick[data-match="${matchId}"]`);
-        if (tieSelect && tieSelect.value) {
+        if (serieEmpatada && tieSelect && tieSelect.value) {
           if (m.tieBreakWinner !== tieSelect.value) {
             m.tieBreakWinner = tieSelect.value;
             changed = true;
           }
+        } else if (!serieEmpatada && m.tieBreakWinner) {
+          m.tieBreakWinner = null;
+          changed = true;
         }
-
-        const isOk = matchScoreOk(m);
         if (isOk) {
           m.status = "finished";
           changed = true;
@@ -10427,6 +10462,26 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             if (r.ok) showToast("Resultado guardado");
           }
         }
+      });
+
+      /* El selector aparece después de cargar los dos partidos. Guardarlo al
+         cambiar evita obligar al administrador a abrir otro modal sólo para
+         confirmar quién ganó la tanda. */
+      document.addEventListener("change",async e=>{
+        const select=e.target.closest&&e.target.closest(".tie-penal-quick");
+        if(!select)return;
+        const m=state.matches[select.dataset.match];
+        if(!m||!matchScoreOk(m))return;
+        const marcador=qualificationScore(m);
+        if(marcador.h!==marcador.a)return;
+        m.tieBreakWinner=select.value||null;
+        persist();
+        renderAll({announce:true,preserveScroll:true});
+        if(window.supabase&&m.uuid){
+          await guardarEnNube("el ganador por penales",()=>
+            supabase.from('matches').update({tie_break_winner:m.tieBreakWinner}).eq('legacy_id',m.id));
+        }
+        if(m.tieBreakWinner)showToast("Ganador por penales guardado");
       });
 
       /* ==================================================================
@@ -10582,8 +10637,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const a1 = hasScore(m.scoreAway) ? Number(m.scoreAway) : "";
           const h2 = hasScore(m.scoreHome2) ? Number(m.scoreHome2) : "";
           const a2 = hasScore(m.scoreAway2) ? Number(m.scoreAway2) : "";
-          const totH = (h1 !== "" ? h1 : 0) + (h2 !== "" ? h2 : 0);
-          const totA = (a1 !== "" ? a1 : 0) + (a2 !== "" ? a2 : 0);
+          const marcadorSerie = qualificationScore(m);
+          const totH = marcadorSerie.h;
+          const totA = marcadorSerie.a;
           const hasAny = (h1 !== "" || a1 !== "" || h2 !== "" || a2 !== "");
           const isComplete = (h1 !== "" && a1 !== "" && h2 !== "" && a2 !== "");
           const isTied = isComplete && totH === totA;
@@ -10606,7 +10662,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               <div class="twolegs-header-row">
                 <span class="twolegs-col-title">IDA</span>
                 <span class="twolegs-col-title">VTA</span>
-                <span class="twolegs-col-title" style="color:#60a5fa;font-weight:900;">TOT</span>
+                <span class="twolegs-col-title" style="color:#60a5fa;font-weight:900;" title="${m.decideByMatches?"Partidos ganados":"Total global"}">${m.decideByMatches?"PG":"TOT"}</span>
               </div>
               <div class="twolegs-team-row">
                 <div class="twolegs-team-info">
@@ -11300,7 +11356,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const ht=home.id?state.teams[home.id]:null,at=away.id?state.teams[away.id]:null;
         const played=matchScoreOk(m);
         const winner=getWinner(m);
-        const agg=aggregateScore(m);
+        const agg=qualificationScore(m);
         const label=m.phase==="group"?(state.groups[m.groupId]?.name||""):(m.label||m.roundTitle||"");
         const cuando=[m.date?formatDateShort(m.date):"Sin fecha",m.time||""].filter(Boolean).join(" · ");
 
@@ -11342,7 +11398,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
             ${lado(home,ht,agg.h,agg.a)}
             ${lado(away,at,agg.a,agg.h)}
           </div>
-          ${m.twoLegs&&played?`<div class="fx-legs">Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}</div>`:""}
+          ${m.twoLegs&&played?`<div class="fx-legs">Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}${m.decideByMatches?` · Partidos ganados ${agg.h}-${agg.a}${agg.h===agg.a?(m.tieBreakWinner?" · Definida por penales":" · Penales pendientes"):""}`:""}</div>`:""}
           ${figura}
           <footer class="fx-foot">
             <span class="fx-when">${esc(cuando)}</span>
@@ -12589,8 +12645,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const home = resolveSlot(m.homeSlot), away = resolveSlot(m.awaySlot);
         const g = state.groups[m.groupId];
         
-        $("#viewResultsModalTitle").textContent = `${home.name||"Local"} ${m.scoreHome} – ${m.scoreAway} ${away.name||"Visitante"}`;
-        $("#viewResultsModalSubtitle").textContent = g ? g.name : "Fase Final";
+        if(m.twoLegs){
+          const marcadorSerie=qualificationScore(m);
+          const ganadorPenales=m.tieBreakWinner==="home"?home.name:m.tieBreakWinner==="away"?away.name:"";
+          $("#viewResultsModalTitle").textContent = `${home.name||"Local"} ${marcadorSerie.h} – ${marcadorSerie.a} ${away.name||"Visitante"}`;
+          $("#viewResultsModalSubtitle").textContent = `${m.decideByMatches?"Partidos ganados":"Resultado global"} · Ida ${m.scoreHome}-${m.scoreAway} · Vuelta ${m.scoreHome2}-${m.scoreAway2}${ganadorPenales?` · Penales: ${ganadorPenales}`:""}`;
+        }else{
+          $("#viewResultsModalTitle").textContent = `${home.name||"Local"} ${m.scoreHome} – ${m.scoreAway} ${away.name||"Visitante"}`;
+          $("#viewResultsModalSubtitle").textContent = g ? g.name : "Fase Final";
+        }
         
         window.__cardsCache = buildCards(); // Asegurar caché para MVP
         
@@ -13009,15 +13072,19 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
         const n=v=>v===""?null:Number(v);
         const h1=n($("#matchHomeScoreField").value),a1=n($("#matchAwayScoreField").value);
-        let h=h1,a=a1,ready=h1!==null&&a1!==null;
+        let ready=h1!==null&&a1!==null;
+        const provisional={...m,scoreHome:h1,scoreAway:a1};
         if(m.twoLegs){
           const h2=n($("#matchHomeScoreField2").value),a2=n($("#matchAwayScoreField2").value);
           ready=ready&&h2!==null&&a2!==null;
-          h=(h1||0)+(h2||0);a=(a1||0)+(a2||0);
+          provisional.scoreHome2=h2;provisional.scoreAway2=a2;
+        }
+        const {h,a}=qualificationScore(provisional);
+        if(m.twoLegs){
           const out=$("#matchAggReadout");
           if(out)out.innerHTML=ready
-            ? `<span class="agg-label">Global</span><b>${esc(home.name)} ${h} — ${a} ${esc(away.name)}</b>`
-            : `<span class="agg-label">Global</span><span class="agg-pending">Faltan cargar los dos partidos de la serie</span>`;
+            ? `<span class="agg-label">${m.decideByMatches?"Partidos ganados":"Global"}</span><b>${esc(home.name)} ${h} — ${a} ${esc(away.name)}</b>${m.decideByMatches&&h===a?'<span class="agg-pending">Penales directos</span>':""}`
+            : `<span class="agg-label">${m.decideByMatches?"Por partidos":"Global"}</span><span class="agg-pending">Faltan cargar los dos partidos de la serie</span>`;
         }
         const tied=home.id&&away.id&&ready&&h===a;
         $("#matchTieWrap").classList.toggle("visible",Boolean(tied));
@@ -13046,6 +13113,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         $("#matchScoreHeading").textContent=two?`Ida${m.date?" · "+formatDateShort(m.date):""}`:"Resultado";
         if(two){
           $("#matchLeg2Heading").textContent=`Vuelta${m.dateLeg2?" · "+formatDateShort(m.dateLeg2):""}`;
+          $("#matchLeg2Hint").textContent=m.decideByMatches
+            ? "Cada partido cuenta por separado. Si igualan en partidos ganados, la serie se define por penales directos."
+            : "Cargá los goles de cada equipo en el partido de vuelta. El resultado global define quién pasa.";
           $("#matchHomeLabel2").textContent=home.name;
           $("#matchAwayLabel2").textContent=away.name;
           $("#matchHomeScoreField2").value=m.scoreHome2??"";
@@ -15853,8 +15923,8 @@ function loop(){
           m.scoreAway2=clamp($("#matchAwayScoreField2").value);
         }
         const complete=matchScoreOk(m);
-        const agg=aggregateScore(m);
-        m.tieBreakWinner=(complete&&agg.h===agg.a)?($("#matchTieField").value||null):null;
+        const marcadorSerie=qualificationScore(m);
+        m.tieBreakWinner=(complete&&marcadorSerie.h===marcadorSerie.a)?($("#matchTieField").value||null):null;
         if(complete&&m.status==="scheduled")m.status="finished";
         m.events=pendingEvents.filter(ev=>ev.playerId).map(ev=>({id:ev.id,minute:ev.minute,type:ev.type,teamId:ev.teamId,playerId:ev.playerId}));
         m.mvpPlayerId=$("#matchMvpField").value||null;

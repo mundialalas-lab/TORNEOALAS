@@ -43,6 +43,18 @@ ahí mismo sin salir del partido. Al cargar goles, el marcador se ajusta solo.
 Todo lo que se registra acá alimenta la tabla de posiciones, la llave y las
 estadísticas. No hay ningún dato que mantener a mano por duplicado.
 
+## Cómo se definen las semifinales
+
+Las semifinales mantienen la ida y la vuelta, pero **no usan diferencia de
+goles global**. Cada partido cuenta por separado:
+
+- si un equipo gana más partidos de la serie, clasifica a la final;
+- si ambos ganan uno, se define por penales;
+- si los dos partidos terminan empatados, también se define por penales.
+
+Por ejemplo, ganar 5–0 la ida y perder 0–1 la vuelta deja la serie 1–1 en
+partidos ganados: corresponde cargar directamente el ganador por penales.
+
 ## Base de datos
 
 `supabase/migrations/0001_mundial_alas.sql` traduce todo el modelo a tablas de
