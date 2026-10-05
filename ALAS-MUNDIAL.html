@@ -10548,19 +10548,6 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         idProximo = (destacado && destacado.kind === "next") ? destacado.match.id : null;
       }
 
-      /* Las series de ida y vuelta tienen su propio bloque, con dos
-         marcadores y dos fechas: no entran en el formato de una linea del
-         afiche. Se les deja el rotulo del orden arriba y nada mas. */
-      function cintaFechaSerie(m){
-        const n = ordenEnFecha.get(m.id);
-        if (!n) return "";
-        const esProximo = m.id === idProximo;
-        return `<div class="mt-orden${esProximo ? " es-proximo" : ""}">
-          <span class="mt-orden-n">${ordinalDe(n)} partido</span>
-          ${esProximo ? '<span class="mt-orden-chip">Siguiente</span>' : ""}
-        </div>`;
-      }
-
       /* El nombre como va en la cinta del afiche.
 
          La regla es por PALABRA, no por nombre: se abrevia la palabra que no
@@ -10640,55 +10627,93 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const marcadorSerie = qualificationScore(m);
           const totH = marcadorSerie.h;
           const totA = marcadorSerie.a;
-          const hasAny = (h1 !== "" || a1 !== "" || h2 !== "" || a2 !== "");
-          const isComplete = (h1 !== "" && a1 !== "" && h2 !== "" && a2 !== "");
+          const idaOk = h1 !== "" && a1 !== "";
+          const vueltaOk = h2 !== "" && a2 !== "";
+          const hasPlayedLeg = idaOk || vueltaOk;
+          const isComplete = idaOk && vueltaOk;
           const isTied = isComplete && totH === totA;
-
           const winH = isComplete && (totH > totA || (isTied && m.tieBreakWinner === "home"));
           const winA = isComplete && (totA > totH || (isTied && m.tieBreakWinner === "away"));
+          const puedeCargar = document.body.classList.contains("admin-mode");
+          const esProximo = m.id === idProximo;
+          const rotuloSerie = esc(m.label || "Semifinal");
 
-          const tieSelectHtml = isTied ? `
-            <div style="margin-top:8px;width:100%;display:flex;flex-direction:column;gap:4px;background:rgba(30,58,138,0.3);padding:8px;border-radius:10px;border:1px solid rgba(96,165,250,0.3);">
-              <span style="font-size:10px;font-weight:800;color:#93c5fd;letter-spacing:0.05em;text-transform:uppercase;">GANADOR POR PENALES:</span>
-              <select class="tie-penal-quick" data-match="${m.id}" style="width:100%;height:32px;border-radius:8px;background:#0f172a;color:#fff;border:1px solid #3b82f6;font-size:12px;font-weight:700;padding:0 8px;">
-                <option value="">Seleccionar clasificado por penales…</option>
-                <option value="home" ${m.tieBreakWinner==="home"?"selected":""}>${esc(home.name)} (Gana por penales)</option>
-                <option value="away" ${m.tieBreakWinner==="away"?"selected":""}>${esc(away.name)} (Gana por penales)</option>
-              </select>
-            </div>` : "";
+          const marcadorPierna = (leg, h, a, ok) => {
+            const inputs = puedeCargar
+              ? `<span class="fx-vs-inputs">
+                  <input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="home" data-leg="${leg}" value="${esc(h)}" aria-label="Goles de ${esc(home.name)} en ${leg===1?"ida":"vuelta"}">
+                  <i>–</i>
+                  <input class="score-input group-score-manual" type="number" min="0" max="99" inputmode="numeric" data-match="${m.id}" data-side="away" data-leg="${leg}" value="${esc(a)}" aria-label="Goles de ${esc(away.name)} en ${leg===1?"ida":"vuelta"}">
+                </span>`
+              : ok
+                ? `<span class="fx-vs-score">${h}<i>–</i>${a}</span>`
+                : `<span class="fx-vs-vs">VS</span>`;
+            return `<div class="fx-centro${live ? " es-vivo" : ""}">
+              <span class="fx-centro-n">${leg===1?"Ida":"Vuelta"}</span>
+              ${inputs}
+            </div>`;
+          };
 
-          return `${cintaFechaSerie(m)}<div class="mt ${live?"is-live":""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}" style="padding:0;background:none;border:none;box-shadow:none;">
-            <div class="twolegs-card-wrap">
-              <div class="twolegs-header-row">
-                <span class="twolegs-col-title">IDA</span>
-                <span class="twolegs-col-title">VTA</span>
-                <span class="twolegs-col-title" style="color:#60a5fa;font-weight:900;" title="${m.decideByMatches?"Partidos ganados":"Total global"}">${m.decideByMatches?"PG":"TOT"}</span>
+          const filaPierna = (leg, h, a, ok) => {
+            const homeGana = ok && h > a;
+            const awayGana = ok && a > h;
+            return `<div class="fx-fila fx-serie-partido" role="button" tabindex="0" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}">
+              <div class="fx-lado is-local${homeGana ? " es-ganador" : ""}">
+                ${teamCrest(home,"fx-escudo",home.name)}
+                <span class="fx-nombre" title="${esc(home.name)}">${esc(nombreAfiche(home))}</span>
               </div>
-              <div class="twolegs-team-row">
-                <div class="twolegs-team-info">
-                  ${teamCrest(home,"crest-sm")}
-                  <span class="twolegs-team-name">${teamName(home)}</span>
-                </div>
-                <div class="twolegs-inputs-group">
-                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="home" data-leg="1" value="${esc(h1)}" placeholder="–">
-                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="home" data-leg="2" value="${esc(h2)}" placeholder="–">
-                  <div class="twolegs-total-badge ${winH?"is-winner":winA?"is-loser":""}">${hasAny?totH:"–"}</div>
-                </div>
+              ${marcadorPierna(leg,h,a,ok)}
+              <div class="fx-lado is-visita${awayGana ? " es-ganador" : ""}">
+                <span class="fx-nombre" title="${esc(away.name)}">${esc(nombreAfiche(away))}</span>
+                ${teamCrest(away,"fx-escudo",away.name)}
               </div>
-              <div class="twolegs-team-row">
-                <div class="twolegs-team-info">
-                  ${teamCrest(away,"crest-sm")}
-                  <span class="twolegs-team-name">${teamName(away)}</span>
-                </div>
-                <div class="twolegs-inputs-group">
-                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="away" data-leg="1" value="${esc(a1)}" placeholder="–">
-                  <input class="twolegs-input group-score-manual" type="number" min="0" max="99" data-match="${m.id}" data-side="away" data-leg="2" value="${esc(a2)}" placeholder="–">
-                  <div class="twolegs-total-badge ${winA?"is-winner":winH?"is-loser":""}">${hasAny?totA:"–"}</div>
-                </div>
-              </div>
-              ${tieSelectHtml}
+            </div>`;
+          };
+
+          let chip;
+          if(live) chip='<span class="fx-estado es-vivo">En vivo</span>';
+          else if(m.status==="suspended") chip='<span class="fx-estado es-susp">Suspendido</span>';
+          else if(isTied&&!m.tieBreakWinner) chip='<span class="fx-estado es-penales">Penales pendientes</span>';
+          else if(isTied&&m.tieBreakWinner) chip='<span class="fx-estado es-fin">Definido por penales</span>';
+          else if(isComplete) chip='<span class="fx-estado es-fin">Finalizado</span>';
+          else if(idaOk) chip='<span class="fx-estado es-susp">Ida jugada · vuelta pendiente</span>';
+          else chip='<span class="fx-estado es-porjugar">A jugar</span>';
+
+          let penalesHtml="";
+          if(isTied){
+            if(puedeCargar){
+              penalesHtml=`<div class="fx-serie-penales">
+                <label for="pen-${esc(String(m.id))}">Clasificado por penales</label>
+                <select id="pen-${esc(String(m.id))}" class="tie-penal-quick" data-match="${m.id}">
+                  <option value="">Seleccionar equipo…</option>
+                  <option value="home" ${m.tieBreakWinner==="home"?"selected":""}>${esc(home.name)}</option>
+                  <option value="away" ${m.tieBreakWinner==="away"?"selected":""}>${esc(away.name)}</option>
+                </select>
+              </div>`;
+            }else{
+              const clasificado=m.tieBreakWinner==="home"?home:m.tieBreakWinner==="away"?away:null;
+              penalesHtml=`<div class="fx-serie-penales es-lectura"><span>Penales</span><strong>${clasificado?esc(clasificado.name)+" clasifica":"Definición pendiente"}</strong></div>`;
+            }
+          }
+
+          return `<div class="fx-duelo fx-serie${esProximo ? " es-proximo" : ""}${live ? " es-vivo" : ""} ${window.__recentlyRegisteredMatch === m.id ? "recently-registered" : ""}">
+            <span class="fx-serie-etiqueta">${rotuloSerie}</span>
+            ${esProximo ? '<span class="fx-chip-proximo">Siguiente</span>' : ""}
+            ${filaPierna(1,h1,a1,idaOk)}
+            ${filaPierna(2,h2,a2,vueltaOk)}
+            <div class="fx-serie-resumen${isComplete ? " esta-completa" : ""}">
+              <span class="fx-serie-resumen-label">Partidos ganados</span>
+              <span class="fx-serie-pg${winH||winA ? " hay-clasificado" : ""}"><b class="${winH?"es-clasificado":""}">${hasPlayedLeg?totH:"–"}</b><i>–</i><b class="${winA?"es-clasificado":""}">${hasPlayedLeg?totA:"–"}</b></span>
+              <small>Si igualan en PG, se define por penales</small>
             </div>
-            ${mtFoot(m,played,live,"")}
+            ${penalesHtml}
+            <div class="fx-pie">
+              ${chip}
+              <span class="fx-flecha" aria-hidden="true">▾</span>
+            </div>
+            <div class="fx-acciones" id="acc-${esc(String(m.id))}" hidden>
+              ${mtFoot(m,played,live,"",true)}
+            </div>
           </div>`;
         }
 
@@ -10897,12 +10922,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         });
         const rondas = Object.keys(porRonda).sort((a,b)=>a-b);
 
-        /* Cada cruce va envuelto en su propia celda, y no suelto en la
-           grilla. Es necesario: groupMatchRow devuelve UN elemento para el
-           partido simple, pero DOS para la serie de ida y vuelta —la cinta
-           de fechas y la tarjeta—. Sueltos, la grilla los tomaria como dos
-           celdas y partiria la semifinal al medio en cuanto se resuelvan
-           los cruces y pase a mostrarse como serie. */
+        /* Cada cruce va envuelto en su propia celda para que tanto el partido
+           simple como la serie completa sean una sola unidad de la grilla. */
         const celda = m => `<div class="llave-cruce">${groupMatchRow(m)}</div>`;
 
         let html = `<div class="llave-lista">`;
@@ -10983,9 +11004,9 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
              al pasar la llave a lista esos selectores dejaron de encontrar
              nada y la llave aparecia de golpe.
 
-             La serie de ida y vuelta devuelve .mt en lugar de .fx-duelo, asi
-             que van los dos: si falta uno, la semifinal entra sin animar. */
-          gsap.fromTo("#llaveBoard .llave-ronda .fx-duelo, #llaveBoard .llave-ronda .mt",
+             Todas las variantes usan .fx-duelo, también la serie de ida y
+             vuelta, para compartir entrada y comportamiento. */
+          gsap.fromTo("#llaveBoard .llave-ronda .fx-duelo",
             {autoAlpha:0,y:16},{autoAlpha:1,y:0,duration:.45,ease:"power3.out",stagger:.06,delay:.05,clearProps:"opacity,visibility,transform"});
           gsap.fromTo("#llaveBoard .llave-coronacion",
             {autoAlpha:0,scale:.92},{autoAlpha:1,scale:1,duration:.6,ease:"back.out(1.7)",delay:.24,clearProps:"opacity,visibility,transform"});
@@ -18113,6 +18134,110 @@ body.modal-open .topbar-tabs{
              transform var(--t-toque) var(--ease-salida),
              visibility var(--t-toque) var(--ease-salida) !important;
 }
+
+/* ==========================================================================
+   LLAVE RESPONSIVA · semifinales con el mismo lenguaje del repechaje
+   ========================================================================== */
+
+/* Una columna nunca puede exigir más ancho que su contenedor. El mínimo fijo
+   de 360px era mayor que el espacio útil de un teléfono después del padding
+   del panel y hacía que toda la llave quedara recortada hacia la derecha. */
+.llave-cruces{
+  grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));
+}
+.llave-lista,.llave-ronda,.llave-cruces,.llave-cruce,
+.llave-cruce>.fx-duelo{min-width:0;max-width:100%}
+
+/* Cada semifinal es una pequeña serie de dos cintas del mismo afiche que usa
+   el repechaje. IDA y VUELTA se leen en el centro, siempre con el equipo de
+   arriba a la izquierda para no invertir el sentido al cargar resultados. */
+.fx-serie{padding-top:20px}
+.fx-serie-etiqueta{
+  position:absolute;z-index:3;top:0;left:12px;
+  max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;
+  padding:3px 10px;border-radius:999px;
+  background:#17243a;border:1px solid rgba(96,165,250,.42);
+  color:#bfdbfe;box-shadow:0 4px 10px rgba(0,0,0,.35);
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:9.5px;font-weight:800;line-height:1.2;
+  letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;
+}
+.fx-serie .fx-chip-proximo{top:0;right:12px;left:auto}
+.fx-serie.es-proximo .fx-serie-etiqueta{padding-right:88px}
+.fx-serie-partido{cursor:pointer}
+.fx-serie-partido+.fx-serie-partido{margin-top:6px}
+.fx-serie .fx-vs-inputs i{
+  font-style:normal;color:rgba(255,255,255,.45);font-size:11px;
+}
+
+/* El criterio de clasificación no queda escondido detrás de "PG": se nombra
+   completo y se acompaña con la regla de penales. */
+.fx-serie-resumen{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+  gap:2px 10px;margin:0 9px;padding:8px 11px;
+  background:linear-gradient(180deg,rgba(19,32,52,.98),rgba(10,17,29,.98));
+  border:1px solid rgba(96,165,250,.28);border-top:0;
+  color:#e5edf9;
+}
+.fx-serie-resumen-label{
+  min-width:0;font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+}
+.fx-serie-pg{
+  display:flex;align-items:center;gap:5px;
+  font-family:'Anton',var(--font-display),sans-serif;
+  font-size:19px;line-height:1;font-variant-numeric:tabular-nums;
+}
+.fx-serie-pg b{min-width:17px;text-align:center;font-weight:400}
+.fx-serie-pg i{font-style:normal;font-size:.65em;color:rgba(255,255,255,.42)}
+.fx-serie-pg .es-clasificado{color:#4ade80;text-shadow:0 0 12px rgba(74,222,128,.36)}
+.fx-serie-resumen small{
+  grid-column:1/-1;color:#8fa1ba;font-size:9.5px;line-height:1.25;
+}
+.fx-serie-penales{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,1.35fr);
+  align-items:center;gap:8px;margin:0 9px;padding:8px 10px;
+  background:rgba(146,99,12,.18);border:1px solid rgba(245,179,14,.38);
+  border-top:0;color:#fde68a;
+}
+.fx-serie-penales label,.fx-serie-penales>span{
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+}
+.fx-serie-penales select{
+  width:100%;min-width:0;height:36px;padding:0 8px;border-radius:8px;
+  border:1px solid rgba(245,179,14,.58);background:#111a28;color:#fff;
+  font-size:12px;font-weight:700;
+}
+.fx-serie-penales.es-lectura strong{
+  color:#fff;font-size:11px;text-align:right;overflow-wrap:anywhere;
+}
+.fx-serie .fx-pie{margin-top:0}
+.fx-estado.es-penales{color:#facc15}
+
+@media (max-width:600px){
+  #llaveShell{
+    padding:26px 12px calc(20px + var(--sa-bottom,0px));
+    border-radius:16px;
+  }
+  #llaveShell .llave-head{margin-bottom:18px}
+  #llaveShell .llave-lista{padding:0 0 24px;gap:20px}
+  #llaveShell .llave-cruces{grid-template-columns:minmax(0,1fr);gap:12px}
+  #llaveShell .llave-ronda .lc-head{margin-left:2px!important;margin-right:2px!important}
+  .fx-serie-resumen{margin:0 6px;padding:7px 9px}
+  .fx-serie-penales{grid-template-columns:1fr;margin:0 6px;gap:5px}
+  .fx-serie-penales.es-lectura{grid-template-columns:auto minmax(0,1fr)}
+  .fx-serie .fx-pie{margin-left:6px;margin-right:6px}
+}
+
+@media (max-width:380px){
+  #llaveShell{padding-left:8px;padding-right:8px}
+  .fx-serie-partido{gap:4px;padding-left:6px;padding-right:6px}
+  .fx-serie-partido .fx-escudo{width:24px;height:24px}
+  .fx-serie-partido .fx-centro{padding-left:5px;padding-right:5px}
+  .fx-serie-partido .fx-vs-inputs .score-input{width:24px}
+  .fx-serie-resumen-label{font-size:10px;letter-spacing:.07em}
+}
 </style>
 
 <script>
@@ -18267,8 +18392,10 @@ body.modal-open .topbar-tabs{
     var quieto = !g || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     duelo.classList.toggle('es-abierto', abrir);
-    var fila = duelo.querySelector('.fx-fila');
-    if (fila) fila.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    var filas = duelo.querySelectorAll('.fx-fila');
+    for (var i = 0; i < filas.length; i++) {
+      filas[i].setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    }
 
     if (quieto){
       panel.hidden = !abrir;
