@@ -1082,9 +1082,26 @@ h1,h2,h3,h4{text-wrap:balance;font-weight:inherit}
 .fx-estado.es-porjugar{color:var(--azul-hi,#5aa2ff)}
 .fx-estado.es-vivo{color:#fca5a5}
 .fx-estado.es-susp{color:#fbbf24}
+.fx-pie.tiene-opciones{justify-content:space-between;padding-right:5px}
+.fx-toggle{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  min-width:72px;height:28px;padding:0 7px;
+  border:1px solid rgba(96,165,250,.28);border-radius:7px;
+  background:rgba(47,127,240,.10);color:#9ec8ff;cursor:pointer;
+  font-family:'Saira Condensed',var(--font-ui),sans-serif;
+  font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  transition:color .18s ease,background .18s ease,border-color .18s ease;
+}
+.fx-toggle:hover,.fx-toggle:focus-visible{
+  color:#fff;background:rgba(47,127,240,.22);border-color:rgba(96,165,250,.58);
+}
+.fx-toggle:focus-visible{outline:2px solid var(--azul-hi,#5aa2ff);outline-offset:2px}
 .fx-flecha{
-  font-size:10px;line-height:1;color:rgba(255,255,255,.45);
+  width:14px;height:14px;flex:none;
   transition:transform .28s var(--ease-salida,cubic-bezier(.4,0,.6,1));
+}
+.fx-duelo.es-abierto .fx-toggle{
+  color:#fff;background:rgba(47,127,240,.26);border-color:rgba(96,165,250,.62);
 }
 .fx-duelo.es-abierto .fx-flecha{transform:rotate(180deg)}
 
@@ -10618,6 +10635,10 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const away = awayRes.id ? state.teams[awayRes.id] : { name: awayRes.name || "?", id: null };
         const live = m.status === "live";
         const played = matchScoreOk(m);
+        const botonAcciones = (esEdicion=true) => `<button class="fx-toggle" type="button" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}" aria-label="${esEdicion?"Mostrar botones de edición":"Mostrar opciones del partido"}">
+          <span class="fx-toggle-label">${esEdicion?"Editar":"Opciones"}</span>
+          <svg class="fx-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>`;
 
         if (m.twoLegs && home.id && away.id) {
           const h1 = hasScore(m.scoreHome) ? Number(m.scoreHome) : "";
@@ -10635,6 +10656,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const winH = isComplete && (totH > totA || (isTied && m.tieBreakWinner === "home"));
           const winA = isComplete && (totA > totH || (isTied && m.tieBreakWinner === "away"));
           const puedeCargar = document.body.classList.contains("admin-mode");
+          const hayAcciones = puedeCargar || played;
           const esProximo = m.id === idProximo;
           const rotuloSerie = esc(m.label || "Semifinal");
 
@@ -10657,7 +10679,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           const filaPierna = (leg, h, a, ok) => {
             const homeGana = ok && h > a;
             const awayGana = ok && a > h;
-            return `<div class="fx-fila fx-serie-partido" role="button" tabindex="0" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}">
+            return `<div class="fx-fila fx-serie-partido${hayAcciones?" tiene-acciones":""}"${hayAcciones?` role="button" tabindex="0" aria-expanded="false" aria-controls="acc-${esc(String(m.id))}"`:""}>
               <div class="fx-lado is-local${homeGana ? " es-ganador" : ""}">
                 ${teamCrest(home,"fx-escudo",home.name)}
                 <span class="fx-nombre" title="${esc(home.name)}">${esc(nombreAfiche(home))}</span>
@@ -10707,13 +10729,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               <small>Si igualan en PG, se define por penales</small>
             </div>
             ${penalesHtml}
-            <div class="fx-pie">
+            <div class="fx-pie${hayAcciones?" tiene-opciones":""}">
               ${chip}
-              <span class="fx-flecha" aria-hidden="true">▾</span>
+              ${hayAcciones?botonAcciones(puedeCargar):""}
             </div>
-            <div class="fx-acciones" id="acc-${esc(String(m.id))}" hidden>
+            ${hayAcciones?`<div class="fx-acciones" id="acc-${esc(String(m.id))}" hidden>
               ${mtFoot(m,played,live,"",true)}
-            </div>
+            </div>`:""}
           </div>`;
         }
 
@@ -10726,6 +10748,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         /* Los inputs solo para quien puede cargar resultados. Al resto le
            mostramos el marcador, o VS si todavia no se jugo. */
         const puedeCargar = document.body.classList.contains("admin-mode");
+        const hayAcciones = puedeCargar || played;
         const inputsHtml = (puedeCargar && home.id && away.id)
           ? inp("home", home, m.scoreHome) + inp("away", away, m.scoreAway)
           : "";
@@ -10740,7 +10763,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           : played ? `<span class="fx-estado es-fin">Finalizado</span>`
           : `<span class="fx-estado es-porjugar">A jugar</span>`;
 
-        const abrible = !!(home.id && away.id);
+        const abrible = !!(home.id && away.id && hayAcciones);
 
         return `<div class="fx-duelo${esProximo ? " es-proximo" : ""}${live ? " es-vivo" : ""}">
           ${esProximo ? '<span class="fx-chip-proximo">Siguiente</span>' : ""}
@@ -10755,14 +10778,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
               ${teamCrest(away.id?away:null,"fx-escudo",away.name)}
             </div>
           </div>
-          <div class="fx-pie">
+          <div class="fx-pie${abrible&&hayAcciones?" tiene-opciones":""}">
             ${chip}
-            ${abrible ? '<span class="fx-flecha" aria-hidden="true">▾</span>' : ""}
+            ${abrible&&hayAcciones ? botonAcciones(puedeCargar) : ""}
           </div>
-          ${home.id && away.id ? `
-            <div class="fx-acciones" id="acc-${esc(String(m.id))}" hidden>
-              ${mtFoot(m,played,live,"",true)}
-            </div>` : `<div class="mt-foot" style="text-align:center; color:var(--text-mute); font-size:11px;">Por definir</div>`}
+          ${home.id && away.id
+            ? (hayAcciones ? `<div class="fx-acciones" id="acc-${esc(String(m.id))}" hidden>
+                ${mtFoot(m,played,live,"",true)}
+              </div>` : "")
+            : `<div class="mt-foot" style="text-align:center; color:var(--text-mute); font-size:11px;">Por definir</div>`}
         </div>`;
       }
 
@@ -18154,6 +18178,8 @@ body.modal-open .topbar-tabs{
 .fx-serie{padding-top:20px}
 .fx-serie-etiqueta{
   position:absolute;z-index:3;top:0;left:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:112px;min-height:24px;box-sizing:border-box;
   max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;
   padding:3px 10px;border-radius:999px;
   background:#17243a;border:1px solid rgba(96,165,250,.42);
@@ -18163,8 +18189,7 @@ body.modal-open .topbar-tabs{
   letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;
 }
 .fx-serie .fx-chip-proximo{top:0;right:12px;left:auto}
-.fx-serie.es-proximo .fx-serie-etiqueta{padding-right:88px}
-.fx-serie-partido{cursor:pointer}
+.fx-serie-partido.tiene-acciones{cursor:pointer}
 .fx-serie-partido+.fx-serie-partido{margin-top:6px}
 .fx-serie .fx-vs-inputs i{
   font-style:normal;color:rgba(255,255,255,.45);font-size:11px;
@@ -18396,6 +18421,11 @@ body.modal-open .topbar-tabs{
     for (var i = 0; i < filas.length; i++) {
       filas[i].setAttribute('aria-expanded', abrir ? 'true' : 'false');
     }
+    var toggles = duelo.querySelectorAll('.fx-toggle');
+    for (var j = 0; j < toggles.length; j++) {
+      toggles[j].setAttribute('aria-expanded', abrir ? 'true' : 'false');
+      toggles[j].setAttribute('aria-label', abrir ? 'Ocultar opciones del partido' : 'Mostrar opciones del partido');
+    }
 
     if (quieto){
       panel.hidden = !abrir;
@@ -18478,6 +18508,12 @@ body.modal-open .topbar-tabs{
   }
 
   document.addEventListener('click', function(e){
+    var toggle = e.target.closest && e.target.closest('.fx-toggle');
+    if (toggle){
+      e.preventDefault();
+      alternarDuelo(toggle);
+      return;
+    }
     var fila = e.target.closest && e.target.closest('.fx-fila');
     if (!fila) return;
     /* Los controles de adentro hacen lo suyo: cargar un gol en el marcador no
