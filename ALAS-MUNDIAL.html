@@ -10429,6 +10429,26 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           }
         });
 
+        /* El botón de una semifinal no puede limitarse a intentar guardar una
+           vuelta vacía: para quien carga al borde de la cancha eso parece que
+           "no hace nada". Si falta alguno de los dos goles de la vuelta,
+           abre el formulario completo directamente en esos campos. Los goles
+           que se hubieran tipeado en la tarjeta ya quedaron copiados arriba,
+           así que no se pierde ningún dato. */
+        const vueltaIncompleta = m.twoLegs &&
+          (!hasScore(m.scoreHome2) || !hasScore(m.scoreAway2));
+        if (vueltaIncompleta) {
+          openMatchModal(matchId);
+          setTimeout(() => {
+            const campo = !hasScore(m.scoreHome2)
+              ? $("#matchHomeScoreField2")
+              : $("#matchAwayScoreField2");
+            campo?.focus();
+          }, 80);
+          showToast("Cargá los goles de la vuelta y guardá el partido");
+          return;
+        }
+
         const isOk = matchScoreOk(m);
         const marcadorSerie = isOk ? qualificationScore(m) : null;
         const serieEmpatada = Boolean(marcadorSerie && marcadorSerie.h === marcadorSerie.a);
