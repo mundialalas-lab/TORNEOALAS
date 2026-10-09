@@ -4025,6 +4025,25 @@ body.album-fs .footer-strip{display:none}
 .mr-score:focus{outline:none;border-color:#5aa2ff;background:rgba(90,162,255,.14)}
 .mr-equipos-leg2 .mr-score{height:48px;font-size:25px}
 
+/* En una serie no se cargan dos marcadores a la vez: se entra a uno de los
+   dos partidos y todo lo que se ve debajo pertenece a ese partido. */
+.match-leg-navigator{display:none;margin:0 0 12px;padding:10px;border:1px solid rgba(96,165,250,.42);border-radius:14px;background:linear-gradient(135deg,rgba(22,87,196,.2),rgba(11,22,44,.82))}
+.match-leg-navigator.visible{display:block}
+.match-leg-nav-title{display:block;margin:0 0 8px;font-family:var(--font-ui);font-size:10px;font-weight:900;letter-spacing:.11em;color:#b9d8ff;text-transform:uppercase}
+.match-leg-nav-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.match-leg-nav-btn{min-height:54px;padding:7px 10px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(5,12,27,.48);color:#aebbd0;text-align:left;cursor:pointer;font-family:var(--font-ui);transition:background var(--t),border-color var(--t),box-shadow var(--t),transform var(--t)}
+.match-leg-nav-btn strong{display:block;font-size:13px;letter-spacing:.05em}
+.match-leg-nav-btn small{display:block;margin-top:2px;font-size:10px;color:inherit;opacity:.76}
+.match-leg-nav-btn:active{transform:scale(.98)}
+.match-leg-nav-btn.active{border-color:#60a5fa;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;box-shadow:0 4px 15px rgba(37,99,235,.36)}
+.match-leg-panel{display:none}
+.match-leg-panel.is-active{display:block}
+.leg2-wrap.visible{display:none}
+.leg2-wrap.visible.is-active{display:block}
+.event-leg-picker{border-color:rgba(96,165,250,.42);background:linear-gradient(135deg,rgba(37,99,235,.16),rgba(15,23,42,.7))}
+.event-leg-current{display:block;font-family:var(--font-display);font-size:16px;letter-spacing:.04em;color:#dbeafe;text-transform:uppercase}
+.event-leg-picker small{margin-top:2px}
+
 /* ---- hoja de jugadores ---- */
 .mr-hoja{
   /* Sobre el modal del partido, que una regla mas abajo empuja a 100000. */
@@ -6678,7 +6697,8 @@ body.presentation-mode .champion-name{font-size:clamp(30px,3.4vw,58px)}
 
 /* --------------------------------------------- 11 · serie ida y vuelta -- */
 .leg2-wrap{display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-strong)}
-.leg2-wrap.visible{display:block}
+.leg2-wrap.visible{display:none}
+.leg2-wrap.visible.is-active{display:block}
 .leg2-hint{font-size:11.5px;color:var(--text-mute);margin:-2px 0 10px}
 .agg-readout{
   display:flex;align-items:center;gap:9px;flex-wrap:wrap;
@@ -8684,6 +8704,8 @@ body{background:transparent !important}
                es otra tarea y no tiene por qué competir por la atención
                mientras se cargan los goles. -->
           <section class="form-section mr-cab">
+            <div class="match-leg-navigator" id="matchLegNavigator" aria-label="Partido que se está cargando"></div>
+            <div class="match-leg-panel" id="matchLeg1Panel">
             <h3 id="matchScoreHeading" class="mr-cab-ttl">Resultado</h3>
             <div class="mr-equipos">
               <div class="mr-lado">
@@ -8704,20 +8726,29 @@ body{background:transparent !important}
                 <input type="number" id="matchAwayScoreField" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del visitante" />
               </div>
             </div>
+            </div>
 
             <!-- Serie de ida y vuelta. Sigue acá porque sin esto la llave no
                  se puede cargar, pero queda apagada salvo que el cruce sea a
                  dos partidos. -->
-            <div class="leg2-wrap" id="matchLeg2Wrap">
+            <div class="leg2-wrap match-leg-panel" id="matchLeg2Wrap">
               <h3 id="matchLeg2Heading">Vuelta</h3>
               <p class="leg2-hint" id="matchLeg2Hint">Cada partido cuenta por separado. Si igualan en partidos ganados, la serie se define por penales directos.</p>
               <div class="mr-equipos mr-equipos-leg2">
                 <div class="mr-lado">
+                <button type="button" class="mr-add admin-only" data-mr-add="home">
+                  <span>＋</span> Agregar datos
+                </button>
+                <div class="mr-escudo" id="mrCrestHome2"></div>
                   <span class="mr-nombre" id="matchHomeLabel2">Local</span>
                   <input type="number" id="matchHomeScoreField2" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del local en la vuelta" />
                 </div>
                 <span class="mr-vs" aria-hidden="true">—</span>
                 <div class="mr-lado">
+                <button type="button" class="mr-add admin-only" data-mr-add="away">
+                  <span>＋</span> Agregar datos
+                </button>
+                <div class="mr-escudo" id="mrCrestAway2"></div>
                   <span class="mr-nombre" id="matchAwayLabel2">Visitante</span>
                   <input type="number" id="matchAwayScoreField2" class="mr-score" min="0" max="99" inputmode="numeric" aria-label="Goles del visitante en la vuelta" />
                 </div>
@@ -12905,14 +12936,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const m=state.matches[editingMatchId]; if(!m) return;
         const home=resolveSlot(m.homeSlot), away=resolveSlot(m.awaySlot);
         const pintar=(lado,slot)=>{
-          const caja=$(lado==="home"?"#mrCrestHome":"#mrCrestAway");
           const t=slot.id?state.teams[slot.id]:null;
-          if(caja) caja.innerHTML=t?teamCrest(t,"crest-lg"):"";
-          const nom=$(lado==="home"?"#matchHomeLabel":"#matchAwayLabel");
-          if(nom) nom.textContent=slot.name||"";
+          const cajas=lado==="home"?["#mrCrestHome","#mrCrestHome2"]:["#mrCrestAway","#mrCrestAway2"];
+          cajas.forEach(sel=>{const caja=$(sel);if(caja)caja.innerHTML=t?teamCrest(t,"crest-lg"):"";});
+          const nombres=lado==="home"?["#matchHomeLabel","#matchHomeLabel2"]:["#matchAwayLabel","#matchAwayLabel2"];
+          nombres.forEach(sel=>{const nom=$(sel);if(nom)nom.textContent=slot.name||"";});
           // sin equipo definido todavía no hay a quién cargarle nada
-          const bt=document.querySelector(`[data-mr-add="${lado}"]`);
-          if(bt) bt.disabled=!slot.id;
+          document.querySelectorAll(`[data-mr-add="${lado}"]`).forEach(bt=>bt.disabled=!slot.id);
         };
         pintar("home",home); pintar("away",away);
       }
@@ -13206,10 +13236,38 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         if(!box)return;
         if(!m?.twoLegs){box.hidden=true;box.innerHTML="";return;}
         box.hidden=false;
-        box.innerHTML=`<span class="event-leg-label">Partido:</span>
-          <button type="button" class="event-leg-btn${editingEventLeg===1?" active":""}" data-event-leg="1" aria-pressed="${editingEventLeg===1}">Ida</button>
-          <button type="button" class="event-leg-btn${editingEventLeg===2?" active":""}" data-event-leg="2" aria-pressed="${editingEventLeg===2}">Vuelta</button>
-          <small>Los goles se suman al marcador de ${editingEventLeg===2?"vuelta":"ida"}.</small>`;
+        box.innerHTML=`<span class="event-leg-current">Partido de ${editingEventLeg===2?"vuelta":"ida"}</span>
+          <small>Estas incidencias y los goles se cargarán solamente en este partido.</small>`;
+      }
+
+      function renderMatchLegNavigator(){
+        const box=$("#matchLegNavigator"),m=state.matches[editingMatchId];
+        const ida=$("#matchLeg1Panel"),vuelta=$("#matchLeg2Wrap");
+        if(!box||!ida||!vuelta)return;
+        const two=Boolean(m?.twoLegs);
+        box.classList.toggle("visible",two);
+        ida.classList.toggle("is-active",!two||editingEventLeg===1);
+        vuelta.classList.toggle("is-active",two&&editingEventLeg===2);
+        if(!two){box.innerHTML="";return;}
+        const estado=leg=>{
+          const h=$(leg===2?"#matchHomeScoreField2":"#matchHomeScoreField")?.value;
+          const a=$(leg===2?"#matchAwayScoreField2":"#matchAwayScoreField")?.value;
+          return hasScore(h)&&hasScore(a)?`${h} — ${a}`:"Pendiente de cargar";
+        };
+        box.innerHTML=`<span class="match-leg-nav-title">Estás registrando</span>
+          <div class="match-leg-nav-options">
+            <button type="button" class="match-leg-nav-btn${editingEventLeg===1?" active":""}" data-select-leg="1" aria-pressed="${editingEventLeg===1}"><strong>1.º PARTIDO · IDA</strong><small>${estado(1)}</small></button>
+            <button type="button" class="match-leg-nav-btn${editingEventLeg===2?" active":""}" data-select-leg="2" aria-pressed="${editingEventLeg===2}"><strong>2.º PARTIDO · VUELTA</strong><small>${estado(2)}</small></button>
+          </div>`;
+      }
+
+      function seleccionarPartidoSerie(leg){
+        const m=state.matches[editingMatchId];if(!m?.twoLegs)return;
+        editingEventLeg=Number(leg)===2?2:1;
+        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
+        renderMatchLegNavigator();
+        renderEventEditor(home,away);
+        if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
       }
 
       let matchModalSavedScroll = 0;
@@ -13254,6 +13312,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         // porque el chip de la figura lee su valor
         poblarSelectFigura(home,away,m.mvpPlayerId||"");
         mrTeamId=null; mrPlayerId=null; mrTipo=null; mrCant=1;
+        renderMatchLegNavigator();
         renderEventEditor(home,away);
         $("#matchModal").classList.add("open");playClick();
         animarModalPartido();
@@ -15945,15 +16004,12 @@ function loop(){
         if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
       });
 
-      $("#eventLegPicker")?.addEventListener("click",e=>{
-        const btn=e.target.closest("[data-event-leg]");
+      $("#matchLegNavigator")?.addEventListener("click",e=>{
+        const btn=e.target.closest("[data-select-leg]");
         if(!btn)return;
         const m=state.matches[editingMatchId];
         if(!m?.twoLegs)return;
-        editingEventLeg=Number(btn.dataset.eventLeg)===2?2:1;
-        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
-        renderEventEditor(home,away);
-        if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
+        seleccionarPartidoSerie(btn.dataset.selectLeg);
         showToast(`Cargando incidencias de la ${editingEventLeg===2?"vuelta":"ida"}`);
         playClick();
       });
@@ -16044,6 +16100,7 @@ function loop(){
       ["#matchHomeScoreField","#matchAwayScoreField","#matchHomeScoreField2","#matchAwayScoreField2"]
         .forEach(sel=>$(sel).addEventListener("input",()=>{
           updateTieVisibility();
+          renderMatchLegNavigator();
           // el aviso de "faltan goles" compara contra el marcador: si cambia el
           // marcador y no se recalcula, el aviso queda mintiendo
           const m=state.matches[editingMatchId];
@@ -16063,7 +16120,10 @@ function loop(){
         const marcadorSerie=qualificationScore(m);
         m.tieBreakWinner=(complete&&marcadorSerie.h===marcadorSerie.a)?($("#matchTieField").value||null):null;
         if(complete&&m.status==="scheduled")m.status="finished";
-        m.events=pendingEvents.filter(ev=>ev.playerId).map(ev=>({id:ev.id,minute:ev.minute,type:ev.type,teamId:ev.teamId,playerId:ev.playerId}));
+        m.events=pendingEvents.filter(ev=>ev.playerId).map(ev=>({
+          id:ev.id,minute:ev.minute,type:ev.type,teamId:ev.teamId,playerId:ev.playerId,
+          leg:ev.leg||1
+        }));
         m.mvpPlayerId=$("#matchMvpField").value||null;
         persist();
 
