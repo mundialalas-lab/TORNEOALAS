@@ -3859,6 +3859,21 @@ body.album-fs .footer-strip{display:none}
 }
 
 .event-editor{display:flex;flex-direction:column;gap:7px}
+.event-leg-picker{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  margin:0 0 10px;padding:8px 10px;
+  border:1px solid rgba(96,165,250,.28);border-radius:var(--r-sm);
+  background:rgba(47,127,240,.09);
+}
+.event-leg-label{font-family:var(--font-ui);font-size:11px;font-weight:800;color:var(--muted);margin-right:2px}
+.event-leg-btn{
+  min-height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:999px;
+  background:var(--surface-2);color:var(--muted);font-family:var(--font-ui);font-size:11px;font-weight:800;
+  cursor:pointer;transition:background var(--t),border-color var(--t),color var(--t),transform var(--t);
+}
+.event-leg-btn:active{transform:scale(.97)}
+.event-leg-btn.active{border-color:var(--azul-hi);background:var(--azul);color:#fff;box-shadow:0 3px 10px rgba(47,127,240,.25)}
+.event-leg-picker small{width:100%;font-family:var(--font-ui);font-size:10px;color:var(--muted)}
 .event-row{display:grid;grid-template-columns:64px 1fr 1fr auto;align-items:center;gap:7px}
 .event-row select,.event-row input{
   height:36px;padding:0 9px;min-width:0;
@@ -8716,6 +8731,7 @@ body{background:transparent !important}
                desde la hoja de jugadores, no acá. -->
           <section class="form-section reg-sec">
             <h3>Incidencias del partido</h3>
+            <div class="event-leg-picker" id="eventLegPicker" hidden aria-label="Partido al que pertenecen las incidencias"></div>
             <p class="section-hint" id="eventSummary">Sin eventos cargados.</p>
             <div class="event-editor reg-list" id="eventEditor"></div>
             <!-- El destacado se elige tocando al jugador; el select sigue
@@ -9301,6 +9317,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       let toastTimer=null,audioContext=null,previousChampion=null,lastPlayedCount=0,connectorFrame=null;
       let editingTeamId=null,editingPlayerId=null,currentTeamSheetId=null,editingMatchId=null;
       let pendingEvents=[],pendingTeamCrest=null,pendingTeamPhoto=null,pendingPlayerPhoto=null;
+      let editingEventLeg=1;
       let fixtureFilterState={teamId:"",groupId:"",phase:"",status:""};
       let albumFrameReady=false;
       let lastBracketShape="";
@@ -10438,7 +10455,8 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const vueltaIncompleta = m.twoLegs &&
           (!hasScore(m.scoreHome2) || !hasScore(m.scoreAway2));
         if (vueltaIncompleta) {
-          openMatchModal(matchId);
+          const idaCargada=hasScore(m.scoreHome)&&hasScore(m.scoreAway);
+          openMatchModal(matchId,idaCargada?2:1);
           setTimeout(() => {
             const campo = !hasScore(m.scoreHome2)
               ? $("#matchHomeScoreField2")
@@ -12858,9 +12876,13 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       /* Los goles cargados mueven el marcador. Se puede seguir editando a
          mano: hay goles sin autor en la lista —uno en contra, alguien que no
          está cargado— y el aviso de descuadre avisa si no cierran. */
-      function mrAjustarMarcador(teamId,delta){
+      function mrAjustarMarcador(teamId,delta,leg=editingEventLeg){
         const lado=mrLadoDe(teamId); if(!lado||!delta) return;
-        const campo=$(lado==="home"?"#matchHomeScoreField":"#matchAwayScoreField");
+        const m=state.matches[editingMatchId];
+        const esVuelta=Boolean(m?.twoLegs)&&Number(leg)===2;
+        const campo=$(lado==="home"
+          ? (esVuelta?"#matchHomeScoreField2":"#matchHomeScoreField")
+          : (esVuelta?"#matchAwayScoreField2":"#matchAwayScoreField"));
         if(!campo) return;
         const actual=campo.value===""||campo.value==null?0:Number(campo.value);
         campo.value=Math.max(0,actual+delta);
@@ -12899,10 +12921,19 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
       /* El minuto salió del flujo. Estaba en el modelo y en la base, pero en
          71 eventos cargados no se usó ni una vez: pedirlo sólo agregaba un
          toque por evento. El campo sigue en la base por si algún día vuelve. */
+      function eventosDelPartidoActivo(){
+        const m=state.matches[editingMatchId];
+        return pendingEvents.filter(ev=>!m?.twoLegs||Number(ev.leg||1)===editingEventLeg);
+      }
+
       function regListaHtml(){
-        if(!pendingEvents.length)
-          return '<p class="reg-vacio-min">Nada cargado todavía. Usá «Agregar datos» arriba de cada equipo.</p>';
-        return pendingEvents.map((ev,i)=>{
+        const activos=eventosDelPartidoActivo();
+        const m=state.matches[editingMatchId];
+        if(!activos.length){
+          const tramo=m?.twoLegs?` de la ${editingEventLeg===2?"vuelta":"ida"}`:"";
+          return `<p class="reg-vacio-min">No hay datos${tramo} todavía. Usá «Agregar datos» arriba de cada equipo.</p>`;
+        }
+        return pendingEvents.map((ev,i)=>({ev,i})).filter(({ev})=>activos.includes(ev)).map(({ev,i})=>{
           const p=state.players[ev.playerId],t=ev.teamId&&state.teams[ev.teamId];
           return `<div class="event-row reg-item reg-i-${esc(ev.type)}" data-idx="${i}">
             <span class="reg-it-ico">${REG_ICO[ev.type]||""}</span>
@@ -12952,7 +12983,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const filas=jug.map(p=>{
           const marcas=REG_TIPOS.map(d=>{
             const n=d.t==="mvp"?(mvpId===p.id?1:0)
-                   :pendingEvents.filter(e=>e.type===d.t&&e.playerId===p.id).length;
+                   :eventosDelPartidoActivo().filter(e=>e.type===d.t&&e.playerId===p.id).length;
             if(!n) return "";
             return `<span class="mr-marca" style="background:${d.acc}">${REG_ICO[d.t]}${d.t==="mvp"?"":`<i>${n}</i>`}</span>`;
           }).join("");
@@ -12986,9 +13017,11 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const t=state.teams[mrTeamId];
         const crest=$("#mrSheetCrest"); if(crest) crest.innerHTML=t?teamCrest(t,"crest-sm"):"";
         const ttl=$("#mrSheetTitle"); if(ttl) ttl.textContent=t?.name||"Equipo";
-        const n=pendingEvents.filter(e=>e.teamId===mrTeamId).length;
+        const n=eventosDelPartidoActivo().filter(e=>e.teamId===mrTeamId).length;
+        const m=state.matches[editingMatchId];
+        const tramo=m?.twoLegs?` · Cargando: ${editingEventLeg===2?"Vuelta":"Ida"}`:"";
         const sub=$("#mrSheetSub");
-        if(sub) sub.textContent=n?`${n} ${n===1?"incidencia cargada":"incidencias cargadas"}`:"Tocá al jugador que participó.";
+        if(sub) sub.textContent=(n?`${n} ${n===1?"incidencia cargada":"incidencias cargadas"}`:"Tocá al jugador que participó.")+tramo;
         const bx=$("#btnMrBuscarClear"); if(bx) bx.hidden=!mrFiltro;
         cuerpo.innerHTML=mrHojaHtml();
       }
@@ -13015,7 +13048,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const mvpId=$("#matchMvpField")?.value||"";
         return REG_TIPOS.map(d=>{
           const n=d.t==="mvp"?(mvpId===mrPlayerId?1:0)
-                 :pendingEvents.filter(e=>e.type===d.t&&e.playerId===mrPlayerId).length;
+                 :eventosDelPartidoActivo().filter(e=>e.type===d.t&&e.playerId===mrPlayerId).length;
           const on=mrTipo===d.t;
           return `<button type="button" class="mr-ev-tipo${on?" on":""}" data-mr-tipo="${d.t}" style="--acc:${d.acc}">
             <span class="mr-ev-ic">${REG_ICO[d.t]}</span>
@@ -13061,13 +13094,15 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
           showToast(yaEra?"Figura sin designar":`Figura del encuentro: ${nombreJugador(p)}`);
         }else{
           const cuantos=mrTipo==="goal"?Math.max(1,Math.min(20,mrCant)):1;
+          const leg=m.twoLegs?editingEventLeg:1;
           for(let i=0;i<cuantos;i++){
-            pendingEvents.push({id:uid("ev"),minute:null,type:mrTipo,teamId:p.teamId,playerId:mrPlayerId});
+            pendingEvents.push({id:uid("ev"),minute:null,type:mrTipo,teamId:p.teamId,playerId:mrPlayerId,leg});
           }
-          if(mrTipo==="goal") mrAjustarMarcador(p.teamId,cuantos);
+          if(mrTipo==="goal") mrAjustarMarcador(p.teamId,cuantos,leg);
+          const tramo=m.twoLegs?` · ${leg===2?"Vuelta":"Ida"}`:"";
           showToast(cuantos>1
-            ? `${cuantos} goles · ${nombreJugador(p)}`
-            : `${EVENT_LABEL[mrTipo]||mrTipo} · ${nombreJugador(p)}`);
+            ? `${cuantos} goles · ${nombreJugador(p)}${tramo}`
+            : `${EVENT_LABEL[mrTipo]||mrTipo} · ${nombreJugador(p)}${tramo}`);
         }
 
         cerrarHojaEvento();
@@ -13116,6 +13151,7 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
 
       function renderEventEditor(home,away){
         renderMatchHeader();
+        renderEventLegPicker();
         $("#eventEditor").innerHTML=regMvpChip()+regListaHtml();
 
         /* Aviso de coherencia: los goles cargados tienen que dar el marcador.
@@ -13123,20 +13159,21 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
            se olvida un gol— y desde la tabla de goleadores no se nota nunca. */
         const res=$("#eventSummary");
         if(!res)return;
-        const cont=t=>pendingEvents.filter(e=>e.type===t&&e.playerId).length;
+        const activos=eventosDelPartidoActivo();
+        const cont=t=>activos.filter(e=>e.type===t&&e.playerId).length;
         const goles=cont("goal");
         const n=v=>v===""||v==null?null:Number(v);
-        const h=n($("#matchHomeScoreField")?.value),a=n($("#matchAwayScoreField")?.value);
-        let marcador=(h??0)+(a??0);
         const m=state.matches[editingMatchId];
-        if(m&&m.twoLegs){
-          marcador+=(n($("#matchHomeScoreField2")?.value)??0)+(n($("#matchAwayScoreField2")?.value)??0);
-        }
+        const esVuelta=m?.twoLegs&&editingEventLeg===2;
+        const h=n($(esVuelta?"#matchHomeScoreField2":"#matchHomeScoreField")?.value);
+        const a=n($(esVuelta?"#matchAwayScoreField2":"#matchAwayScoreField")?.value);
+        const marcador=(h??0)+(a??0);
         const partes=[`${goles} gol${goles===1?"":"es"}`,
                       `${cont("yellow")} amarilla${cont("yellow")===1?"":"s"}`,`${cont("red")} roja${cont("red")===1?"":"s"}`];
         const hayResultado=h!==null&&a!==null;
         const descuadre=hayResultado&&goles!==marcador;
-        res.textContent=partes.join(" · ")+(descuadre
+        const tramo=m?.twoLegs?`Datos de la ${editingEventLeg===2?"vuelta":"ida"}: `:"";
+        res.textContent=tramo+partes.join(" · ")+(descuadre
           ? `  ⚠ El marcador dice ${marcador} gol${marcador===1?"":"es"} y hay ${goles} cargado${goles===1?"":"s"}.`
           : "");
         res.classList.toggle("is-warn",descuadre);
@@ -13164,11 +13201,23 @@ const GOL_ICON_DATA = "data:image/webp;base64,UklGRgrLAABXRUJQVlA4IP7KAABwiwOdAS
         const tied=home.id&&away.id&&ready&&h===a;
         $("#matchTieWrap").classList.toggle("visible",Boolean(tied));
       }
+      function renderEventLegPicker(){
+        const box=$("#eventLegPicker"),m=state.matches[editingMatchId];
+        if(!box)return;
+        if(!m?.twoLegs){box.hidden=true;box.innerHTML="";return;}
+        box.hidden=false;
+        box.innerHTML=`<span class="event-leg-label">Partido:</span>
+          <button type="button" class="event-leg-btn${editingEventLeg===1?" active":""}" data-event-leg="1" aria-pressed="${editingEventLeg===1}">Ida</button>
+          <button type="button" class="event-leg-btn${editingEventLeg===2?" active":""}" data-event-leg="2" aria-pressed="${editingEventLeg===2}">Vuelta</button>
+          <small>Los goles se suman al marcador de ${editingEventLeg===2?"vuelta":"ida"}.</small>`;
+      }
+
       let matchModalSavedScroll = 0;
-      function openMatchModal(matchId){
+      function openMatchModal(matchId,preferredLeg=1){
         matchModalSavedScroll = (typeof window !== "undefined") ? window.scrollY : 0;
         const m=state.matches[matchId];if(!m)return;
         editingMatchId=matchId;
+        editingEventLeg=m.twoLegs&&Number(preferredLeg)===2?2:1;
         const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
         $("#matchModalTitle").textContent=`${home.name} vs ${away.name}`;
         $("#matchModalSub").textContent=m.phase==="group"?(state.groups[m.groupId]?.name||""):(m.label||"");
@@ -15891,9 +15940,22 @@ function loop(){
         const [quitado]=pendingEvents.splice(Number(del.dataset.delEvent),1);
         // sacar un gol también lo saca del marcador, o quedaría un descuadre
         // que nadie pidió
-        if(quitado&&quitado.type==="goal")mrAjustarMarcador(quitado.teamId,-1);
+        if(quitado&&quitado.type==="goal")mrAjustarMarcador(quitado.teamId,-1,quitado.leg||1);
         renderEventEditor(home,away);
         if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
+      });
+
+      $("#eventLegPicker")?.addEventListener("click",e=>{
+        const btn=e.target.closest("[data-event-leg]");
+        if(!btn)return;
+        const m=state.matches[editingMatchId];
+        if(!m?.twoLegs)return;
+        editingEventLeg=Number(btn.dataset.eventLeg)===2?2:1;
+        const home=resolveSlot(m.homeSlot),away=resolveSlot(m.awaySlot);
+        renderEventEditor(home,away);
+        if($("#mrPlayerSheet")?.classList.contains("open"))renderHojaJugadores();
+        showToast(`Cargando incidencias de la ${editingEventLeg===2?"vuelta":"ida"}`);
+        playClick();
       });
 
       /* --- carga: equipo → jugador → qué y cuántos --- */
